@@ -16,7 +16,11 @@
       "Bash(bash test_rate_limit.sh:*)",
       "Bash(bash:*)",
       "Bash(docker-compose build:*)",
-      "Bash(docker-compose up:*)"
+      "Bash(docker-compose up:*)",
+      "Bash(psql:*)",
+      "Bash(railway --version:*)",
+      "Bash(npm install:*)",
+      "Bash(railway login:*)"
     ],
     "deny": [],
     "ask": []
