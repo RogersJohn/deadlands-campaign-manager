@@ -66,6 +66,7 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/auth/login", "/auth/register").permitAll()
                         .requestMatchers("/reference/**").permitAll()
+                        .requestMatchers("/portraits/**").permitAll()
                         // Authenticated endpoints
                         .requestMatchers("/auth/change-password").authenticated()
                         .requestMatchers("/api/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
