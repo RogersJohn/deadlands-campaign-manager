@@ -10,7 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("production")
+@Profile("disabled") // Disabled to prevent memory issues - load reference data manually
 @Order(2) // Run after DatabaseInitializer
 public class ReferenceDataInitializer implements CommandLineRunner {
 
