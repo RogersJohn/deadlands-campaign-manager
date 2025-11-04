@@ -30,7 +30,7 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: never  # Disabled - use DatabaseInitializer and ReferenceDataInitializer instead
       continue-on-error: false
 
   security:
