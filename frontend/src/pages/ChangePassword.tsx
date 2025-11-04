@@ -7,16 +7,26 @@ import {
   Button,
   Alert,
   Box,
+  IconButton,
+  InputAdornment,
 } from '@mui/material';
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const ChangePassword: React.FC = () => {
   const navigate = useNavigate();
+  const token = useAuthStore((state) => state.token);
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -55,7 +65,6 @@ const ChangePassword: React.FC = () => {
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
       await axios.post(
         `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/auth/change-password`,
         formData,
@@ -109,37 +118,73 @@ const ChangePassword: React.FC = () => {
               fullWidth
               label="Current Password"
               name="currentPassword"
-              type="password"
+              type={showPasswords.current ? 'text' : 'password'}
               value={formData.currentPassword}
               onChange={handleChange}
               required
               margin="normal"
               autoComplete="current-password"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                      edge="end"
+                    >
+                      {showPasswords.current ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <TextField
               fullWidth
               label="New Password"
               name="newPassword"
-              type="password"
+              type={showPasswords.new ? 'text' : 'password'}
               value={formData.newPassword}
               onChange={handleChange}
               required
               margin="normal"
               helperText="Minimum 8 characters"
               autoComplete="new-password"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                      edge="end"
+                    >
+                      {showPasswords.new ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <TextField
               fullWidth
               label="Confirm New Password"
               name="confirmPassword"
-              type="password"
+              type={showPasswords.confirm ? 'text' : 'password'}
               value={formData.confirmPassword}
               onChange={handleChange}
               required
               margin="normal"
               autoComplete="new-password"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                      edge="end"
+                    >
+                      {showPasswords.confirm ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
 
             <Button

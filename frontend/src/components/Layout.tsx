@@ -20,6 +20,7 @@ import {
   Person as PersonIcon,
   MenuBook as WikiIcon,
   Logout as LogoutIcon,
+  Lock as LockIcon,
 } from '@mui/icons-material'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
@@ -38,6 +39,7 @@ const Layout = () => {
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'My Characters', icon: <PersonIcon />, path: '/dashboard' },
     { text: 'Wiki', icon: <WikiIcon />, path: '/wiki' },
+    { text: 'Change Password', icon: <LockIcon />, path: '/change-password' },
   ]
 
   return (

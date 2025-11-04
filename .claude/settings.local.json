@@ -2,7 +2,21 @@
   "permissions": {
     "allow": [
       "Bash(pdftotext:*)",
-      "Bash(openssl rand:*)"
+      "Bash(openssl rand:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(curl:*)",
+      "Bash(docker exec:*)",
+      "Bash(tee:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(token_response.json)",
+      "Bash(cat:*)",
+      "Bash(for i in {1..105})",
+      "Bash(do curl -s -o /dev/null -w \"%{http_code} \" http://localhost:8080/api/reference/skills)",
+      "Bash(done)",
+      "Bash(bash test_rate_limit.sh:*)",
+      "Bash(bash:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker-compose up:*)"
     ],
     "deny": [],
     "ask": []
