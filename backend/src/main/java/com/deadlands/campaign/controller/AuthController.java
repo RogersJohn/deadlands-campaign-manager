@@ -1,5 +1,6 @@
 package com.deadlands.campaign.controller;
 
+import com.deadlands.campaign.dto.ChangePasswordRequest;
 import com.deadlands.campaign.dto.LoginRequest;
 import com.deadlands.campaign.dto.LoginResponse;
 import com.deadlands.campaign.dto.RegisterRequest;
@@ -8,6 +9,7 @@ import com.deadlands.campaign.repository.UserRepository;
 import com.deadlands.campaign.security.JwtTokenProvider;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -71,5 +73,36 @@ public class AuthController {
         userRepository.save(user);
 
         return ResponseEntity.ok("User registered successfully!");
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest changePasswordRequest) {
+        // Get the authenticated user
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Verify current password
+        if (!passwordEncoder.matches(changePasswordRequest.getCurrentPassword(), user.getPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Current password is incorrect");
+        }
+
+        // Verify new password matches confirmation
+        if (!changePasswordRequest.getNewPassword().equals(changePasswordRequest.getConfirmPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("New password and confirmation do not match");
+        }
+
+        // Check that new password is different from current
+        if (changePasswordRequest.getCurrentPassword().equals(changePasswordRequest.getNewPassword())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("New password must be different from current password");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Password changed successfully!");
     }
 }

@@ -63,11 +63,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                        // Public endpoints
+                        .requestMatchers("/auth/login", "/auth/register").permitAll()
                         .requestMatchers("/reference/**").permitAll()
+                        // Authenticated endpoints
+                        .requestMatchers("/auth/change-password").authenticated()
                         .requestMatchers("/api/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers("/api/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("GAME_MASTER")
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 );
 

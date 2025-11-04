@@ -1,28 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Out-String)",
-      "Bash(cmd /c \"..\\mvnw.cmd clean compile\")",
-      "Bash(powershell:*)",
-      "Bash(cp:*)",
-      "Bash(docker --version:*)",
-      "Bash(docker-compose:*)",
-      "Bash(del:*)",
-      "Bash(rm:*)",
-      "Bash(curl:*)",
-      "Bash(curl -s http://localhost:8080/api/characters -H 'Authorization: Bearer $(cat token.txt)')",
-      "Bash(docker logs:*)",
-      "Bash(docker exec:*)",
-      "Bash(for file in Edge.java Hindrance.java Equipment.java ArcanePower.java Wound.java)",
-      "Bash(do grep -n \"@ManyToOne\" $file)",
-      "Bash(done)",
-      "Bash(cat:*)",
-      "Bash(login.json)",
-      "Bash(python -m json.tool:*)",
-      "Bash(bash test-api.sh:*)",
       "Bash(pdftotext:*)",
-      "Bash(for file in *.pdf)",
-      "Bash(do pdftotext \"$file\" \"$file%.pdf.txt\")"
+      "Bash(openssl rand:*)"
     ],
     "deny": [],
     "ask": []

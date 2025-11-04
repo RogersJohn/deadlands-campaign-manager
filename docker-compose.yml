@@ -26,16 +26,21 @@ services:
     ports:
       - "8080:8080"
     environment:
-      DATABASE_URL: jdbc:postgresql://postgres:5432/deadlands
-      DATABASE_USERNAME: deadlands
-      DATABASE_PASSWORD: deadlands123
-      JWT_SECRET: dev-secret-key-change-in-production-minimum-256-bits-required-for-security
-      CORS_ORIGINS: http://localhost:3000
+      DATABASE_URL: ${DATABASE_URL:-jdbc:postgresql://postgres:5432/deadlands}
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-deadlands}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-deadlands123}
+      JWT_SECRET: ${JWT_SECRET:-dev-secret-key-change-in-production-minimum-256-bits-required-for-security}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-DEBUG}
       JAVA_OPTS: "-Xmx1024m -Xms512m"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
+    env_file:
+      - .env.production
 
   frontend:
     build:
@@ -45,10 +50,12 @@ services:
     ports:
       - "3000:3000"
     environment:
-      VITE_API_URL: http://localhost:8080/api
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
     depends_on:
       - backend
     restart: unless-stopped
+    env_file:
+      - .env.production
 
 volumes:
   postgres_data:
