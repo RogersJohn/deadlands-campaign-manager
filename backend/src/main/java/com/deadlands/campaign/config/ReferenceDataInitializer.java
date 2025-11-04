@@ -10,7 +10,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-@Profile("disabled") // Disabled to prevent memory issues - load reference data manually
+@Profile("production") // Now enabled - memory issues resolved by character endpoint optimization
 @Order(2) // Run after DatabaseInitializer
 public class ReferenceDataInitializer implements CommandLineRunner {
 
@@ -43,10 +43,19 @@ public class ReferenceDataInitializer implements CommandLineRunner {
 
             String sql = new String(resource.getInputStream().readAllBytes());
 
-            // Execute the SQL
-            jdbcTemplate.execute(sql);
+            // Split by semicolons and execute each statement separately for better memory management
+            String[] statements = sql.split(";");
+            int executedCount = 0;
 
-            logger.info("Reference data loaded successfully!");
+            for (String statement : statements) {
+                String trimmedStatement = statement.trim();
+                if (!trimmedStatement.isEmpty() && !trimmedStatement.startsWith("--")) {
+                    jdbcTemplate.execute(trimmedStatement);
+                    executedCount++;
+                }
+            }
+
+            logger.info("Reference data loaded successfully! Executed {} statements.", executedCount);
         } catch (Exception e) {
             logger.error("Failed to load reference data", e);
             throw new RuntimeException("Failed to load reference data", e);
