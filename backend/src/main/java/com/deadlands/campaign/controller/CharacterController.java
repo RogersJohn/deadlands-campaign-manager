@@ -137,8 +137,9 @@ public class CharacterController {
     }
 
     @GetMapping("/{id}")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ResponseEntity<Character> getCharacterById(@PathVariable Long id, Authentication authentication) {
-        Character character = characterRepository.findByIdWithRelationships(id)
+        Character character = characterRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Character not found"));
 
         User user = userRepository.findByUsername(authentication.getName())
@@ -149,6 +150,14 @@ public class CharacterController {
             !character.getPlayer().getId().equals(user.getId())) {
             return ResponseEntity.status(403).build();
         }
+
+        // Trigger lazy loading within transaction before returning
+        character.getSkills().size();
+        character.getEdges().size();
+        character.getHindrances().size();
+        character.getEquipment().size();
+        character.getArcanePowers().size();
+        character.getWounds().size();
 
         return ResponseEntity.ok(character);
     }
