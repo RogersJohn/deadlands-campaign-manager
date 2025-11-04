@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
+- Fix character endpoint 502 error in production
+- Load reference data into production database
 - Character creation wizard with step-by-step workflow
 - Campaign management features (sessions, notes, tracking)
 - Interactive character sheet with dice rolling
@@ -18,6 +20,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Character export to PDF
 - Enhanced search and filtering for reference data
 - Character import improvements with auto-matching
+
+## [1.1.0] - 2025-11-04
+
+### Added
+
+#### Production Deployment to Railway.app
+- Successfully deployed full application stack to Railway cloud platform
+- Created three Railway services:
+  - PostgreSQL 14 database (managed service)
+  - Spring Boot backend with Docker
+  - React frontend with Nginx and Docker
+- Configured public domains:
+  - Frontend: https://deadlands-frontend.up.railway.app
+  - Backend: https://deadlands-campaign-manager-production.up.railway.app/api
+- Implemented auto-initialization of database on startup
+- Created `DatabaseInitializer.java` for automatic user creation
+- Added character portrait support with static file serving
+- Implemented password change feature with show/hide toggles
+- Added "Change Password" menu item to navigation
+
+#### Security Enhancements
+- Generated secure 512-bit JWT secret for production
+- Configured environment-based CORS origins
+- Added OPTIONS request handling for CORS preflight
+- Made portrait endpoints publicly accessible
+- Implemented rate limiting preparation (Bucket4j dependency)
+
+#### Character Sheet UI Redesign
+- Redesigned character sheet with tabbed interface using Material-UI Tabs
+- Created 5 tabs: Overview, Skills, Edges & Hindrances, Equipment, Arcane Powers
+- Added portrait display in Overview tab with conditional rendering
+- Improved visual organization with Card components
+- Preserved all tooltip functionality across tabs
+
+#### Docker Configuration
+- Updated backend Dockerfile to use official Maven 3.9 image
+- Added build-time environment variable support for frontend
+- Fixed nginx configuration for Railway deployment
+- Implemented multi-stage Docker builds for optimization
+- Added production Maven profile to pom.xml
+
+### Changed
+- Modified `api.ts` to use `VITE_API_URL` from environment variables
+- Updated nginx.conf to remove backend proxy (direct URL calls)
+- Changed `application-production.yml` SQL init mode to always
+- Updated SecurityConfig to allow OPTIONS requests via `HttpMethod.OPTIONS`
+- Modified frontend Dockerfile to accept `VITE_API_URL` as build argument
+
+### Fixed
+- Resolved Maven build failures with production profile
+- Fixed CORS preflight request handling
+- Corrected frontend API URL configuration (was calling itself)
+- Fixed Spring Security blocking portrait images
+- Resolved Docker build issues with Alpine Maven package
+- Fixed compilation errors in SecurityConfig (HttpMethod enum)
+- Corrected nginx port configuration (3000 vs 80)
+- Fixed password mismatch (BCrypt hash was for "password" not "password123")
+
+### Known Issues
+- `/api/characters` endpoint returning 502 Bad Gateway in production
+  - Backend starts successfully but crashes on character endpoint access
+  - Likely database query timeout or memory issue
+  - Requires debugging in next session
+- Reference data not loaded in production
+  - ReferenceDataInitializer disabled due to memory constraints
+  - Tooltips will not work until reference data loaded manually
+  - Need alternative loading approach (smaller batches or build-time)
+
+### Technical Debt
+- Character endpoint needs query optimization for Railway
+- Reference data loading needs memory-efficient approach
+- Consider database connection pool tuning
+- May need to add database indexes for performance
+- Consider implementing pagination for character queries
+
+### Deployment Configuration
+
+#### Environment Variables Added
+**Backend:**
+- `DATABASE_URL` - PostgreSQL connection via Railway variables
+- `DATABASE_USERNAME` - Auto-linked to Railway Postgres
+- `DATABASE_PASSWORD` - Auto-linked to Railway Postgres
+- `JWT_SECRET` - Secure 512-bit secret
+- `JWT_EXPIRATION` - 86400000ms (24 hours)
+- `SPRING_PROFILES_ACTIVE` - production
+- `LOG_LEVEL` - INFO
+- `CORS_ORIGINS` - Frontend domain
+
+**Frontend:**
+- `VITE_API_URL` - Backend API domain (build-time)
+
+#### Port Configuration
+- Backend: 8080 (Spring Boot default)
+- Frontend: 3000 (nginx configured port)
+- Database: 5432 (PostgreSQL default, private network)
 
 ## [1.0.0] - 2025-11-04
 
