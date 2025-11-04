@@ -23,18 +23,22 @@ public class CharacterController {
     private UserRepository userRepository;
 
     @GetMapping
-    public ResponseEntity<List<Character>> getAllCharacters(Authentication authentication) {
+    public ResponseEntity<List<CharacterDTO>> getAllCharacters(Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<Character> characters;
         if (user.getRole() == User.Role.GAME_MASTER) {
-            characters = characterRepository.findAllWithRelationships();
+            characters = characterRepository.findAll();
         } else {
-            characters = characterRepository.findByPlayerIdWithRelationships(user.getId());
+            characters = characterRepository.findByPlayerId(user.getId());
         }
 
-        return ResponseEntity.ok(characters);
+        List<CharacterDTO> characterDTOs = characters.stream()
+                .map(this::toDTO)
+                .toList();
+
+        return ResponseEntity.ok(characterDTOs);
     }
 
     private CharacterDTO toDTO(Character character) {
@@ -57,6 +61,13 @@ public class CharacterController {
         dto.setNotes(character.getNotes());
         dto.setCharacterImageUrl(character.getCharacterImageUrl());
         dto.setIsNpc(character.getIsNpc());
+
+        // Add player information
+        if (character.getPlayer() != null) {
+            dto.setPlayerId(character.getPlayer().getId());
+            dto.setPlayerName(character.getPlayer().getUsername());
+        }
+
         return dto;
     }
 
@@ -79,6 +90,8 @@ public class CharacterController {
         private String notes;
         private String characterImageUrl;
         private Boolean isNpc;
+        private Long playerId;
+        private String playerName;
 
         // Getters and setters
         public Long getId() { return id; }
@@ -117,6 +130,10 @@ public class CharacterController {
         public void setCharacterImageUrl(String characterImageUrl) { this.characterImageUrl = characterImageUrl; }
         public Boolean getIsNpc() { return isNpc; }
         public void setIsNpc(Boolean isNpc) { this.isNpc = isNpc; }
+        public Long getPlayerId() { return playerId; }
+        public void setPlayerId(Long playerId) { this.playerId = playerId; }
+        public String getPlayerName() { return playerName; }
+        public void setPlayerName(String playerName) { this.playerName = playerName; }
     }
 
     @GetMapping("/{id}")
