@@ -14,6 +14,17 @@ A comprehensive web-based campaign management system for Deadlands Reloaded tabl
   - Attributes, Skills, Edges, Hindrances
   - Equipment and Arcane Powers tracking
   - Wound tracking by location
+  - Interactive tooltips with sourcebook descriptions
+  - Alphabetically sorted character sheet sections
+
+- **Reference Data System** ✨ NEW!
+  - Integrated Deadlands sourcebook data
+  - 60+ skill definitions with descriptions
+  - Edge database with requirements and effects
+  - Hindrance database with game mechanics
+  - Equipment catalog with full stats
+  - Arcane power reference with mechanics
+  - Hover tooltips for instant rule lookups
 
 - **Campaign Wiki** (Coming Soon)
   - Permission-based content unlocking
@@ -174,6 +185,13 @@ deadlands-campaign/
 - `PUT /api/characters/{id}` - Update character
 - `DELETE /api/characters/{id}` - Delete character (GM only)
 
+### Reference Data (Public)
+- `GET /api/reference/skills` - Get all skill references
+- `GET /api/reference/edges` - Get all edge references
+- `GET /api/reference/hindrances` - Get all hindrance references
+- `GET /api/reference/equipment` - Get all equipment references
+- `GET /api/reference/powers` - Get all arcane power references
+
 ## Deployment
 
 ### Recommended Hosting: Railway.app
@@ -225,12 +243,24 @@ VITE_API_URL=https://your-backend-domain.com/api
 
 ## Development Roadmap
 
+### Completed ✅
 - [x] Project structure setup
 - [x] Authentication system
 - [x] Basic character management
 - [x] Character sheet viewing
-- [ ] Full character creation form
+- [x] Reference data system with tooltips
+- [x] Sourcebook integration
+- [x] Alphabetical sorting of character data
+
+### In Progress 🚧
+- [ ] Expand reference database (target: 500+ entries)
+- [ ] Character creation wizard
+
+### Planned 📋
 - [ ] Character editing interface
+- [ ] Interactive dice rolling
+- [ ] Wound and Fate Chip tracking
+- [ ] Campaign management features
 - [ ] Wiki system with markdown support
 - [ ] Permission-based wiki content
 - [ ] NPC generator
@@ -240,6 +270,9 @@ VITE_API_URL=https://your-backend-domain.com/api
 - [ ] Combat tracker
 - [ ] File uploads for character images
 - [ ] Export characters to PDF
+- [ ] Mobile optimization
+
+See [SESSION_STATUS.md](SESSION_STATUS.md) for detailed feature proposals and priorities.
 
 ## Contributing
 

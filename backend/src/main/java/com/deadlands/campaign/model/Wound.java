@@ -1,5 +1,6 @@
 package com.deadlands.campaign.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +13,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.EqualsAndHashCode(exclude = {"character"})
+@lombok.ToString(exclude = {"character"})
 public class Wound {
 
     @Id
@@ -20,6 +23,7 @@ public class Wound {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "character_id", nullable = false)
+    @JsonIgnoreProperties({"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds"})
     private Character character;
 
     @Enumerated(EnumType.STRING)

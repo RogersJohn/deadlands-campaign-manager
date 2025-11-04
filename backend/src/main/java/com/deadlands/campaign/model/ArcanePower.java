@@ -1,5 +1,6 @@
 package com.deadlands.campaign.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,6 +13,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.EqualsAndHashCode(exclude = {"character", "powerReference"})
+@lombok.ToString(exclude = {"character", "powerReference"})
 public class ArcanePower {
 
     @Id
@@ -20,9 +23,16 @@ public class ArcanePower {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "character_id", nullable = false)
+    @JsonIgnoreProperties({"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds"})
     private Character character;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "power_reference_id")
+    @JsonIgnoreProperties("id")
+    private ArcanePowerReference powerReference;
+
+    // Legacy fields - kept for backward compatibility
+    @Column(nullable = true)
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -37,7 +47,7 @@ public class ArcanePower {
     private Integer targetNumber;
 
     @Column(length = 1000)
-    private String notes;
+    private String notes; // Character-specific notes, trappings, etc.
 
     public enum PowerType {
         HEXSLINGING,

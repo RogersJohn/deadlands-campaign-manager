@@ -59,14 +59,14 @@ INSERT INTO edges (character_id, name, description, type) VALUES
 (1, 'Martial Artist', 'Special martial arts abilities', 'COMBAT'),
 (1, 'Superstitious', 'Superstitious behavior', 'BACKGROUND'),
 (1, 'Juxteno', 'Mexican heritage', 'BACKGROUND'),
-(1, 'Illiterate', 'Cannot read', 'BACKGROUND'),
-(1, 'Dumb as Mud (Eagle)', 'Low intelligence', 'HINDRANCE')
+(1, 'Illiterate', 'Cannot read', 'BACKGROUND')
 ON CONFLICT DO NOTHING;
 
 -- Mexicali Bob Hindrances
 INSERT INTO hindrances (character_id, name, description, severity) VALUES
 (1, 'Superstitious', 'Believes in superstitions', 'MINOR'),
 (1, 'Illiterate', 'Cannot read or write', 'MINOR'),
+(1, 'Dumb as Mud (Eagle)', 'Low intelligence', 'MAJOR'),
 (1, 'Dumb as Mud', 'Low intelligence', 'MAJOR')
 ON CONFLICT DO NOTHING;
 
@@ -281,16 +281,16 @@ ON CONFLICT DO NOTHING;
 
 -- Doc Farraday Arcane Powers
 INSERT INTO arcane_powers (character_id, name, type, speed, duration, range, trait, target_number, notes) VALUES
-(4, 'Boost', '2', 'Instant', 'Instant', 'Smarts', '5', 'Boost trait'),
-(4, 'Heal', '1', 'Instant', 'Touch', 'Spirit', '5', 'Heal wounds'),
-(4, 'Helper Hex', 'Hexslinging', 'Varies', 'Permanent', 'Touch', 'Smarts', '5', 'Help as be wilt'),
-(4, 'Noxious Breath', 'Hexslinging', '1', 'Concentration', 'Touch', 'Spirit', '5', 'Poison breath'),
-(4, 'Feast', 'Hexslinging', '10min', 'Permanent', 'Touch', 'Mojo', '5', 'Summon food'),
-(4, 'Old Sarge', 'Hexslinging', 'Inst', null, null, null, null, 'Summon guardian'),
-(4, 'Viva Patras', 'Hexslinging', 'Inst', null, null, null, null, 'Raise dead'),
-(4, 'Spiritual Pathway', 'Hexslinging', 'Inst', null, null, null, null, 'Ghost road'),
-(4, 'Sadden', 'Hexslinging', 'Inst', null, null, null, null, 'Cause sadness'),
-(4, 'Sight Made', 'Hexslinging', 'Inst', null, null, null, null, 'Enhanced vision')
+(4, 'Boost', 'HEXSLINGING', '2', 'Instant', 'Instant', 'Smarts', 5, 'Boost trait'),
+(4, 'Heal', 'HEXSLINGING', '1', 'Instant', 'Touch', 'Spirit', 5, 'Heal wounds'),
+(4, 'Helper Hex', 'HEXSLINGING', 'Varies', 'Permanent', 'Touch', 'Smarts', 5, 'Help as be wilt'),
+(4, 'Noxious Breath', 'HEXSLINGING', '1', 'Concentration', 'Touch', 'Spirit', 5, 'Poison breath'),
+(4, 'Feast', 'HEXSLINGING', '10min', 'Permanent', 'Touch', 'Mojo', 5, 'Summon food'),
+(4, 'Old Sarge', 'HEXSLINGING', 'Inst', null, null, null, null, 'Summon guardian'),
+(4, 'Viva Patras', 'HEXSLINGING', 'Inst', null, null, null, null, 'Raise dead'),
+(4, 'Spiritual Pathway', 'HEXSLINGING', 'Inst', null, null, null, null, 'Ghost road'),
+(4, 'Sadden', 'HEXSLINGING', 'Inst', null, null, null, null, 'Cause sadness'),
+(4, 'Sight Made', 'HEXSLINGING', 'Inst', null, null, null, null, 'Enhanced vision')
 ON CONFLICT DO NOTHING;
 
 -- Doc Farraday Edges

@@ -8,7 +8,10 @@ import {
   Button,
   Typography,
   Alert,
+  IconButton,
+  InputAdornment,
 } from '@mui/material'
+import { Visibility, VisibilityOff } from '@mui/icons-material'
 import { useAuthStore } from '../store/authStore'
 import authService from '../services/authService'
 
@@ -21,6 +24,7 @@ const Login = () => {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -78,11 +82,25 @@ const Login = () => {
             <TextField
               fullWidth
               label="Password"
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               margin="normal"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      onMouseDown={(e) => e.preventDefault()}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             <Button
               type="submit"

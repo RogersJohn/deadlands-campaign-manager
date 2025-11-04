@@ -1,5 +1,6 @@
 package com.deadlands.campaign.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,8 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
+@lombok.EqualsAndHashCode(exclude = {"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds", "player"})
+@lombok.ToString(exclude = {"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds", "player"})
 public class Character {
 
     @Id
@@ -34,6 +37,7 @@ public class Character {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "player_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "characters", "password"})
     private User player;
 
     // Core Stats
@@ -76,21 +80,27 @@ public class Character {
 
     // Derived Stats
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("character")
     private Set<Skill> skills = new HashSet<>();
 
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("character")
     private Set<Edge> edges = new HashSet<>();
 
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("character")
     private Set<Hindrance> hindrances = new HashSet<>();
 
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("character")
     private Set<Equipment> equipment = new HashSet<>();
 
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("character")
     private Set<ArcanePower> arcanePowers = new HashSet<>();
 
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("character")
     private Set<Wound> wounds = new HashSet<>();
 
     @Column(length = 2000)

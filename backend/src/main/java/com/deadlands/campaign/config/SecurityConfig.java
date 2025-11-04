@@ -64,6 +64,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/reference/**").permitAll()
                         .requestMatchers("/api/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers("/api/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers("/api/admin/**").hasRole("GAME_MASTER")

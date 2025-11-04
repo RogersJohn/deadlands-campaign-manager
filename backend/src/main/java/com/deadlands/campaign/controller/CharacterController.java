@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/characters")
+@RequestMapping("/characters")
 public class CharacterController {
 
     @Autowired
@@ -27,16 +27,101 @@ public class CharacterController {
         User user = userRepository.findByUsername(authentication.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        List<Character> characters;
         if (user.getRole() == User.Role.GAME_MASTER) {
-            return ResponseEntity.ok(characterRepository.findAll());
+            characters = characterRepository.findAllWithRelationships();
         } else {
-            return ResponseEntity.ok(characterRepository.findByPlayerId(user.getId()));
+            characters = characterRepository.findByPlayerIdWithRelationships(user.getId());
         }
+
+        return ResponseEntity.ok(characters);
+    }
+
+    private CharacterDTO toDTO(Character character) {
+        CharacterDTO dto = new CharacterDTO();
+        dto.setId(character.getId());
+        dto.setName(character.getName());
+        dto.setOccupation(character.getOccupation());
+        dto.setPace(character.getPace());
+        dto.setSize(character.getSize());
+        dto.setWind(character.getWind());
+        dto.setGrit(character.getGrit());
+        dto.setCognitionDie(character.getCognitionDie());
+        dto.setDeftnessDie(character.getDeftnessDie());
+        dto.setNimblenessDie(character.getNimblenessDie());
+        dto.setQuicknessDie(character.getQuicknessDie());
+        dto.setSmartsDie(character.getSmartsDie());
+        dto.setSpiritDie(character.getSpiritDie());
+        dto.setStrengthDie(character.getStrengthDie());
+        dto.setVigorDie(character.getVigorDie());
+        dto.setNotes(character.getNotes());
+        dto.setCharacterImageUrl(character.getCharacterImageUrl());
+        dto.setIsNpc(character.getIsNpc());
+        return dto;
+    }
+
+    static class CharacterDTO {
+        private Long id;
+        private String name;
+        private String occupation;
+        private Integer pace;
+        private Integer size;
+        private Integer wind;
+        private Integer grit;
+        private String cognitionDie;
+        private String deftnessDie;
+        private String nimblenessDie;
+        private String quicknessDie;
+        private String smartsDie;
+        private String spiritDie;
+        private String strengthDie;
+        private String vigorDie;
+        private String notes;
+        private String characterImageUrl;
+        private Boolean isNpc;
+
+        // Getters and setters
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getOccupation() { return occupation; }
+        public void setOccupation(String occupation) { this.occupation = occupation; }
+        public Integer getPace() { return pace; }
+        public void setPace(Integer pace) { this.pace = pace; }
+        public Integer getSize() { return size; }
+        public void setSize(Integer size) { this.size = size; }
+        public Integer getWind() { return wind; }
+        public void setWind(Integer wind) { this.wind = wind; }
+        public Integer getGrit() { return grit; }
+        public void setGrit(Integer grit) { this.grit = grit; }
+        public String getCognitionDie() { return cognitionDie; }
+        public void setCognitionDie(String cognitionDie) { this.cognitionDie = cognitionDie; }
+        public String getDeftnessDie() { return deftnessDie; }
+        public void setDeftnessDie(String deftnessDie) { this.deftnessDie = deftnessDie; }
+        public String getNimblenessDie() { return nimblenessDie; }
+        public void setNimblenessDie(String nimblenessDie) { this.nimblenessDie = nimblenessDie; }
+        public String getQuicknessDie() { return quicknessDie; }
+        public void setQuicknessDie(String quicknessDie) { this.quicknessDie = quicknessDie; }
+        public String getSmartsDie() { return smartsDie; }
+        public void setSmartsDie(String smartsDie) { this.smartsDie = smartsDie; }
+        public String getSpiritDie() { return spiritDie; }
+        public void setSpiritDie(String spiritDie) { this.spiritDie = spiritDie; }
+        public String getStrengthDie() { return strengthDie; }
+        public void setStrengthDie(String strengthDie) { this.strengthDie = strengthDie; }
+        public String getVigorDie() { return vigorDie; }
+        public void setVigorDie(String vigorDie) { this.vigorDie = vigorDie; }
+        public String getNotes() { return notes; }
+        public void setNotes(String notes) { this.notes = notes; }
+        public String getCharacterImageUrl() { return characterImageUrl; }
+        public void setCharacterImageUrl(String characterImageUrl) { this.characterImageUrl = characterImageUrl; }
+        public Boolean getIsNpc() { return isNpc; }
+        public void setIsNpc(Boolean isNpc) { this.isNpc = isNpc; }
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Character> getCharacterById(@PathVariable Long id, Authentication authentication) {
-        Character character = characterRepository.findById(id)
+        Character character = characterRepository.findByIdWithRelationships(id)
                 .orElseThrow(() -> new RuntimeException("Character not found"));
 
         User user = userRepository.findByUsername(authentication.getName())

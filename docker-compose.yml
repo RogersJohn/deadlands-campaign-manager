@@ -31,6 +31,7 @@ services:
       DATABASE_PASSWORD: deadlands123
       JWT_SECRET: dev-secret-key-change-in-production-minimum-256-bits-required-for-security
       CORS_ORIGINS: http://localhost:3000
+      JAVA_OPTS: "-Xmx1024m -Xms512m"
     depends_on:
       postgres:
         condition: service_healthy

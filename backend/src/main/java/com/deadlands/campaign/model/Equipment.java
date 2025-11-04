@@ -1,5 +1,6 @@
 package com.deadlands.campaign.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,6 +15,8 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@lombok.EqualsAndHashCode(exclude = {"character", "equipmentReference"})
+@lombok.ToString(exclude = {"character", "equipmentReference"})
 public class Equipment {
 
     @Id
@@ -22,9 +25,16 @@ public class Equipment {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "character_id", nullable = false)
+    @JsonIgnoreProperties({"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds"})
     private Character character;
 
-    @Column(nullable = false)
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "equipment_reference_id")
+    @JsonIgnoreProperties("id")
+    private EquipmentReference equipmentReference;
+
+    // Legacy fields - kept for backward compatibility
+    @Column(nullable = true)
     private String name;
 
     @Column(length = 1000)
@@ -33,6 +43,7 @@ public class Equipment {
     @Enumerated(EnumType.STRING)
     private EquipmentType type;
 
+    // Character-specific fields
     @Column(nullable = false)
     private Integer quantity = 1;
 
@@ -42,7 +53,7 @@ public class Equipment {
     @Column(precision = 10, scale = 2)
     private BigDecimal cost;
 
-    // Weapon-specific fields
+    // Weapon-specific fields (can override reference values)
     private String damage;
     private String range;
     private Integer rof; // Rate of Fire
@@ -52,6 +63,9 @@ public class Equipment {
 
     @Column(name = "is_equipped")
     private Boolean isEquipped = false;
+
+    @Column(length = 500)
+    private String notes; // Character-specific notes
 
     public enum EquipmentType {
         WEAPON_MELEE,

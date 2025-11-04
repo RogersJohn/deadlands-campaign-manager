@@ -1,4 +1,4 @@
-import axios from 'axios'
+import api from './api'
 
 interface LoginRequest {
   username: string
@@ -20,12 +20,12 @@ interface LoginResponse {
 
 const authService = {
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    const response = await axios.post('/auth/login', credentials)
+    const response = await api.post('/auth/login', credentials)
     return response.data
   },
 
   register: async (data: RegisterRequest): Promise<void> => {
-    await axios.post('/auth/register', data)
+    await api.post('/auth/register', data)
   },
 }
 
