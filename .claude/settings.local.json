@@ -20,7 +20,9 @@
       "Bash(psql:*)",
       "Bash(railway --version:*)",
       "Bash(npm install:*)",
-      "Bash(railway login:*)"
+      "Bash(railway login:*)",
+      "Bash(winget install:*)",
+      "Bash(railway link:*)"
     ],
     "deny": [],
     "ask": []
