@@ -10,8 +10,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-
 @Component
 @Profile("production")
 public class DatabaseInitializer implements CommandLineRunner {
@@ -41,38 +39,35 @@ public class DatabaseInitializer implements CommandLineRunner {
 
     private void initializeUsers() {
         // Create Game Master
-        User gameMaster = new User();
-        gameMaster.setUsername("gamemaster");
-        gameMaster.setEmail("gm@deadlands.com");
-        gameMaster.setPassword(passwordEncoder.encode("password123"));
-        gameMaster.setRole("GAME_MASTER");
-        gameMaster.setActive(true);
-        gameMaster.setCreatedAt(LocalDateTime.now());
-        gameMaster.setUpdatedAt(LocalDateTime.now());
+        User gameMaster = User.builder()
+                .username("gamemaster")
+                .email("gm@deadlands.com")
+                .password(passwordEncoder.encode("password123"))
+                .role(User.Role.GAME_MASTER)
+                .active(true)
+                .build();
         userRepository.save(gameMaster);
         logger.info("Created user: gamemaster");
 
         // Create Player 1
-        User player1 = new User();
-        player1.setUsername("player1");
-        player1.setEmail("player1@deadlands.com");
-        player1.setPassword(passwordEncoder.encode("password123"));
-        player1.setRole("PLAYER");
-        player1.setActive(true);
-        player1.setCreatedAt(LocalDateTime.now());
-        player1.setUpdatedAt(LocalDateTime.now());
+        User player1 = User.builder()
+                .username("player1")
+                .email("player1@deadlands.com")
+                .password(passwordEncoder.encode("password123"))
+                .role(User.Role.PLAYER)
+                .active(true)
+                .build();
         userRepository.save(player1);
         logger.info("Created user: player1");
 
         // Create Player 2
-        User player2 = new User();
-        player2.setUsername("player2");
-        player2.setEmail("player2@deadlands.com");
-        player2.setPassword(passwordEncoder.encode("password123"));
-        player2.setRole("PLAYER");
-        player2.setActive(true);
-        player2.setCreatedAt(LocalDateTime.now());
-        player2.setUpdatedAt(LocalDateTime.now());
+        User player2 = User.builder()
+                .username("player2")
+                .email("player2@deadlands.com")
+                .password(passwordEncoder.encode("password123"))
+                .role(User.Role.PLAYER)
+                .active(true)
+                .build();
         userRepository.save(player2);
         logger.info("Created user: player2");
 
