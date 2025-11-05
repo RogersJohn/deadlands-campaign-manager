@@ -72,10 +72,13 @@ public class SecurityConfig {
                         .requestMatchers("/portraits/**").permitAll()
                         // Authenticated endpoints
                         .requestMatchers("/auth/change-password").authenticated()
-                        .requestMatchers("/api/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
-                        .requestMatchers("/api/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.POST, "/characters").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.PUT, "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.DELETE, "/characters/**").hasRole("GAME_MASTER")
+                        .requestMatchers("/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         // Admin endpoints
-                        .requestMatchers("/api/admin/**").hasRole("GAME_MASTER")
+                        .requestMatchers("/admin/**").hasRole("GAME_MASTER")
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 );
