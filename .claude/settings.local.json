@@ -22,7 +22,13 @@
       "Bash(npm install:*)",
       "Bash(railway login:*)",
       "Bash(winget install:*)",
-      "Bash(railway link:*)"
+      "Bash(railway link:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(railway status:*)",
+      "Bash(docker run:*)"
     ],
     "deny": [],
     "ask": []
