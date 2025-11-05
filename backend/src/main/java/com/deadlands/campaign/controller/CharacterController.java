@@ -50,14 +50,17 @@ public class CharacterController {
         dto.setSize(character.getSize());
         dto.setWind(character.getWind());
         dto.setGrit(character.getGrit());
-        dto.setCognitionDie(character.getCognitionDie());
-        dto.setDeftnessDie(character.getDeftnessDie());
-        dto.setNimblenessDie(character.getNimblenessDie());
-        dto.setQuicknessDie(character.getQuicknessDie());
+        // Savage Worlds attributes
+        dto.setAgilityDie(character.getAgilityDie());
         dto.setSmartsDie(character.getSmartsDie());
         dto.setSpiritDie(character.getSpiritDie());
         dto.setStrengthDie(character.getStrengthDie());
         dto.setVigorDie(character.getVigorDie());
+        // Legacy attributes (deprecated)
+        dto.setCognitionDie(character.getCognitionDie());
+        dto.setDeftnessDie(character.getDeftnessDie());
+        dto.setNimblenessDie(character.getNimblenessDie());
+        dto.setQuicknessDie(character.getQuicknessDie());
         dto.setNotes(character.getNotes());
         dto.setCharacterImageUrl(character.getCharacterImageUrl());
         dto.setIsNpc(character.getIsNpc());
@@ -79,14 +82,17 @@ public class CharacterController {
         private Integer size;
         private Integer wind;
         private Integer grit;
-        private String cognitionDie;
-        private String deftnessDie;
-        private String nimblenessDie;
-        private String quicknessDie;
+        // Savage Worlds attributes
+        private String agilityDie;
         private String smartsDie;
         private String spiritDie;
         private String strengthDie;
         private String vigorDie;
+        // Legacy attributes (deprecated)
+        private String cognitionDie;
+        private String deftnessDie;
+        private String nimblenessDie;
+        private String quicknessDie;
         private String notes;
         private String characterImageUrl;
         private Boolean isNpc;
@@ -108,6 +114,8 @@ public class CharacterController {
         public void setWind(Integer wind) { this.wind = wind; }
         public Integer getGrit() { return grit; }
         public void setGrit(Integer grit) { this.grit = grit; }
+        public String getAgilityDie() { return agilityDie; }
+        public void setAgilityDie(String agilityDie) { this.agilityDie = agilityDie; }
         public String getCognitionDie() { return cognitionDie; }
         public void setCognitionDie(String cognitionDie) { this.cognitionDie = cognitionDie; }
         public String getDeftnessDie() { return deftnessDie; }

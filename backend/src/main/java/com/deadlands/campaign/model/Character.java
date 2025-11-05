@@ -53,18 +53,9 @@ public class Character {
     @Column(nullable = false)
     private Integer grit = 1;
 
-    // Attributes - stored as dice notation (e.g., "3d6")
-    @Column(name = "cognition_die")
-    private String cognitionDie = "1d6";
-
-    @Column(name = "deftness_die")
-    private String deftnessDie = "1d6";
-
-    @Column(name = "nimbleness_die")
-    private String nimblenessDie = "1d6";
-
-    @Column(name = "quickness_die")
-    private String quicknessDie = "1d6";
+    // Savage Worlds Attributes - stored as dice notation (e.g., "3d6")
+    @Column(name = "agility_die")
+    private String agilityDie = "1d6";
 
     @Column(name = "smarts_die")
     private String smartsDie = "1d6";
@@ -77,6 +68,19 @@ public class Character {
 
     @Column(name = "vigor_die")
     private String vigorDie = "1d6";
+
+    // Legacy Deadlands Classic Attributes (deprecated - use Savage Worlds attributes above)
+    @Column(name = "cognition_die")
+    private String cognitionDie = "1d6";
+
+    @Column(name = "deftness_die")
+    private String deftnessDie = "1d6";
+
+    @Column(name = "nimbleness_die")
+    private String nimblenessDie = "1d6";
+
+    @Column(name = "quickness_die")
+    private String quicknessDie = "1d6";
 
     // Derived Stats
     @OneToMany(mappedBy = "character", cascade = CascadeType.ALL, orphanRemoval = true)
