@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Box,
   Typography,
@@ -18,11 +18,52 @@ import {
   Paper,
   Grid,
   Alert,
+  Autocomplete,
+  Chip,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Tooltip,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material'
+import {
+  Add as AddIcon,
+  Delete as DeleteIcon,
+  ExpandMore as ExpandMoreIcon,
+  Info as InfoIcon,
+} from '@mui/icons-material'
 import characterService, { Character } from '../services/characterService'
+import referenceService, {
+  SkillReference,
+  EdgeReference,
+  HindranceReference,
+  EquipmentReference,
+  ArcanePowerReference,
+  Skill,
+  Edge,
+  Hindrance,
+  Equipment,
+  ArcanePower,
+} from '../services/referenceService'
 
 const ATTRIBUTE_OPTIONS = ['d4', 'd6', 'd8', 'd10', 'd12']
-const steps = ['Basic Info', 'Attributes', 'Derived Stats', 'Review']
+const SKILL_DIE_OPTIONS = ['d4', 'd6', 'd8', 'd10', 'd12']
+const steps = [
+  'Basic Info',
+  'Attributes',
+  'Skills',
+  'Edges',
+  'Hindrances',
+  'Equipment',
+  'Arcane Powers',
+  'Derived Stats',
+  'Review',
+]
 
 const CharacterCreate = () => {
   const navigate = useNavigate()
@@ -43,6 +84,37 @@ const CharacterCreate = () => {
     size: 0,
     wind: 0,
     grit: 1,
+    skills: [],
+    edges: [],
+    hindrances: [],
+    equipment: [],
+    arcanePowers: [],
+  })
+
+  // Fetch reference data
+  const { data: skillReferences = [] } = useQuery({
+    queryKey: ['skillReferences'],
+    queryFn: referenceService.getSkills,
+  })
+
+  const { data: edgeReferences = [] } = useQuery({
+    queryKey: ['edgeReferences'],
+    queryFn: referenceService.getEdges,
+  })
+
+  const { data: hindranceReferences = [] } = useQuery({
+    queryKey: ['hindranceReferences'],
+    queryFn: referenceService.getHindrances,
+  })
+
+  const { data: equipmentReferences = [] } = useQuery({
+    queryKey: ['equipmentReferences'],
+    queryFn: referenceService.getEquipment,
+  })
+
+  const { data: arcanePowerReferences = [] } = useQuery({
+    queryKey: ['arcanePowerReferences'],
+    queryFn: referenceService.getArcanePowers,
   })
 
   const createCharacterMutation = useMutation({
@@ -75,18 +147,11 @@ const CharacterCreate = () => {
     const errors: string[] = []
 
     if (activeStep === 0) {
-      if (!formData.name?.trim()) {
-        errors.push('Character name is required')
-      }
-      if (!formData.occupation?.trim()) {
-        errors.push('Occupation is required')
-      }
+      if (!formData.name?.trim()) errors.push('Character name is required')
+      if (!formData.occupation?.trim()) errors.push('Occupation is required')
     }
 
     if (activeStep === 1) {
-      // Savage Worlds: Characters start with d4 in all attributes
-      // They have 5 points to distribute, where:
-      // d6 costs 1 point, d8 costs 2 points, d10 costs 3 points, d12 costs 4 points
       const attributePoints: Record<string, number> = {
         'd4': 0,
         'd6': 1,
@@ -118,9 +183,122 @@ const CharacterCreate = () => {
     createCharacterMutation.mutate(formData as Character)
   }
 
+  // Skills management
+  const addSkill = (skillRef: SkillReference) => {
+    const newSkill: Skill = {
+      name: skillRef.name,
+      dieValue: skillRef.defaultValue || 'd4',
+      skillReferenceId: skillRef.id,
+    }
+    setFormData({
+      ...formData,
+      skills: [...(formData.skills || []), newSkill],
+    })
+  }
+
+  const removeSkill = (index: number) => {
+    const updated = [...(formData.skills || [])]
+    updated.splice(index, 1)
+    setFormData({ ...formData, skills: updated })
+  }
+
+  const updateSkillDie = (index: number, dieValue: string) => {
+    const updated = [...(formData.skills || [])]
+    updated[index] = { ...updated[index], dieValue }
+    setFormData({ ...formData, skills: updated })
+  }
+
+  // Edges management
+  const addEdge = (edgeRef: EdgeReference) => {
+    const newEdge: Edge = {
+      name: edgeRef.name,
+      type: edgeRef.type,
+      description: edgeRef.description,
+      edgeReferenceId: edgeRef.id,
+    }
+    setFormData({
+      ...formData,
+      edges: [...(formData.edges || []), newEdge],
+    })
+  }
+
+  const removeEdge = (index: number) => {
+    const updated = [...(formData.edges || [])]
+    updated.splice(index, 1)
+    setFormData({ ...formData, edges: updated })
+  }
+
+  // Hindrances management
+  const addHindrance = (hindranceRef: HindranceReference) => {
+    const newHindrance: Hindrance = {
+      name: hindranceRef.name,
+      severity: hindranceRef.severity,
+      description: hindranceRef.description,
+      hindranceReferenceId: hindranceRef.id,
+    }
+    setFormData({
+      ...formData,
+      hindrances: [...(formData.hindrances || []), newHindrance],
+    })
+  }
+
+  const removeHindrance = (index: number) => {
+    const updated = [...(formData.hindrances || [])]
+    updated.splice(index, 1)
+    setFormData({ ...formData, hindrances: updated })
+  }
+
+  // Equipment management
+  const addEquipment = (equipRef: EquipmentReference) => {
+    const newEquip: Equipment = {
+      name: equipRef.name,
+      type: equipRef.type,
+      quantity: 1,
+      isEquipped: false,
+      equipmentReferenceId: equipRef.id,
+      description: equipRef.description,
+    }
+    setFormData({
+      ...formData,
+      equipment: [...(formData.equipment || []), newEquip],
+    })
+  }
+
+  const removeEquipment = (index: number) => {
+    const updated = [...(formData.equipment || [])]
+    updated.splice(index, 1)
+    setFormData({ ...formData, equipment: updated })
+  }
+
+  const updateEquipmentQuantity = (index: number, quantity: number) => {
+    const updated = [...(formData.equipment || [])]
+    updated[index] = { ...updated[index], quantity }
+    setFormData({ ...formData, equipment: updated })
+  }
+
+  // Arcane Powers management
+  const addArcanePower = (powerRef: ArcanePowerReference) => {
+    const newPower: ArcanePower = {
+      name: powerRef.name,
+      powerPoints: powerRef.powerPoints,
+      arcanePowerReferenceId: powerRef.id,
+      description: powerRef.description,
+    }
+    setFormData({
+      ...formData,
+      arcanePowers: [...(formData.arcanePowers || []), newPower],
+    })
+  }
+
+  const removeArcanePower = (index: number) => {
+    const updated = [...(formData.arcanePowers || [])]
+    updated.splice(index, 1)
+    setFormData({ ...formData, arcanePowers: updated })
+  }
+
   const renderStepContent = () => {
     switch (activeStep) {
-      case 0:
+      case 0: // Basic Info
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -143,7 +321,7 @@ const CharacterCreate = () => {
                   value={formData.occupation}
                   onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
                   required
-                  helperText="e.g., Gunslinger, Mad Scientist, Huckster, etc."
+                  helperText="e.g., Gunslinger, Mad Scientist, Huckster, Blessed, etc."
                 />
               </Grid>
               <Grid item xs={12}>
@@ -161,7 +339,7 @@ const CharacterCreate = () => {
           </Box>
         )
 
-      case 1:
+      case 1: // Attributes
         const attributePoints: Record<string, number> = {
           'd4': 0,
           'd6': 1,
@@ -183,7 +361,8 @@ const CharacterCreate = () => {
               Attributes (Savage Worlds)
             </Typography>
             <Alert severity="info" sx={{ mb: 3 }}>
-              Characters start with d4 in all attributes. You have <strong>5 points</strong> to distribute.
+              Characters start with d4 in all attributes. You have <strong>5 points</strong> to
+              distribute.
               <br />
               d6 costs 1 point, d8 costs 2 points, d10 costs 3 points, d12 costs 4 points.
               <br />
@@ -274,7 +453,466 @@ const CharacterCreate = () => {
           </Box>
         )
 
-      case 2:
+      case 2: // Skills
+        const skillsByAttribute = skillReferences.reduce((acc, skill) => {
+          if (!acc[skill.attribute]) acc[skill.attribute] = []
+          acc[skill.attribute].push(skill)
+          return acc
+        }, {} as Record<string, SkillReference[]>)
+
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Skills
+            </Typography>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Add skills to your character. You can adjust the die value for each skill.
+              <br />
+              Savage Worlds: Novice characters typically get 15 skill points (d4=1pt, d6=2pts,
+              d8=3pts, d10=4pts, d12=5pts).
+            </Alert>
+
+            {/* Skills Selection */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Browse Skills by Attribute
+              </Typography>
+              {Object.entries(skillsByAttribute).map(([attribute, skills]) => (
+                <Accordion key={attribute}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>
+                      {attribute} ({skills.length} skills)
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={1}>
+                      {skills.map((skill) => (
+                        <Grid item key={skill.id}>
+                          <Chip
+                            label={skill.name}
+                            onClick={() => addSkill(skill)}
+                            icon={<AddIcon />}
+                            color={skill.isCoreSkill ? 'primary' : 'default'}
+                            variant={skill.isCoreSkill ? 'filled' : 'outlined'}
+                          />
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Box>
+
+            {/* Selected Skills */}
+            {formData.skills && formData.skills.length > 0 && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Selected Skills ({formData.skills.length})
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Skill</TableCell>
+                      <TableCell>Die Value</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {formData.skills.map((skill, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{skill.name}</TableCell>
+                        <TableCell>
+                          <FormControl size="small" sx={{ minWidth: 80 }}>
+                            <Select
+                              value={skill.dieValue}
+                              onChange={(e) => updateSkillDie(index, e.target.value)}
+                            >
+                              {SKILL_DIE_OPTIONS.map((opt) => (
+                                <MenuItem key={opt} value={opt}>
+                                  {opt}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={() => removeSkill(index)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            )}
+          </Box>
+        )
+
+      case 3: // Edges
+        const edgesByType = edgeReferences.reduce((acc, edge) => {
+          if (!acc[edge.type]) acc[edge.type] = []
+          acc[edge.type].push(edge)
+          return acc
+        }, {} as Record<string, EdgeReference[]>)
+
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Edges
+            </Typography>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Select edges for your character. Savage Worlds characters typically start with 1-2
+              edges.
+              <br />
+              Check requirements carefully - some edges require specific attributes or skills.
+            </Alert>
+
+            {/* Edges Selection */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Browse Edges by Type
+              </Typography>
+              {Object.entries(edgesByType).map(([type, edges]) => (
+                <Accordion key={type}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>
+                      {type} ({edges.length} edges)
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {edges.map((edge) => (
+                        <Grid item xs={12} key={edge.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<AddIcon />}
+                              onClick={() => addEdge(edge)}
+                            >
+                              {edge.name}
+                            </Button>
+                            <Tooltip title={edge.description}>
+                              <IconButton size="small">
+                                <InfoIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Typography variant="caption" sx={{ mt: 1 }}>
+                              {edge.requirements && `Requires: ${edge.requirements}`}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Box>
+
+            {/* Selected Edges */}
+            {formData.edges && formData.edges.length > 0 && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Selected Edges ({formData.edges.length})
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Edge</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {formData.edges.map((edge, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{edge.name}</TableCell>
+                        <TableCell>{edge.type}</TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={() => removeEdge(index)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            )}
+          </Box>
+        )
+
+      case 4: // Hindrances
+        const hindrancesBySeverity = hindranceReferences.reduce((acc, hindrance) => {
+          if (!acc[hindrance.severity]) acc[hindrance.severity] = []
+          acc[hindrance.severity].push(hindrance)
+          return acc
+        }, {} as Record<string, HindranceReference[]>)
+
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Hindrances
+            </Typography>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Hindrances give extra points during character creation. Minor=1pt, Major=2pts.
+              <br />
+              You can take up to 1 Major and 2 Minor hindrances (max 4 points).
+            </Alert>
+
+            {/* Hindrances Selection */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Browse Hindrances by Severity
+              </Typography>
+              {Object.entries(hindrancesBySeverity).map(([severity, hindrances]) => (
+                <Accordion key={severity}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>
+                      {severity} ({hindrances.length} hindrances)
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {hindrances.map((hindrance) => (
+                        <Grid item xs={12} key={hindrance.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<AddIcon />}
+                              onClick={() => addHindrance(hindrance)}
+                            >
+                              {hindrance.name}
+                            </Button>
+                            <Tooltip title={hindrance.description}>
+                              <IconButton size="small">
+                                <InfoIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Box>
+
+            {/* Selected Hindrances */}
+            {formData.hindrances && formData.hindrances.length > 0 && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Selected Hindrances ({formData.hindrances.length})
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Hindrance</TableCell>
+                      <TableCell>Severity</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {formData.hindrances.map((hindrance, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{hindrance.name}</TableCell>
+                        <TableCell>{hindrance.severity}</TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={() => removeHindrance(index)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            )}
+          </Box>
+        )
+
+      case 5: // Equipment
+        const equipmentByType = equipmentReferences.reduce((acc, equip) => {
+          if (!acc[equip.type]) acc[equip.type] = []
+          acc[equip.type].push(equip)
+          return acc
+        }, {} as Record<string, EquipmentReference[]>)
+
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Equipment
+            </Typography>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Select starting equipment for your character. Savage Worlds characters start with
+              $500.
+            </Alert>
+
+            {/* Equipment Selection */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Browse Equipment by Type
+              </Typography>
+              {Object.entries(equipmentByType).map(([type, items]) => (
+                <Accordion key={type}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                    <Typography>
+                      {type.replace('_', ' ')} ({items.length} items)
+                    </Typography>
+                  </AccordionSummary>
+                  <AccordionDetails>
+                    <Grid container spacing={2}>
+                      {items.map((item) => (
+                        <Grid item xs={12} sm={6} key={item.id}>
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<AddIcon />}
+                              onClick={() => addEquipment(item)}
+                            >
+                              {item.name}
+                            </Button>
+                            <Tooltip
+                              title={`${item.description}${item.cost ? ` - $${item.cost}` : ''}`}
+                            >
+                              <IconButton size="small">
+                                <InfoIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </AccordionDetails>
+                </Accordion>
+              ))}
+            </Box>
+
+            {/* Selected Equipment */}
+            {formData.equipment && formData.equipment.length > 0 && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Selected Equipment ({formData.equipment.length})
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Item</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell>Quantity</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {formData.equipment.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell>{item.type.replace('_', ' ')}</TableCell>
+                        <TableCell>
+                          <TextField
+                            type="number"
+                            size="small"
+                            value={item.quantity}
+                            onChange={(e) =>
+                              updateEquipmentQuantity(index, parseInt(e.target.value) || 1)
+                            }
+                            sx={{ width: 80 }}
+                            inputProps={{ min: 1 }}
+                          />
+                        </TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={() => removeEquipment(index)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            )}
+          </Box>
+        )
+
+      case 6: // Arcane Powers
+        return (
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Arcane Powers
+            </Typography>
+            <Alert severity="info" sx={{ mb: 3 }}>
+              Select arcane powers if your character has an Arcane Background edge.
+              <br />
+              Characters with Arcane Background typically start with 3 powers and 10 Power Points.
+            </Alert>
+
+            {/* Powers Selection */}
+            <Box sx={{ mb: 3 }}>
+              <Typography variant="subtitle1" gutterBottom>
+                Available Powers
+              </Typography>
+              <Grid container spacing={2}>
+                {arcanePowerReferences.map((power) => (
+                  <Grid item xs={12} sm={6} key={power.id}>
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<AddIcon />}
+                        onClick={() => addArcanePower(power)}
+                      >
+                        {power.name}
+                      </Button>
+                      <Tooltip
+                        title={`${power.description} | PP: ${power.powerPoints} | Range: ${power.range}`}
+                      >
+                        <IconButton size="small">
+                          <InfoIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+
+            {/* Selected Powers */}
+            {formData.arcanePowers && formData.arcanePowers.length > 0 && (
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  Selected Powers ({formData.arcanePowers.length})
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Power</TableCell>
+                      <TableCell>Power Points</TableCell>
+                      <TableCell align="right">Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {formData.arcanePowers.map((power, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{power.name}</TableCell>
+                        <TableCell>{power.powerPoints}</TableCell>
+                        <TableCell align="right">
+                          <IconButton size="small" onClick={() => removeArcanePower(index)}>
+                            <DeleteIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            )}
+          </Box>
+        )
+
+      case 7: // Derived Stats
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -315,7 +953,7 @@ const CharacterCreate = () => {
           </Box>
         )
 
-      case 3:
+      case 8: // Review
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -338,7 +976,9 @@ const CharacterCreate = () => {
                 <Typography variant="subtitle2" color="text.secondary">
                   Character Type
                 </Typography>
-                <Typography variant="body1">{formData.isNpc ? 'NPC' : 'Player Character'}</Typography>
+                <Typography variant="body1">
+                  {formData.isNpc ? 'NPC' : 'Player Character'}
+                </Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -361,6 +1001,49 @@ const CharacterCreate = () => {
                     Vigor: {formData.vigorDie}
                   </Grid>
                 </Grid>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Skills ({formData.skills?.length || 0})
+                </Typography>
+                <Typography variant="body2">
+                  {formData.skills?.map((s) => `${s.name} (${s.dieValue})`).join(', ') ||
+                    'None selected'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Edges ({formData.edges?.length || 0})
+                </Typography>
+                <Typography variant="body2">
+                  {formData.edges?.map((e) => e.name).join(', ') || 'None selected'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Hindrances ({formData.hindrances?.length || 0})
+                </Typography>
+                <Typography variant="body2">
+                  {formData.hindrances?.map((h) => `${h.name} (${h.severity})`).join(', ') ||
+                    'None selected'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Equipment ({formData.equipment?.length || 0})
+                </Typography>
+                <Typography variant="body2">
+                  {formData.equipment?.map((e) => `${e.name} (${e.quantity})`).join(', ') ||
+                    'None selected'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Arcane Powers ({formData.arcanePowers?.length || 0})
+                </Typography>
+                <Typography variant="body2">
+                  {formData.arcanePowers?.map((p) => p.name).join(', ') || 'None selected'}
+                </Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>

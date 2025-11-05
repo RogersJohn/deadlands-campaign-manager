@@ -1,4 +1,5 @@
 import api from './api'
+import { Skill, Edge, Hindrance, Equipment, ArcanePower } from './referenceService'
 
 export interface Character {
   id?: number
@@ -22,6 +23,12 @@ export interface Character {
   notes?: string
   characterImageUrl?: string
   isNpc: boolean
+  // Nested entities
+  skills?: Skill[]
+  edges?: Edge[]
+  hindrances?: Hindrance[]
+  equipment?: Equipment[]
+  arcanePowers?: ArcanePower[]
 }
 
 const characterService = {
