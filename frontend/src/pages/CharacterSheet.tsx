@@ -361,11 +361,6 @@ const CharacterSheet = () => {
                           <Typography variant="h6" color="primary">
                             {skill.dieValue}
                           </Typography>
-                          {skill.category && (
-                            <Typography variant="body2" color="text.secondary">
-                              {skill.category}
-                            </Typography>
-                          )}
                           {skill.notes && (
                             <Typography variant="body2" sx={{ mt: 1 }}>
                               {skill.notes}
