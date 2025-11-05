@@ -12,15 +12,27 @@ import java.util.Optional;
 @Repository
 public interface WikiEntryRepository extends JpaRepository<WikiEntry, Long> {
 
-    Optional<WikiEntry> findBySlug(String slug);
+    @Query("SELECT w FROM WikiEntry w " +
+           "LEFT JOIN FETCH w.relatedCharacter c " +
+           "LEFT JOIN FETCH c.player " +
+           "WHERE w.slug = :slug")
+    Optional<WikiEntry> findBySlug(@Param("slug") String slug);
 
-    List<WikiEntry> findByCategory(WikiEntry.Category category);
+    @Query("SELECT DISTINCT w FROM WikiEntry w " +
+           "LEFT JOIN FETCH w.relatedCharacter c " +
+           "LEFT JOIN FETCH c.player " +
+           "WHERE w.category = :category " +
+           "ORDER BY w.sortOrder, w.title")
+    List<WikiEntry> findByCategory(@Param("category") WikiEntry.Category category);
 
     List<WikiEntry> findByIsPublicTrue();
 
     @Query("SELECT w FROM WikiEntry w WHERE w.relatedCharacter.id = :characterId")
     List<WikiEntry> findByRelatedCharacterId(@Param("characterId") Long characterId);
 
-    @Query("SELECT w FROM WikiEntry w ORDER BY w.category, w.sortOrder, w.title")
+    @Query("SELECT DISTINCT w FROM WikiEntry w " +
+           "LEFT JOIN FETCH w.relatedCharacter c " +
+           "LEFT JOIN FETCH c.player " +
+           "ORDER BY w.category, w.sortOrder, w.title")
     List<WikiEntry> findAllOrdered();
 }
