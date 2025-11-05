@@ -339,7 +339,7 @@ const CharacterSheet = () => {
               .map((skill: any) => {
                 const skillRef = skill.skillReference || findSkillReference(skill.name)
                 const tooltipContent = skillRef
-                  ? `${skillRef.description}\n\nAttribute: ${skillRef.attribute}\nDefault: ${skillRef.defaultValue}`
+                  ? `${skillRef.description}\n\nAttribute: ${skillRef.attribute}`
                   : skill.name
 
                 return (
