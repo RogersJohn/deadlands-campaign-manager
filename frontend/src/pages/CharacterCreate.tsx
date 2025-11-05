@@ -53,6 +53,87 @@ import referenceService, {
 
 const ATTRIBUTE_OPTIONS = ['d4', 'd6', 'd8', 'd10', 'd12']
 const SKILL_DIE_OPTIONS = ['d4', 'd6', 'd8', 'd10', 'd12']
+const DEADLANDS_ARCHETYPES = [
+  'Blessed',
+  'Huckster',
+  'Mad Scientist',
+  'Shaman',
+  'Chi Master',
+  'Gunslinger',
+  'Shootist',
+  'Duelist',
+  'Bounty Hunter',
+  'Lawman',
+  'Texas Ranger',
+  'U.S. Marshal',
+  'Pinkerton Agent',
+  'Agency Agent',
+  'Confederate Spy',
+  'Union Soldier',
+  'Confederate Soldier',
+  'Cavalry Officer',
+  'Outlaw',
+  'Bandit',
+  'Desperado',
+  'Road Agent',
+  'Gambler',
+  'Card Sharp',
+  'Con Artist',
+  'Snake Oil Salesman',
+  'Doctor',
+  'Sawbones',
+  'Dentist',
+  'Undertaker',
+  'Prospector',
+  'Miner',
+  'Sodbuster',
+  'Rancher',
+  'Cowpoke',
+  'Wrangler',
+  'Scout',
+  'Explorer',
+  'Mountain Man',
+  'Trapper',
+  'Guide',
+  'Drifter',
+  'Wanderer',
+  'Vagrant',
+  'Saloon Girl',
+  'Entertainer',
+  'Musician',
+  'Newspaper Reporter',
+  'Editor',
+  'Photographer',
+  'Shopkeeper',
+  'Blacksmith',
+  'Livery Operator',
+  'Stable Hand',
+  'Bartender',
+  'Brothel Owner',
+  'Preacher',
+  'Minister',
+  'Priest',
+  'Nun',
+  'Missionary',
+  'Indian Warrior',
+  'Indian Scout',
+  'Tribal Elder',
+  'Medicine Man',
+  'Railroad Worker',
+  'Telegraph Operator',
+  'Stage Coach Driver',
+  'Freight Hauler',
+  'Riverboat Captain',
+  'Riverboat Gambler',
+  'Circus Performer',
+  'Snake Charmer',
+  'Fortune Teller',
+  'Vigilante',
+  'Town Drunk',
+  'Homesteader',
+  'School Teacher',
+  'Other',
+]
 const steps = [
   'Basic Info',
   'Attributes',
@@ -315,14 +396,20 @@ const CharacterCreate = () => {
                 />
               </Grid>
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Occupation"
-                  value={formData.occupation}
-                  onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
-                  required
-                  helperText="e.g., Gunslinger, Mad Scientist, Huckster, Blessed, etc."
-                />
+                <FormControl fullWidth required>
+                  <InputLabel>Occupation</InputLabel>
+                  <Select
+                    value={formData.occupation}
+                    onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                    label="Occupation"
+                  >
+                    {DEADLANDS_ARCHETYPES.map((archetype) => (
+                      <MenuItem key={archetype} value={archetype}>
+                        {archetype}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
               <Grid item xs={12}>
                 <FormControlLabel
