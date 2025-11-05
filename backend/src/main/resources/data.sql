@@ -22,8 +22,8 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- Attributes: Agility d10, Smarts d8, Spirit d12, Strength d10, Vigor d8
 -- Parry 7, Toughness 6, Charisma 0
-INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, is_npc, created_at, updated_at) VALUES
-(1, 'Mexicali Bob', 'Apprentice Shaman', 2, 'd10', 'd8', 'd12', 'd10', 'd8', 6, 1, 20, 1, 7, 6, 0, false, NOW(), NOW())
+INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, total_xp, spent_xp, is_npc, created_at, updated_at) VALUES
+(1, 'Mexicali Bob', 'Apprentice Shaman', 2, 'd10', 'd8', 'd12', 'd10', 'd8', 6, 1, 20, 1, 7, 6, 0, 130, 120, false, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
     agility_die = EXCLUDED.agility_die,
     smarts_die = EXCLUDED.smarts_die,
@@ -113,8 +113,8 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- Attributes: Agility d10, Smarts d12, Spirit d6, Strength d10, Vigor d10
 -- Parry 6, Toughness 7, Charisma 0
-INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, is_npc, created_at, updated_at, notes) VALUES
-(2, 'Cornelius Wilberforce III', 'Scholar', 3, 'd10', 'd12', 'd6', 'd10', 'd10', 6, 0, 13, 1, 6, 7, 0, false, NOW(), NOW(), '0 red chips, 6 white chips, 0 blue chips')
+INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, total_xp, spent_xp, is_npc, created_at, updated_at, notes) VALUES
+(2, 'Cornelius Wilberforce III', 'Scholar', 3, 'd10', 'd12', 'd6', 'd10', 'd10', 6, 0, 13, 1, 6, 7, 0, 192, 182, false, NOW(), NOW(), '0 red chips, 6 white chips, 0 blue chips')
 ON CONFLICT (id) DO UPDATE SET
     agility_die = EXCLUDED.agility_die,
     smarts_die = EXCLUDED.smarts_die,
@@ -192,8 +192,8 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- Attributes: Agility d8, Smarts d12, Spirit d8, Strength d6, Vigor d10
 -- Parry 6, Toughness 7, Charisma 0
-INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, is_npc, created_at, updated_at, notes) VALUES
-(3, 'Doc Emett Von Braun', 'Mad Scientist', 4, 'd8', 'd12', 'd8', 'd6', 'd10', 6, 0, 12, 1, 6, 7, 0, false, NOW(), NOW(), 'Year 1863 - The only true character in the party!')
+INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, total_xp, spent_xp, is_npc, created_at, updated_at, notes) VALUES
+(3, 'Doc Emett Von Braun', 'Mad Scientist', 4, 'd8', 'd12', 'd8', 'd6', 'd10', 6, 0, 12, 1, 6, 7, 0, 162, 152, false, NOW(), NOW(), 'Year 1863 - The only true character in the party!')
 ON CONFLICT (id) DO UPDATE SET
     agility_die = EXCLUDED.agility_die,
     smarts_die = EXCLUDED.smarts_die,
@@ -276,8 +276,8 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- Attributes: Agility d10, Smarts d12, Spirit d12, Strength d4, Vigor d10
 -- Parry 5, Toughness 7, Charisma +2 (has Purty edge)
-INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, is_npc, created_at, updated_at) VALUES
-(4, 'John Henry Farraday', 'Doctor', 5, 'd10', 'd12', 'd12', 'd4', 'd10', 6, 0, 12, 2, 5, 7, 2, false, NOW(), NOW())
+INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, total_xp, spent_xp, is_npc, created_at, updated_at) VALUES
+(4, 'John Henry Farraday', 'Doctor', 5, 'd10', 'd12', 'd12', 'd4', 'd10', 6, 0, 12, 2, 5, 7, 2, 151, 141, false, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
     agility_die = EXCLUDED.agility_die,
     smarts_die = EXCLUDED.smarts_die,
@@ -361,8 +361,8 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- Attributes: Agility d10, Smarts d4, Spirit d4, Strength d6, Vigor d4
 -- Parry 5, Toughness 4, Charisma 0
-INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, is_npc, created_at, updated_at, notes) VALUES
-(5, 'Jack Horner', 'Old Geezer Prospector', 6, 'd10', 'd4', 'd4', 'd6', 'd4', 4, 0, 7, 2, 5, 4, 0, false, NOW(), NOW(), 'No aptitude for Tomb or Switch. Attacked in hand to hand with weapon and have card. Miss TN 5 Nimbleness or fall down.')
+INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, total_xp, spent_xp, is_npc, created_at, updated_at, notes) VALUES
+(5, 'Jack Horner', 'Old Geezer Prospector', 6, 'd10', 'd4', 'd4', 'd6', 'd4', 4, 0, 7, 2, 5, 4, 0, 104, 94, false, NOW(), NOW(), 'No aptitude for Tomb or Switch. Attacked in hand to hand with weapon and have card. Miss TN 5 Nimbleness or fall down.')
 ON CONFLICT (id) DO UPDATE SET
     agility_die = EXCLUDED.agility_die,
     smarts_die = EXCLUDED.smarts_die,
@@ -427,8 +427,8 @@ ON CONFLICT DO NOTHING;
 -- Attributes: Agility d10, Smarts d4, Spirit d4, Strength d6, Vigor d4
 -- Parry 2, Toughness 4, Charisma 0
 -- NOTE: Character has no skills - needs to be completed
-INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, is_npc, created_at, updated_at) VALUES
-(6, 'Lucas Turner', 'Gunslinger', 2, 'd10', 'd4', 'd4', 'd6', 'd4', 6, 0, 7, 2, 2, 4, 0, false, NOW(), NOW())
+INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, total_xp, spent_xp, is_npc, created_at, updated_at) VALUES
+(6, 'Lucas Turner', 'Gunslinger', 2, 'd10', 'd4', 'd4', 'd6', 'd4', 6, 0, 7, 2, 2, 4, 0, 32, 22, false, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
     agility_die = EXCLUDED.agility_die,
     smarts_die = EXCLUDED.smarts_die,
@@ -461,8 +461,8 @@ ON CONFLICT DO NOTHING;
 -- =====================================================
 -- Attributes: All d4 (baseline template)
 -- Parry 2, Toughness 4, Charisma 0
-INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, is_npc, created_at, updated_at) VALUES
-(7, 'George C Dobbs', 'Unknown', 3, 'd4', 'd4', 'd4', 'd4', 'd4', 6, 0, 6, 1, 2, 4, 0, false, NOW(), NOW())
+INSERT INTO characters (id, name, occupation, player_id, agility_die, smarts_die, spirit_die, strength_die, vigor_die, pace, size, wind, grit, parry, toughness, charisma, total_xp, spent_xp, is_npc, created_at, updated_at) VALUES
+(7, 'George C Dobbs', 'Unknown', 3, 'd4', 'd4', 'd4', 'd4', 'd4', 6, 0, 6, 1, 2, 4, 0, 10, 0, false, NOW(), NOW())
 ON CONFLICT (id) DO UPDATE SET
     agility_die = EXCLUDED.agility_die,
     smarts_die = EXCLUDED.smarts_die,

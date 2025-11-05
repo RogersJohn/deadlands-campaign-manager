@@ -63,6 +63,13 @@ public class Character {
     @Column(nullable = false)
     private Integer charisma = 0; // Modifiers from edges/hindrances
 
+    // XP Tracking
+    @Column(name = "total_xp", nullable = false)
+    private Integer totalXp = 0; // Total XP earned by character
+
+    @Column(name = "spent_xp", nullable = false)
+    private Integer spentXp = 0; // XP spent on improvements
+
     // Savage Worlds Attributes - stored as dice notation (e.g., "3d6")
     @Column(name = "agility_die")
     private String agilityDie = "1d6";

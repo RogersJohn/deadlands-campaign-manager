@@ -279,6 +279,20 @@ const CharacterSheet = () => {
                     </Typography>
                     <Typography variant="h6">{character.grit}</Typography>
                   </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Total XP
+                    </Typography>
+                    <Typography variant="h6">{character.totalXp || 0}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Unspent XP
+                    </Typography>
+                    <Typography variant="h6">
+                      {(character.totalXp || 0) - (character.spentXp || 0)}
+                    </Typography>
+                  </Grid>
                   {character.size !== undefined && character.size !== 0 && (
                     <Grid item xs={6} sm={4} md={3}>
                       <Typography variant="subtitle2" color="text.secondary">

@@ -28,7 +28,15 @@
       "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(railway status:*)",
-      "Bash(docker run:*)"
+      "Bash(docker run:*)",
+      "Bash(railway whoami:*)",
+      "Bash(railway run:*)",
+      "Bash(railway service:*)",
+      "Bash(railway variables:*)",
+      "Bash(railway connect:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:MIYRwGqttlrIeJSvgYWstxkmvxRXtMBt@centerbeam.proxy.rlwy.net:31016/railway\" node:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:MIYRwGqttlrIeJSvgYWstxkmvxRXtMBt@centerbeam.proxy.rlwy.net:31016/railway\" node -e:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:MIYRwGqttlrIeJSvgYWstxkmvxRXtMBt@centerbeam.proxy.rlwy.net:31016/railway\" UPDATE=true node:*)"
     ],
     "deny": [],
     "ask": []

@@ -19,6 +19,9 @@ export interface Character {
   parry: number
   toughness: number
   charisma: number
+  // XP Tracking
+  totalXp?: number
+  spentXp?: number
   // Legacy Deadlands Classic Attributes (deprecated)
   cognitionDie?: string
   deftnessDie?: string
