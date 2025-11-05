@@ -169,6 +169,8 @@ const CharacterCreate = () => {
     parry: 2,
     toughness: 2,
     charisma: 0,
+    totalXp: 0,
+    spentXp: 0,
     skills: [],
     edges: [],
     hindrances: [],
@@ -1046,6 +1048,26 @@ const CharacterCreate = () => {
                   helperText="Grit level (default: 1)"
                 />
               </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Total XP"
+                  value={formData.totalXp}
+                  onChange={(e) => setFormData({ ...formData, totalXp: parseInt(e.target.value) })}
+                  helperText="Total experience points earned"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Spent XP"
+                  value={formData.spentXp}
+                  onChange={(e) => setFormData({ ...formData, spentXp: parseInt(e.target.value) })}
+                  helperText="Experience points already spent"
+                />
+              </Grid>
             </Grid>
           </Box>
         )
@@ -1189,6 +1211,18 @@ const CharacterCreate = () => {
                       Grit
                     </Typography>
                     <Typography variant="body2">{formData.grit}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Total XP
+                    </Typography>
+                    <Typography variant="body2">{formData.totalXp || 0}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Unspent XP
+                    </Typography>
+                    <Typography variant="body2">{(formData.totalXp || 0) - (formData.spentXp || 0)}</Typography>
                   </Grid>
                 </Grid>
               </Grid>

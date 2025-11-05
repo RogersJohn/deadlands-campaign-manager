@@ -57,6 +57,9 @@ const Dashboard = () => {
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   Grit: {character.grit}
                 </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                  XP: {(character.totalXp || 0) - (character.spentXp || 0)} / {character.totalXp || 0}
+                </Typography>
               </CardContent>
               <CardActions>
                 <Button size="small" onClick={() => navigate(`/character/${character.id}`)}>

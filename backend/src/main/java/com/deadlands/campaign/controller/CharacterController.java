@@ -64,6 +64,9 @@ public class CharacterController {
         dto.setNotes(character.getNotes());
         dto.setCharacterImageUrl(character.getCharacterImageUrl());
         dto.setIsNpc(character.getIsNpc());
+        // XP tracking
+        dto.setTotalXp(character.getTotalXp());
+        dto.setSpentXp(character.getSpentXp());
 
         // Add player information
         if (character.getPlayer() != null) {
@@ -96,6 +99,8 @@ public class CharacterController {
         private String notes;
         private String characterImageUrl;
         private Boolean isNpc;
+        private Integer totalXp;
+        private Integer spentXp;
         private Long playerId;
         private String playerName;
 
@@ -138,6 +143,10 @@ public class CharacterController {
         public void setCharacterImageUrl(String characterImageUrl) { this.characterImageUrl = characterImageUrl; }
         public Boolean getIsNpc() { return isNpc; }
         public void setIsNpc(Boolean isNpc) { this.isNpc = isNpc; }
+        public Integer getTotalXp() { return totalXp; }
+        public void setTotalXp(Integer totalXp) { this.totalXp = totalXp; }
+        public Integer getSpentXp() { return spentXp; }
+        public void setSpentXp(Integer spentXp) { this.spentXp = spentXp; }
         public Long getPlayerId() { return playerId; }
         public void setPlayerId(Long playerId) { this.playerId = playerId; }
         public String getPlayerName() { return playerName; }
