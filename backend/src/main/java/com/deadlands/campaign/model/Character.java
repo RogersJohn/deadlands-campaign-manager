@@ -53,6 +53,16 @@ public class Character {
     @Column(nullable = false)
     private Integer grit = 1;
 
+    // Derived Stats (Savage Worlds)
+    @Column(nullable = false)
+    private Integer parry = 2; // Base 2 + Fighting/2
+
+    @Column(nullable = false)
+    private Integer toughness = 2; // Base 2 + Vigor/2 + Armor
+
+    @Column(nullable = false)
+    private Integer charisma = 0; // Modifiers from edges/hindrances
+
     // Savage Worlds Attributes - stored as dice notation (e.g., "3d6")
     @Column(name = "agility_die")
     private String agilityDie = "1d6";

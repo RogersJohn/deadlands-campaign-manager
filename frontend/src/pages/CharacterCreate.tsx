@@ -50,6 +50,7 @@ import referenceService, {
   Equipment,
   ArcanePower,
 } from '../services/referenceService'
+import { calculateAllDerivedStats } from '../utils/derivedStats'
 
 const ATTRIBUTE_OPTIONS = ['d4', 'd6', 'd8', 'd10', 'd12']
 const SKILL_DIE_OPTIONS = ['d4', 'd6', 'd8', 'd10', 'd12']
@@ -165,6 +166,9 @@ const CharacterCreate = () => {
     size: 0,
     wind: 0,
     grit: 1,
+    parry: 2,
+    toughness: 2,
+    charisma: 0,
     skills: [],
     edges: [],
     hindrances: [],
@@ -261,7 +265,13 @@ const CharacterCreate = () => {
   }
 
   const handleSubmit = () => {
-    createCharacterMutation.mutate(formData as Character)
+    // Calculate derived stats before submission
+    const derivedStats = calculateAllDerivedStats(formData)
+    const characterToSubmit = {
+      ...formData,
+      ...derivedStats,
+    }
+    createCharacterMutation.mutate(characterToSubmit as Character)
   }
 
   // Skills management
@@ -1041,6 +1051,9 @@ const CharacterCreate = () => {
         )
 
       case 8: // Review
+        // Calculate derived stats for display
+        const derivedStats = calculateAllDerivedStats(formData)
+
         return (
           <Box>
             <Typography variant="h6" gutterBottom>
@@ -1136,9 +1149,48 @@ const CharacterCreate = () => {
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                   Derived Stats
                 </Typography>
-                <Typography variant="body2">
-                  Pace: {formData.pace} | Size: {formData.size} | Grit: {formData.grit}
-                </Typography>
+                <Grid container spacing={1}>
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Pace
+                    </Typography>
+                    <Typography variant="body2">{formData.pace}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Parry
+                    </Typography>
+                    <Typography variant="body2">{derivedStats.parry}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Toughness
+                    </Typography>
+                    <Typography variant="body2">{derivedStats.toughness}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Charisma
+                    </Typography>
+                    <Typography variant="body2">
+                      {derivedStats.charisma >= 0 ? `+${derivedStats.charisma}` : derivedStats.charisma}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Size
+                    </Typography>
+                    <Typography variant="body2">
+                      {formData.size !== undefined && formData.size >= 0 ? `+${formData.size}` : formData.size}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4}>
+                    <Typography variant="caption" color="text.secondary">
+                      Grit
+                    </Typography>
+                    <Typography variant="body2">{formData.grit}</Typography>
+                  </Grid>
+                </Grid>
               </Grid>
             </Grid>
           </Box>

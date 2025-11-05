@@ -245,24 +245,48 @@ const CharacterSheet = () => {
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Grid container spacing={2}>
-                  <Grid item xs={6} sm={3}>
+                  <Grid item xs={6} sm={4} md={3}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Pace
                     </Typography>
                     <Typography variant="h6">{character.pace}</Typography>
                   </Grid>
-                  <Grid item xs={6} sm={3}>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Parry
+                    </Typography>
+                    <Typography variant="h6">{character.parry || 2}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Toughness
+                    </Typography>
+                    <Typography variant="h6">{character.toughness || 2}</Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Charisma
+                    </Typography>
+                    <Typography variant="h6">
+                      {(character.charisma || 0) >= 0
+                        ? `+${character.charisma || 0}`
+                        : character.charisma}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Grit
                     </Typography>
                     <Typography variant="h6">{character.grit}</Typography>
                   </Grid>
                   {character.size !== undefined && character.size !== 0 && (
-                    <Grid item xs={6} sm={3}>
+                    <Grid item xs={6} sm={4} md={3}>
                       <Typography variant="subtitle2" color="text.secondary">
                         Size
                       </Typography>
-                      <Typography variant="h6">{character.size > 0 ? `+${character.size}` : character.size}</Typography>
+                      <Typography variant="h6">
+                        {character.size > 0 ? `+${character.size}` : character.size}
+                      </Typography>
                     </Grid>
                   )}
                 </Grid>

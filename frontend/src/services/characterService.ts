@@ -15,6 +15,10 @@ export interface Character {
   spiritDie: string
   strengthDie: string
   vigorDie: string
+  // Derived Stats (Savage Worlds)
+  parry: number
+  toughness: number
+  charisma: number
   // Legacy Deadlands Classic Attributes (deprecated)
   cognitionDie?: string
   deftnessDie?: string
