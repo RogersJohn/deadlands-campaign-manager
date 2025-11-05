@@ -199,53 +199,35 @@ const CharacterSheet = () => {
             <Card sx={{ mb: 3 }}>
               <CardContent>
                 <Typography variant="h5" gutterBottom>
-                  Attributes
+                  Attributes (Savage Worlds)
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Grid container spacing={2}>
-                  <Grid item xs={6} sm={3}>
+                  <Grid item xs={6} sm={4} md={2.4}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Cognition
+                      Agility
                     </Typography>
-                    <Typography variant="h6">{character.cognitionDie}</Typography>
+                    <Typography variant="h6">{character.agilityDie || 'd6'}</Typography>
                   </Grid>
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Deftness
-                    </Typography>
-                    <Typography variant="h6">{character.deftnessDie}</Typography>
-                  </Grid>
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Nimbleness
-                    </Typography>
-                    <Typography variant="h6">{character.nimblenessDie}</Typography>
-                  </Grid>
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Quickness
-                    </Typography>
-                    <Typography variant="h6">{character.quicknessDie}</Typography>
-                  </Grid>
-                  <Grid item xs={6} sm={3}>
+                  <Grid item xs={6} sm={4} md={2.4}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Smarts
                     </Typography>
                     <Typography variant="h6">{character.smartsDie}</Typography>
                   </Grid>
-                  <Grid item xs={6} sm={3}>
+                  <Grid item xs={6} sm={4} md={2.4}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Spirit
                     </Typography>
                     <Typography variant="h6">{character.spiritDie}</Typography>
                   </Grid>
-                  <Grid item xs={6} sm={3}>
+                  <Grid item xs={6} sm={4} md={2.4}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Strength
                     </Typography>
                     <Typography variant="h6">{character.strengthDie}</Typography>
                   </Grid>
-                  <Grid item xs={6} sm={3}>
+                  <Grid item xs={6} sm={4} md={2.4}>
                     <Typography variant="subtitle2" color="text.secondary">
                       Vigor
                     </Typography>
@@ -271,22 +253,18 @@ const CharacterSheet = () => {
                   </Grid>
                   <Grid item xs={6} sm={3}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      Size
-                    </Typography>
-                    <Typography variant="h6">{character.size}</Typography>
-                  </Grid>
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Wind
-                    </Typography>
-                    <Typography variant="h6">{character.wind}</Typography>
-                  </Grid>
-                  <Grid item xs={6} sm={3}>
-                    <Typography variant="subtitle2" color="text.secondary">
                       Grit
                     </Typography>
                     <Typography variant="h6">{character.grit}</Typography>
                   </Grid>
+                  {character.size !== undefined && character.size !== 0 && (
+                    <Grid item xs={6} sm={3}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Size
+                      </Typography>
+                      <Typography variant="h6">{character.size > 0 ? `+${character.size}` : character.size}</Typography>
+                    </Grid>
+                  )}
                 </Grid>
               </CardContent>
             </Card>
