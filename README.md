@@ -11,13 +11,18 @@ A comprehensive web-based campaign management system for Deadlands Reloaded tabl
 
 - **Character Management**
   - Full character sheet support for Deadlands Reloaded
+  - **9-step character creation wizard** with comprehensive game mechanics
+  - 80+ authentic Deadlands character archetypes
+  - Interactive skill, edge, hindrance, equipment, and power selection
+  - Auto-calculated derived statistics (Parry, Toughness, Charisma)
   - Attributes, Skills, Edges, Hindrances
   - Equipment and Arcane Powers tracking
   - Wound tracking by location
   - Interactive tooltips with sourcebook descriptions
   - Alphabetically sorted character sheet sections
+  - Tabbed character sheet interface
 
-- **Reference Data System** ✨ NEW!
+- **Reference Data System**
   - Integrated Deadlands sourcebook data
   - 60+ skill definitions with descriptions
   - Edge database with requirements and effects
@@ -25,6 +30,13 @@ A comprehensive web-based campaign management system for Deadlands Reloaded tabl
   - Equipment catalog with full stats
   - Arcane power reference with mechanics
   - Hover tooltips for instant rule lookups
+
+- **Western-Themed UI** ✨ NEW!
+  - High-contrast color scheme (Cream/Tan on Dark Brown)
+  - Authentic Western fonts (Rye, Special Elite)
+  - Headers styled like wanted posters and saloon signs
+  - Improved legibility throughout the application
+  - Professional dark mode theme with Western flair
 
 - **Campaign Wiki** (Coming Soon)
   - Permission-based content unlocking

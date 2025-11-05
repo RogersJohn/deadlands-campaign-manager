@@ -8,9 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Fix character endpoint 502 error in production
-- Load reference data into production database
-- Character creation wizard with step-by-step workflow
+- Character editing for owners (NEXT SESSION PRIORITY)
+- Point-buy validation system (skills: 15pts, edges/hindrances limits)
+- Hindrance point conversion (2pts → +1 edge, +1 attribute, +skill, +$500)
+- Equipment budget tracking ($500 starting funds)
 - Campaign management features (sessions, notes, tracking)
 - Interactive character sheet with dice rolling
 - Wound tracking and Fate Chip management
@@ -19,7 +20,122 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mobile optimization and responsive design
 - Character export to PDF
 - Enhanced search and filtering for reference data
-- Character import improvements with auto-matching
+
+## [1.2.0] - 2025-11-05
+
+### Added
+
+#### Comprehensive Character Creation Wizard
+- Expanded character creation from 4 steps to **9 steps** with full game mechanics support:
+  - **Step 1:** Basic info (name, occupation dropdown, experience level, avatar, notes)
+  - **Step 2:** Attributes (Agility, Smarts, Spirit, Strength, Vigor with die selection)
+  - **Step 3:** Skills (63 skills organized by attribute, accordion browsing, chip selection, inline editing)
+  - **Step 4:** Edges (79 edges by type, accordion UI, tooltip descriptions)
+  - **Step 5:** Hindrances (54 hindrances by severity, accordion UI, game effects)
+  - **Step 6:** Equipment (53 items by type, quantity controls, stats display)
+  - **Step 7:** Arcane Powers (17 powers for arcane backgrounds)
+  - **Step 8:** Derived Stats (Pace, Size, Grit inputs)
+  - **Step 9:** Review (complete character summary with all calculated stats)
+- Created `frontend/src/services/referenceService.ts` for reference data integration
+- Added TypeScript interfaces for all reference data types (SkillReference, EdgeReference, etc.)
+- Implemented accordion-based browsing UI for large datasets
+- Added chip-based selection system with visual feedback
+- Created table views with inline editing capabilities
+- Core skills highlighted with primary color
+- Equipment quantity controls
+
+#### Occupation Dropdown System
+- Replaced free-text occupation field with dropdown of **80+ authentic Deadlands archetypes**
+- Organized by categories:
+  - Arcane Backgrounds (Blessed, Huckster, Mad Scientist, Shaman, etc.)
+  - Combat Roles (Gunslinger, Shootist, Duelist, Bounty Hunter, etc.)
+  - Law Enforcement (Lawman, Texas Ranger, U.S. Marshal, Pinkerton, etc.)
+  - Military (Cavalry Officer, Infantry Soldier, Veteran, etc.)
+  - Social/Professional (Gambler, Doctor, Inventor, Undertaker, etc.)
+  - Frontier Workers (Cowboy, Ranch Hand, Prospector, etc.)
+  - And 50+ more authentic Western archetypes
+- Ensures data consistency and guides players to appropriate character types
+
+#### Derived Statistics Auto-Calculation
+- Implemented Savage Worlds derived stat system:
+  - **Parry:** Base 2 + (Fighting skill die / 2)
+  - **Toughness:** Base 2 + (Vigor die / 2) + Armor bonus
+  - **Charisma:** Sum of edge/hindrance modifiers (Attractive, Ugly, etc.)
+- Added database columns to `characters` table (parry, toughness, charisma)
+- Created database migration script `add-derived-stats.sql`
+- Backfilled 8 existing characters with calculated values
+- Created `frontend/src/utils/derivedStats.ts` utility functions:
+  - `dieToNumber()` - Converts die notation to numeric values
+  - `calculateParry()`, `calculateToughness()`, `calculateCharisma()`
+  - `calculateAllDerivedStats()` - Wrapper for all calculations
+- Integrated auto-calculation into character creation workflow
+- Updated character sheet to display all 6 derived stats (Pace, Parry, Toughness, Charisma, Grit, Size)
+- Review step shows calculated values before submission
+
+#### Western UI Theme & Typography
+- Complete color palette overhaul for better legibility:
+  - **Primary:** Cream/Tan (#D4C5A9, #E8DCC4) - high contrast on dark backgrounds
+  - **Secondary:** Bright Gold (#FFD700) - Western accent color
+  - **Background:** Very Dark Brown (#1a1410) with Dark Brown paper (#2d2419)
+  - **Text:** Cream (#E8DCC4) primary, Muted Tan (#B8A888) secondary
+  - **Semantic colors:** Brighter Red (#DC3545), Muted Green (#5C8A3A), Orange (#FFA726), Dusty Blue (#5A9BD5)
+- Integrated Google Fonts for authentic Western aesthetic:
+  - **"Rye"** - Ornate Western saloon-style font for h1/h2 headers
+  - **"Special Elite"** - Typewriter Western font for h3-h6 and buttons
+- Typography hierarchy with Western flair:
+  - Headers in Gold (#FFD700) and Cream (#E8DCC4) colors
+  - Buttons uppercase with Special Elite font and enhanced shadows
+  - Letter spacing adjusted for authentic wanted poster look
+- Enhanced component styling:
+  - Cards with subtle cream borders and 12px radius
+  - Buttons with depth shadows (4px default, 6px hover)
+  - Chips with bold font and dark brown fills
+  - Tables with cream-colored borders
+- Added Google Fonts preconnect and stylesheet to `index.html`
+
+### Changed
+- Modified `frontend/src/pages/CharacterCreate.tsx` to 9-step wizard
+- Updated `frontend/src/services/characterService.ts` Character interface with nested entities
+- Modified `frontend/src/pages/CharacterSheet.tsx` to display all derived stats
+- Updated `backend/src/main/java/com/deadlands/campaign/model/Character.java` with derived stat fields
+- Changed `frontend/src/theme.ts` complete palette and typography overhaul
+- Modified `frontend/index.html` to load Western Google Fonts
+
+### Fixed
+- **Critical Security Bug:** Fixed 403 Forbidden on character creation
+  - Root cause: Spring Security FilterChain runs BEFORE servlet context path
+  - SecurityConfig matchers had `/api` prefix but security only saw `/characters`
+  - Solution: Removed `/api` prefix from all security matchers
+  - Made matchers HTTP method-specific for better granularity
+  - Updated `backend/src/main/java/com/deadlands/campaign/config/SecurityConfig.java`
+- Fixed SQL die value conversion in migration script
+  - Changed from SUBSTRING/CAST to CASE statements with pattern matching
+  - Handles d4, d6, d8, d10, d12 notation correctly
+- Fixed poor UI contrast (orange on brown)
+  - Replaced goldenrod/orange with cream/tan and bright gold
+  - Much better text legibility throughout application
+
+### Technical Details
+- Database migration uses CASE statements for die value conversion:
+  ```sql
+  CASE
+      WHEN vigor_die LIKE '%d4' THEN 2
+      WHEN vigor_die LIKE '%d6' THEN 3
+      WHEN vigor_die LIKE '%d8' THEN 4
+      WHEN vigor_die LIKE '%d10' THEN 5
+      WHEN vigor_die LIKE '%d12' THEN 6
+      ELSE 2
+  END
+  ```
+- Character creation calculates derived stats before submission
+- All changes committed and auto-deployed to Railway production
+
+### Known Limitations
+- **Character Editing:** Characters can be created but not edited (NEXT SESSION)
+- **Point-Buy Validation:** No validation of skill points (15), edge limits, or hindrance limits (4pts max)
+- **Hindrance Conversion:** No point conversion system yet
+- **Equipment Budget:** No $500 budget tracking yet
+- **Derived Stats:** Armor bonus not factored into Toughness, limited Charisma modifiers, no shield Parry bonus
 
 ## [1.1.0] - 2025-11-04
 

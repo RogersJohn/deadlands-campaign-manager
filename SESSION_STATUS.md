@@ -1,11 +1,435 @@
 # Session Status - Deadlands Campaign Manager
 
-**Last Updated:** 2025-11-04
-**Status:** 🚀 DEPLOYED TO RAILWAY (Production)
+**Last Updated:** 2025-11-05
+**Status:** 🚀 DEPLOYED TO RAILWAY (Production) - Alpha Ready
 
 ## Project Overview
 
 Deadlands Campaign Manager - A Spring Boot 3.2.1 + React 18 web application for managing Deadlands Reloaded tabletop RPG campaigns. Successfully deployed to Railway.app for online access.
+
+---
+
+## Session 2025-11-05: Character Creation Wizard & UI Enhancements
+
+### Summary
+Completed comprehensive character creation wizard with full game mechanics support (skills, edges, hindrances, equipment, arcane powers). Implemented Savage Worlds derived statistics auto-calculation. Fixed critical authentication bug preventing character creation. Overhauled UI theme for better legibility and Western aesthetic.
+
+### What We Accomplished
+
+#### 1. ✅ Expanded Character Creation Wizard (4 → 9 Steps)
+**Created comprehensive multi-step character creation wizard:**
+
+**Step 1 - Basic Info:**
+- Name, occupation (now dropdown), experience level
+- Avatar selection
+- Player notes
+
+**Step 2 - Attributes:**
+- 5 core Savage Worlds attributes (Agility, Smarts, Spirit, Strength, Vigor)
+- Die value selection (d4 through d12+)
+
+**Step 3 - Skills:**
+- Browse 63 skills organized by linked attribute (Agility, Smarts, etc.)
+- Accordion UI for easy browsing by category
+- Chip-based selection with visual feedback
+- Core skills highlighted in primary color
+- Table view of selected skills with inline die value editing
+- Skill removal capability
+
+**Step 4 - Edges:**
+- Browse 79 edges organized by type (Background, Combat, Leadership, Power, Professional, Social, Weird)
+- Accordion UI with descriptions
+- Tooltip showing requirements, rank, and effects
+- Card-based selection display
+
+**Step 5 - Hindrances:**
+- Browse 54 hindrances organized by severity (Major, Minor)
+- Accordion UI with game effect descriptions
+- Visual distinction between Major and Minor hindrances
+
+**Step 6 - Equipment:**
+- Browse 53 equipment items organized by type (Weapons, Armor, Gear)
+- Accordion UI showing stats (damage, range, AP, weight)
+- Quantity controls for stackable items
+- Table view with inline quantity editing
+
+**Step 7 - Arcane Powers:**
+- Browse 17 arcane powers (for Blessed, Huckster, Shaman, Mad Scientist)
+- View power points, range, duration, and effects
+- Conditional display (only for arcane backgrounds)
+
+**Step 8 - Derived Stats:**
+- Auto-calculated Pace (usually 6)
+- Size modifier input
+- Grit level (for Deadlands setting)
+
+**Step 9 - Review:**
+- Complete character summary before submission
+- All selections visible for final check
+- Displays calculated Parry, Toughness, Charisma
+
+**Files Created:**
+- `frontend/src/services/referenceService.ts` - TypeScript interfaces and API calls for reference data
+
+**Files Modified:**
+- `frontend/src/pages/CharacterCreate.tsx` - Expanded from 4 to 9 steps, added selection UIs
+- `frontend/src/services/characterService.ts` - Updated Character interface with nested entities
+
+#### 2. ✅ Occupation Standardization
+**Changed occupation from free-text to dropdown with 80+ authentic Deadlands archetypes:**
+
+**Arcane Backgrounds:**
+- Blessed, Huckster, Mad Scientist, Shaman, Chi Master, Enlightened, Voodooist, Hexslinger
+
+**Combat Roles:**
+- Gunslinger, Shootist, Duelist, Bounty Hunter, Hired Gun, Soldier, Scout, Ranger
+
+**Law Enforcement:**
+- Lawman, Texas Ranger, U.S. Marshal, Pinkerton Agent, Railroad Detective
+
+**Military:**
+- Cavalry Officer, Infantry Soldier, Veteran, Confederate Soldier, Union Soldier
+
+**Social/Professional:**
+- Gambler, Con Artist, Saloon Girl, Prospector, Inventor, Doctor, Undertaker, Photographer
+
+**Frontier Workers:**
+- Cowboy, Ranch Hand, Trail Boss, Cattle Rustler, Horse Thief, Stage Coach Driver
+
+**And 50+ more archetypes...**
+
+**Benefits:**
+- Ensures data consistency
+- Provides guidance to players
+- Authentic to Deadlands setting
+
+#### 3. ✅ Derived Statistics Implementation
+**Implemented Savage Worlds auto-calculation for Parry, Toughness, and Charisma:**
+
+**Backend Changes:**
+- Added `parry`, `toughness`, `charisma` columns to `characters` table
+- Modified `Character.java` entity with new fields:
+  - `parry` (Integer, default 2) - Base 2 + Fighting skill / 2
+  - `toughness` (Integer, default 2) - Base 2 + Vigor / 2 + Armor
+  - `charisma` (Integer, default 0) - Modifiers from edges/hindrances
+
+**Database Migration:**
+- Created `add-derived-stats.sql` migration script
+- Added columns with defaults
+- Backfilled existing 8 characters with calculated values:
+  - Parry calculated from Fighting skill die value
+  - Toughness calculated from Vigor die value
+  - Charisma set to 0 (no edge/hindrance modifiers detected)
+
+**Frontend Utilities:**
+- Created `frontend/src/utils/derivedStats.ts` with calculation functions:
+  - `dieToNumber()` - Converts d4/d6/d8/d10/d12 to numeric values
+  - `calculateParry()` - 2 + (Fighting skill die / 2)
+  - `calculateToughness()` - 2 + (Vigor die / 2) + armor bonus
+  - `calculateCharisma()` - Sum of edge/hindrance modifiers (Attractive, Ugly, etc.)
+  - `calculateAllDerivedStats()` - Convenience wrapper
+
+**Integration:**
+- Character creation automatically calculates before submission
+- Character sheet displays all 6 derived stats (Pace, Parry, Toughness, Charisma, Grit, Size)
+- Review step shows calculated values
+
+**Files Created:**
+- `frontend/src/utils/derivedStats.ts` - Calculation utilities
+
+**Files Modified:**
+- `backend/src/main/java/com/deadlands/campaign/model/Character.java` - Added derived stat fields
+- `backend/src/main/resources/db/migration/add-derived-stats.sql` - Database migration
+- `frontend/src/pages/CharacterCreate.tsx` - Integration of calculations
+- `frontend/src/pages/CharacterSheet.tsx` - Display of derived stats
+
+#### 4. ✅ Fixed 403 Error on Character Creation
+**Critical Bug Fix: Character creation returning 403 Forbidden**
+
+**Root Cause:**
+- Spring Security FilterChain runs BEFORE servlet context path is applied
+- SecurityConfig had path matchers with `/api` prefix (e.g., `/api/characters`)
+- Servlet adds `/api` context path AFTER security filtering
+- Security only saw `/characters`, not `/api/characters` → denied access
+
+**Solution:**
+- Removed `/api` prefix from ALL security matchers
+- Made matchers HTTP method-specific for granular control
+- Verified OPTIONS requests allowed for CORS preflight
+
+**Before (incorrect):**
+```java
+.requestMatchers("/api/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
+```
+
+**After (correct):**
+```java
+.requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
+.requestMatchers(HttpMethod.POST, "/characters").hasAnyRole("PLAYER", "GAME_MASTER")
+.requestMatchers(HttpMethod.PUT, "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
+.requestMatchers(HttpMethod.DELETE, "/characters/**").hasRole("GAME_MASTER")
+```
+
+**Impact:**
+- Character creation now works for PLAYER and GAME_MASTER roles
+- All character endpoints properly secured by role and HTTP method
+
+**Files Modified:**
+- `backend/src/main/java/com/deadlands/campaign/config/SecurityConfig.java`
+
+#### 5. ✅ UI Theme Overhaul - Western Aesthetic & Legibility
+**Addressed user feedback: "orange on brown is very poor legibility" and "western cowboy font" request**
+
+**Color Palette Redesign:**
+- **Primary Color:** Changed from Saddle Brown (#8B4513) to Cream/Tan (#D4C5A9, #E8DCC4)
+  - High contrast on dark backgrounds
+  - Better readability
+- **Secondary Color:** Changed from Goldenrod (#DAA520) to Bright Gold (#FFD700)
+  - Western accent color
+  - Visible and vibrant
+- **Background Colors:**
+  - Default: Very Dark Brown (#1a1410)
+  - Paper: Dark Brown (#2d2419)
+- **Text Colors:**
+  - Primary: Cream (#E8DCC4) - high contrast on dark brown
+  - Secondary: Muted Tan (#B8A888) - for secondary text
+- **Semantic Colors Enhanced:**
+  - Error: Brighter Red (#DC3545) for visibility
+  - Success: Muted Green (#5C8A3A)
+  - Warning: Orange (#FFA726)
+  - Info: Dusty Blue (#5A9BD5)
+
+**Western Font Integration:**
+- **Added Google Fonts:**
+  - "Rye" - Ornate Western saloon-style font
+  - "Special Elite" - Typewriter Western font
+- **Typography Hierarchy:**
+  - **h1, h2:** Rye font, Gold color (#FFD700), letter-spacing 0.05em
+  - **h3:** Rye font, Cream color (#E8DCC4), letter-spacing 0.03em
+  - **h4:** Special Elite font, Cream color, letter-spacing 0.02em
+  - **h5, h6:** Special Elite font, Tan color (#D4C5A9), bold weight
+  - **Buttons:** Special Elite font, uppercase, bold, letter-spacing 0.05em
+- **Result:** Headers look like old Western wanted posters and saloon signs
+
+**Component Style Enhancements:**
+- **Buttons:**
+  - Uppercase text transform
+  - Enhanced shadow depth (0 4px 6px on default, 0 6px 8px on hover)
+  - Border radius 8px
+- **Cards:**
+  - Border radius 12px
+  - Subtle cream border (rgba(212, 197, 169, 0.12))
+  - No background gradient
+- **Chips:**
+  - Bold font weight
+  - Custom filled style with dark brown background (#3d342a)
+- **Tables:**
+  - Cream-colored borders for better definition
+
+**Files Modified:**
+- `frontend/src/theme.ts` - Complete palette and typography overhaul
+- `frontend/index.html` - Added Google Fonts preconnect and stylesheet links
+
+**User Impact:**
+- Much better text legibility throughout app
+- Authentic Wild West aesthetic
+- Professional appearance while maintaining theme
+
+#### 6. ✅ Committed and Deployed
+**All changes committed to GitHub and auto-deployed to Railway:**
+- Theme changes live in production
+- Character creation wizard functional
+- Derived stats calculating correctly
+- Western fonts loaded and applied
+
+### Files Created This Session
+1. `frontend/src/services/referenceService.ts` - Reference data TypeScript interfaces and API service
+2. `frontend/src/utils/derivedStats.ts` - Savage Worlds derived stat calculations
+3. `backend/src/main/resources/db/migration/add-derived-stats.sql` - Database migration for derived stats
+
+### Files Modified This Session
+1. `frontend/src/pages/CharacterCreate.tsx` - Expanded to 9-step wizard with full game mechanics
+2. `frontend/src/pages/CharacterSheet.tsx` - Display all derived stats
+3. `frontend/src/services/characterService.ts` - Updated Character interface
+4. `backend/src/main/java/com/deadlands/campaign/model/Character.java` - Added derived stat fields
+5. `backend/src/main/java/com/deadlands/campaign/config/SecurityConfig.java` - Fixed path matchers (removed /api prefix)
+6. `frontend/src/theme.ts` - Complete color palette and typography overhaul
+7. `frontend/index.html` - Added Western Google Fonts
+
+### Technical Challenges Resolved
+
+**Challenge 1: SQL Die Value Conversion**
+- **Problem:** Migration script attempted to parse die notation strings (like "d8", "1d8") directly to integers
+- **Error:** `invalid input syntax for type integer: "d8"`
+- **Solution:** Used CASE statements with pattern matching instead of SUBSTRING/CAST
+```sql
+CASE
+    WHEN vigor_die LIKE '%d4' THEN 2
+    WHEN vigor_die LIKE '%d6' THEN 3
+    WHEN vigor_die LIKE '%d8' THEN 4
+    WHEN vigor_die LIKE '%d10' THEN 5
+    WHEN vigor_die LIKE '%d12' THEN 6
+    ELSE 2
+END
+```
+
+**Challenge 2: Spring Security Path Matching**
+- **Problem:** 403 Forbidden on POST /api/characters despite correct role
+- **Root Cause:** Security FilterChain runs before context path, saw `/characters` not `/api/characters`
+- **Solution:** Removed `/api` prefix from all security matchers, made HTTP method-specific
+
+**Challenge 3: Poor UI Contrast**
+- **Problem:** Orange/goldenrod on brown backgrounds hard to read
+- **Solution:** Complete palette overhaul to cream/tan with bright gold accents
+
+### Current Status
+
+**✅ Fully Working:**
+- Character creation wizard (all 9 steps)
+- Skills, edges, hindrances, equipment, arcane powers selection
+- Occupation dropdown with 80+ archetypes
+- Derived statistics auto-calculation
+- Database migration with backfilled data
+- Character sheet display with all stats
+- Western-themed UI with high contrast
+- Google Fonts integration (Rye, Special Elite)
+- Authentication and authorization
+- Production deployment on Railway
+
+**✅ Production URLs:**
+- Frontend: https://deadlands-frontend.up.railway.app
+- Backend: https://deadlands-campaign-manager-production.up.railway.app/api
+
+**✅ Test Accounts:**
+All passwords: `password`
+- gamemaster - GAME_MASTER role
+- player1, player2, player3 - PLAYER roles
+
+### Known Limitations
+
+**Character Creation:**
+- No point-buy validation yet (skills: 15pts, edges: limits based on hindrances, hindrances: max 4pts)
+- No hindrance point conversion system (2pts → +1 edge, +1 attribute, +skill point, or +$500)
+- No equipment budget tracking ($500 starting funds + bonuses)
+- No validation warnings when limits exceeded
+
+**Character Editing:**
+- Characters can be created but not edited after creation (NEXT SESSION PRIORITY)
+- No inline editing on character sheets
+- No "Edit" button on character sheet page
+
+**Derived Stats:**
+- Armor bonus not yet factored into Toughness (needs equipment analysis)
+- Edge/hindrance modifiers for Charisma need expansion (only Attractive/Ugly currently)
+- Parry bonuses from shields not implemented
+
+---
+
+## Next Session Plan - 2025-11-06
+
+### PRIMARY GOAL: Character Editing for Owners
+
+**User Priority:** "For the gamemaster and the players to be able to edit all characters for which they have ownership"
+
+#### Ownership Rules
+**Game Master:**
+- Can edit ALL characters regardless of owner
+- Full CRUD permissions
+
+**Players:**
+- Can edit ONLY their own characters (where character.player_id = user.id)
+- Cannot edit other players' characters
+- Cannot delete characters (only GM)
+
+#### Implementation Plan
+
+**Phase 1: Backend Permission Verification (15 min)**
+- ✅ Review existing authorization in CharacterController.java
+- ✅ Verify SecurityConfig allows PUT requests for character owners
+- ✅ Add ownership check in service layer
+- ✅ Test authorization with different user roles
+
+**Phase 2: Character Update Endpoint Enhancement (30 min)**
+- Update CharacterService to handle full character updates
+- Support updating nested entities (skills, edges, hindrances, equipment, powers)
+- Implement cascade updates for related entities
+- Handle orphan removal for deleted nested items
+- Add validation for derived stats recalculation
+
+**Phase 3: Frontend Edit Mode UI (60 min)**
+- Add "Edit Character" button to CharacterSheet.tsx (only for owners)
+- Create edit mode state toggle
+- Convert character sheet sections to editable forms
+- Implement inline editing for:
+  - Basic info (name, occupation, experience)
+  - Attributes (die value selectors)
+  - Skills (add/remove, change die values)
+  - Edges (add/remove)
+  - Hindrances (add/remove)
+  - Equipment (add/remove, change quantities)
+  - Arcane Powers (add/remove)
+  - Derived stats (auto-recalculate on change)
+- Add "Save" and "Cancel" buttons
+- Show loading state during save
+- Display success/error messages
+
+**Phase 4: Reuse CharacterCreate Components (45 min)**
+- Extract skill/edge/hindrance/equipment selection UI into reusable components
+- Move to `frontend/src/components/character/` directory:
+  - `SkillSelector.tsx`
+  - `EdgeSelector.tsx`
+  - `HindranceSelector.tsx`
+  - `EquipmentSelector.tsx`
+  - `ArcanePowerSelector.tsx`
+- Use these components in both CharacterCreate and CharacterSheet edit mode
+- Maintain consistent UX between creation and editing
+
+**Phase 5: Validation & Auto-Calculation (30 min)**
+- Re-run derived stats calculation on every attribute/skill change
+- Update Parry when Fighting skill changes
+- Update Toughness when Vigor changes
+- Update Charisma when edges/hindrances change
+- Show real-time stat updates in edit mode
+- Validate die values (d4 through d12+)
+
+**Phase 6: Testing (30 min)**
+- Test as GAME_MASTER - verify can edit all characters
+- Test as PLAYER - verify can only edit own characters
+- Test editing each character section
+- Test adding and removing nested items
+- Test derived stats recalculation
+- Test save/cancel functionality
+- Test error handling (network errors, validation errors)
+- Verify changes persist after page reload
+
+**Phase 7: Authorization Edge Cases (15 min)**
+- Verify player cannot edit another player's character (403 error)
+- Verify unauthenticated user cannot edit (401 error)
+- Verify character ownership displayed in UI
+- Add ownership indicator ("Your Character" vs "Player: username")
+
+#### Expected Deliverables
+
+**Backend:**
+- Enhanced PUT /api/characters/{id} endpoint
+- Ownership validation in service layer
+- Cascade update support for nested entities
+- Derived stats recalculation on update
+
+**Frontend:**
+- Edit mode toggle on CharacterSheet
+- Reusable selection components
+- Inline editing UI for all character sections
+- Real-time derived stats updates
+- Save/cancel functionality
+- Proper authorization checks
+
+**Testing:**
+- All edit scenarios tested
+- Ownership rules verified
+- Derived stats recalculating correctly
+
+#### Estimated Time: 3-4 hours
 
 ---
 
