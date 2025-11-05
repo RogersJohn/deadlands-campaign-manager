@@ -8,14 +8,17 @@ export interface Character {
   size: number
   wind: number
   grit: number
-  cognitionDie: string
-  deftnessDie: string
-  nimblenessDie: string
-  quicknessDie: string
+  // Savage Worlds Attributes
+  agilityDie: string
   smartsDie: string
   spiritDie: string
   strengthDie: string
   vigorDie: string
+  // Legacy Deadlands Classic Attributes (deprecated)
+  cognitionDie?: string
+  deftnessDie?: string
+  nimblenessDie?: string
+  quicknessDie?: string
   notes?: string
   characterImageUrl?: string
   isNpc: boolean

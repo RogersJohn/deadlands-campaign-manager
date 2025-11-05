@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import CharacterSheet from './pages/CharacterSheet'
+import CharacterCreate from './pages/CharacterCreate'
 import ChangePassword from './pages/ChangePassword'
 import Wiki from './pages/Wiki'
 import Layout from './components/Layout'
@@ -21,6 +22,7 @@ function App() {
         <Route path="/" element={isAuthenticated ? <Layout /> : <Navigate to="/login" />}>
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="character/new" element={<CharacterCreate />} />
           <Route path="character/:id" element={<CharacterSheet />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="wiki" element={<Wiki />} />
