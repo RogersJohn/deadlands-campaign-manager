@@ -57,7 +57,29 @@ const wikiFiles = [
     sortOrder: 11
   },
 
-  // Character bios - private (character-specific)
+  // Character bios - public (more profiles)
+  {
+    file: 'cornelius-bio.md',
+    title: 'Cornelius Wilberforce III - Biography',
+    slug: 'cornelius-wilberforce-bio',
+    category: 'CHARACTER_BIO',
+    visibility: 'PUBLIC',
+    isPublic: true,
+    relatedCharacterId: 2, // Cornelius
+    sortOrder: 12
+  },
+  {
+    file: 'jack-horner-bio.md',
+    title: 'Jack Horner - The Old Prospector',
+    slug: 'jack-horner-bio',
+    category: 'CHARACTER_BIO',
+    visibility: 'PUBLIC',
+    isPublic: true,
+    relatedCharacterId: 5, // Jack Horner
+    sortOrder: 13
+  },
+
+  // Character bios - private (character-specific, only visible to owner)
   {
     file: 'bob-private-bio.md',
     title: 'Mexicali Bob - Private Background',
@@ -77,26 +99,6 @@ const wikiFiles = [
     isPublic: false,
     relatedCharacterId: 4, // John Henry
     sortOrder: 21
-  },
-  {
-    file: 'cornelius-bio.md',
-    title: 'Cornelius Wilberforce III - Biography',
-    slug: 'cornelius-wilberforce-bio',
-    category: 'CHARACTER_BIO',
-    visibility: 'CHARACTER_SPECIFIC',
-    isPublic: false,
-    relatedCharacterId: 2, // Cornelius
-    sortOrder: 22
-  },
-  {
-    file: 'jack-horner-bio.md',
-    title: 'Jack Horner - The Old Prospector',
-    slug: 'jack-horner-bio',
-    category: 'CHARACTER_BIO',
-    visibility: 'CHARACTER_SPECIFIC',
-    isPublic: false,
-    relatedCharacterId: 5, // Jack Horner
-    sortOrder: 23
   }
 ];
 
