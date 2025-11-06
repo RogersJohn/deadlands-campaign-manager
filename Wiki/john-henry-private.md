@@ -4,9 +4,8 @@
 **Died**: 1863 (Cannonball wound through the torso)
 **Returned**: 1863
 **Status**: HARROWED
-**Occupation (In Life)**: Medical Doctor
-**Occupation (Undeath)**: Doctor, Hexslinger, Supernatural Tinker
-**Current Position**: Medical Officer and Technical Specialist, Vanderbilt Continental Express
+**True Nature**: Doctor, Hexslinger (Huckster), Undead Gunfighter
+**Current Position**: Medical Officer, Vanderbilt Continental Express
 
 > **WARNING: This information is known only to John Henry Faraday. Revealing his Harrowed status would result in being hunted, killed, or worse.**
 
@@ -52,7 +51,7 @@ Being Harrowed grants John Henry abilities that seem supernatural because they a
 
 **No Fatigue**: Physical exhaustion is a memory. The body can work indefinitely without rest, though John Henry maintains the pretense of normal human limitations to avoid suspicion.
 
-**Hexslinging Powers**: The manitou's presence grants access to supernatural abilities that manifest as hexes. John Henry has discovered several, each more disturbing in its implications than the last.
+**Hexslinging Powers**: The manitou's presence grants access to supernatural abilities that manifest as hexes—the powers of a Huckster, card-slinging hexslinger drawing on demonic energy to warp reality.
 
 ## The Cannonball Wound
 
@@ -62,37 +61,35 @@ When fully clothed, the injury is completely hidden. But without his shirt, the 
 
 The fact that he survived such an injury would be impossible to explain to anyone who saw the scars. No conventional medical treatment could have saved someone with that wound. Which is why John Henry is extremely careful about who sees him without his shirt.
 
-## The Hexes
+## The Hexes: Huckster's Dark Art
 
-John Henry's hexslinging abilities, powered by the manitou within, have evolved since his resurrection. The powers he currently possesses include:
+John Henry's hexslinging abilities manifest as a Huckster—he doesn't cast traditional magic, but instead channels demonic power through cards and gambling symbolism. The manitou grants him hexes that allow him to manipulate reality through the metaphor of the card game:
 
-**Heal**: The power that made him invaluable as a medic—he can accelerate healing in others at supernatural speeds. Wounds close, bones knit, infections vanish. Those he treats don't know they're being touched by death made manifest, healed by power drawn from the grave itself. This was one of his earliest and most-used hexes, allowing him to maintain his cover as an exceptional doctor.
+**Heal**: The power that made him invaluable as a medic—he can accelerate healing in others at supernatural speeds. Wounds close, bones knit, infections vanish. Those he treats don't know they're being touched by death made manifest, healed by power drawn from the grave itself. This hex allows him to maintain his cover as an exceptional doctor while using abilities no living physician could possess.
 
-**Boost**: A hex that grants supernatural speed and additional actions. When activated, John Henry can move faster, act quicker, and accomplish in seconds what should take minutes. He uses this sparingly, only in moments when normal speed would result in death or discovery. The manitou's power coursing through dead muscles, animating them beyond what living flesh could achieve.
+**Boost**: A hex that grants supernatural enhancement—increased speed, additional actions, capabilities beyond normal human limits. When activated, John Henry can move faster, act quicker, and accomplish in seconds what should take minutes. He uses this sparingly, only in moments when normal speed would result in death or discovery. The manitou's power coursing through dead muscles, animating them beyond what living flesh could achieve.
 
 **Spiritual Pathway**: Perhaps the most unsettling of his hexes—the ability to become insubstantial, like a ghost. When activated, he can phase through solid matter, become intangible to physical attacks, exist partially in the spirit world. It's a reminder that he's not truly alive anymore, that the boundary between life and death has become permeable for him. Using this power feels like temporarily surrendering to what he truly is—a spirit animating dead flesh.
 
-**Other Hexes**: The manitou has granted him access to additional powers: Helper Hex (extending supernatural aid to others), Boost (enhancing abilities), Noxious Breath (poison breath), and others. Each hex represents another thread of the manitou's influence, another way the demon's power manifests through his dead body.
+**Other Hexslinging Powers**: The manitou has granted him access to additional hexes as his power grows: Helper Hex (extending supernatural aid to others), Feast (summoning food from nothing), Noxious Breath (poison breath), and others. Each hex represents another thread of the manitou's influence, another way the demon's power manifests through his undead body. These powers follow the Huckster tradition—reality-warping abilities channeled through gambling metaphors and card symbolism.
 
 John Henry uses his hexes as sparingly as possible. Each activation strengthens the manitou's hold, each supernatural act pulls him further from humanity. But in moments of crisis, the temptation to use powers that could save lives—or save his own existence—becomes impossible to resist.
 
-## The Supernatural Tinkering
+## The Card Sharp's Skills
 
-In life, John Henry was a doctor—his expertise was medicine, anatomy, and the treatment of illness and injury. He had no particular mechanical aptitude beyond what any educated person might possess.
+In life, John Henry had no particular talent for gambling or card manipulation—he was a doctor, focused on medicine and healing. Since his resurrection, the manitou has granted him supernatural proficiency with cards and games of chance.
 
-Since his resurrection, the manitou has granted him supernatural understanding of mechanisms, devices, and equipment. This is not skill acquired through study or practice—it's knowledge that simply exists in his mind, placed there by the demon that animates his corpse.
+His gambling skills and card tricks aren't learned abilities—they're manifestations of his Huckster nature. When he shuffles a deck, cards fall where the manitou wants them. When he plays poker, supernatural influence guides the game. His sleight of hand techniques work because reality bends slightly to accommodate them.
 
-His "tinkering" works through principles that conventional science cannot explain:
+Every time he demonstrates card tricks or wins at gambling, he's using power drawn from the demon inside him. It's another reminder that his capabilities are no longer his own—they belong to the thing that killed him and stole his body.
 
-**Impossible Understanding**: John Henry knows how to repair and modify firearms despite never training as a gunsmith. He understands mechanical principles he never studied. The manitou grants insights that living craftsmen must acquire through years of apprenticeship.
+## The Gunfighter's Reflexes
 
-**Supernatural Enhancement**: Devices he modifies work better than they should. Weapons become more accurate, mechanisms more reliable, equipment more durable. These improvements defy conventional engineering because they're not conventional—they're touched by the manitou's power.
+Before death, John Henry possessed basic shooting skills—enough for frontier self-defense. Since resurrection, his combat capabilities have been enhanced by the Harrowed condition. The manitou's animating force grants reflexes no living human could match, reaction speeds that defy natural limits.
 
-**Intuitive Innovation**: Given tools and materials, John Henry can solve technical problems that stump trained engineers. Not through superior expertise, but through supernatural intuition that simply knows the answers.
+His gunfighting ability comes from undead reflexes and inhuman durability. He doesn't need to fear being shot because bullets can't kill what's already dead. He can take risks in combat that would be suicidal for a living gunfighter, knowing that wounds that would kill others will merely inconvenience him.
 
-This sudden mechanical expertise is deeply disturbing to John Henry. Every time he repairs a weapon or solves an engineering problem, he's using knowledge that came from the demon inside him. It's a constant reminder that his capabilities are no longer his own—they belong to the thing that killed him and stole his body.
-
-The line between skilled craftsmanship and unholy creation blurs in his workshop. Every device he builds or repairs carries a touch of the supernatural, though he carefully frames his work in conventional terms to avoid uncomfortable questions about where a medical doctor learned gunsmithing.
+This makes him far more dangerous than his skill level alone would suggest—a competent shooter made nearly unstoppable by supernatural resilience.
 
 ## The Terrible Secret
 
@@ -118,6 +115,8 @@ John Henry must maintain the appearance of being alive, which requires constant 
 
 **Maintaining Temperature**: Dead flesh doesn't maintain normal body temperature. John Henry must be careful about prolonged physical contact that might reveal his unnatural coldness.
 
+**Pretending to Eat**: The body requires no sustenance, but he must occasionally consume food and drink to maintain the pretense of life.
+
 ## The Constant Struggle
 
 Every moment of John Henry's existence requires conscious effort:
@@ -134,13 +133,13 @@ Every moment of John Henry's existence requires conscious effort:
 
 John Henry's position with the Vanderbilt Continental Express serves multiple purposes:
 
-**Anonymity**: Among hundreds of workers in constant motion westward, he can maintain distance from anyone who might see too clearly.
-
-**Usefulness**: His abilities make him invaluable, ensuring his position remains secure even as questions about his methods accumulate.
+**Usefulness**: His medical abilities (enhanced by hexslinging) make him invaluable, ensuring his position remains secure even as questions about his methods accumulate.
 
 **Movement**: The railroad's westward progress keeps him ahead of anyone who might be searching, anyone who witnessed his death, anyone who knows what he is.
 
 **Purpose**: Helping the railroad succeed, protecting workers, healing the injured—these give meaning to an existence that should not be.
+
+**Anonymity**: Among hundreds of workers in constant motion westward, he can maintain distance from anyone who might see too clearly.
 
 ## The Future He Dreads
 
@@ -158,7 +157,7 @@ John Henry knows his current situation cannot last indefinitely:
 
 John Henry Faraday walks among the living, but he is not one of them. He helps people, but with powers drawn from evil. He maintains humanity's appearance while being fundamentally inhuman. He exists in constant fear of discovery, constant struggle against internal evil, and constant doubt about whether his continued existence serves any purpose beyond the manitou's dark agenda.
 
-The public sees a talented gunsmith and healer with unusual methods. His colleagues see a valuable but mysterious technical specialist. His friends (if he dares call them that) see a competent professional with a troubled past.
+The public sees a talented doctor and dangerous gunfighter with unusual luck at cards. His colleagues see a valuable medical professional with a troubled past. His friends (if he dares call them that) see a competent practitioner with mysterious abilities.
 
 None of them see the truth: a dead man walking, animated by evil, struggling to do good with powers drawn from darkness, fighting a losing battle against the demon that shares his flesh.
 
