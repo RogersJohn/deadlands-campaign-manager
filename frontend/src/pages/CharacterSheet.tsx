@@ -128,7 +128,14 @@ const CharacterSheet = () => {
 
       {/* Tabs Navigation */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-        <Tabs value={currentTab} onChange={handleTabChange} aria-label="character sheet tabs">
+        <Tabs
+          value={currentTab}
+          onChange={handleTabChange}
+          aria-label="character sheet tabs"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+        >
           <Tab icon={<PersonIcon />} label="Overview" iconPosition="start" />
           <Tab icon={<BuildIcon />} label="Skills" iconPosition="start" />
           <Tab icon={<ShieldIcon />} label="Edges & Hindrances" iconPosition="start" />

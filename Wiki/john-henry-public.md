@@ -1,24 +1,32 @@
 # John Henry Faraday
 
-**Born**: 1839, Location Unknown  
-**Occupation**: Gunsmith, Inventor, Medical Practitioner  
-**Current Position**: Technical Specialist and Medical Officer, Vanderbilt Continental Express
+**Born**: 1839, Location Unknown
+**Occupation**: Medical Doctor, Gunsmith, Technical Specialist
+**Current Position**: Medical Officer and Technical Specialist, Vanderbilt Continental Express
 
-## The Man Who Fixes What's Broken
+## The Doctor Who Knows Too Much
 
-John Henry Faraday is something rare in 1863 America—a man with technical expertise across multiple disciplines, respected for his skills even as his unconventional methods raise eyebrows among those trained in traditional crafts. At 24 years old, he serves the Vanderbilt Continental Express as their primary gunsmith and, increasingly, as their medical specialist, though his techniques often defy conventional explanation.
+John Henry Faraday is a properly trained medical doctor, with credentials and qualifications that check out when examined. At 24 years old, he serves the Vanderbilt Continental Express as their medical officer, treating everything from minor injuries to life-threatening trauma with competence that reflects genuine professional training.
 
-There's something about John Henry that makes people simultaneously trust his competence and feel slightly uncomfortable, as if they sense without understanding that his knowledge comes from sources that proper education doesn't explain.
+What makes John Henry unusual isn't a lack of proper education—it's that his medical capabilities seem to exceed what any school could have taught him. There's something about his treatments that achieves results conventional medicine cannot explain, even when performed by a qualified physician.
 
-## The Healer and Inventor
+## The Trained Physician
 
-John Henry's reputation rests primarily on two skills: his ability to repair and modify firearms, and his uncanny success in treating injuries that conventional medicine considers hopeless.
+John Henry's medical credentials are legitimate. He completed formal medical training, holds proper qualifications, and can discuss medical theory with educated practitioners. When treating patients, he uses recognized techniques, proper terminology, and conventional procedures.
 
-His medical treatments work—that's the undeniable truth that overcomes skepticism. Men who should die from their wounds survive under John Henry's care. Infections that should spread mysteriously clear up. Injuries that conventional medicine would treat through amputation heal with limbs intact, though John Henry's methods involve strange contraptions, unusual substances, and procedures that no medical school would recognize.
+Yet his success rate defies statistical probability. Men who should die from their wounds survive under John Henry's care at rates that exceed any normal doctor's experience. Infections that should spread mysteriously clear up. Complications that should arise simply don't occur.
 
-He doesn't claim formal medical training, instead speaking vaguely of "practical experience" and "extensive reading of advanced texts." His workshop contains medical equipment of unusual design—devices that seem to accelerate healing, implements that appear to diagnose conditions through means that existing science cannot explain, and strange apparatuses whose purposes remain mysterious even to those who witness their use.
+He practices medicine exactly as a qualified doctor should—and somehow achieves results that qualified doctors cannot replicate.
 
-When pressed about his methods, John Henry becomes evasive, deflecting questions with technical jargon that sounds almost plausible but never quite explains how his treatments achieve their impossible results.
+## The New Technical Skills
+
+More recently, John Henry has demonstrated unexpected proficiency with mechanical and technical work, particularly firearms modification and equipment repair. This represents a dramatic expansion of his capabilities beyond his medical training.
+
+His gunsmithing work is remarkable considering he never formally trained in the profession. He can repair any firearm, modify weapons to improve their performance, and even design custom pieces. His workshop contains precision tools he seems to have acquired recently, and workers notice that he approaches mechanical problems with the same intense focus he brings to medicine—and achieves similarly improbable results.
+
+The weapons he modifies work exceptionally well. Pistols that never seem to misfire, rifles with uncanny accuracy, shotguns that pattern more tightly than mechanics should allow. When asked where he learned gunsmithing, John Henry becomes vague, mentioning "recent necessity" and "natural aptitude with mechanisms."
+
+This sudden technical expertise puzzles those who knew him before. Where did a medical doctor acquire such advanced mechanical skills? Why did these abilities emerge only recently? John Henry deflects such questions with professional courtesy but offers no satisfying explanations.
 
 ## The Gunsmith's Trade
 
@@ -39,18 +47,17 @@ Beyond weapons and medicine, John Henry has demonstrated ability to create or re
 
 His workshop has become essential to the Vanderbilt Continental Express's operations. When engineers face technical challenges, they increasingly turn to John Henry for solutions. When equipment fails mysteriously, John Henry often manages to repair it even when the cause of failure defies explanation.
 
-## Recent Injury
+## The Scars He Carries
 
-Those who work closely with John Henry have noticed that he moves more carefully than a man his age should, sometimes grimacing with pain during physical exertion. He bears visible scars that suggest recent serious injury, though he deflects questions about their origin with polite but firm boundaries.
+Those who work closely with John Henry have noticed he moves with unusual care, though not from obvious pain or disability. When fully clothed, he appears physically sound, showing no visible signs of injury.
 
-The specifics of what happened remain his private business, but the effects are clear—whatever trauma he endured has left lasting marks both physical and psychological. Some speculate about the cause:
+However, those who have glimpsed him without his shirt—medical staff assisting with patient treatment, or colleagues in situations requiring physical work—report significant scarring on his torso. The marks suggest severe trauma from some catastrophic injury, though the specifics remain unclear.
 
-- An experiment that went catastrophically wrong?
-- An attack by hostile forces?
-- Simple frontier violence?
-- A construction accident during previous employment?
+John Henry does not discuss these scars. Questions about their origin receive polite deflection or professional redirection to other topics. The wounds themselves have healed completely—no infection, no ongoing complications, just the permanent marks of whatever violence occurred.
 
-John Henry doesn't discuss it, and those who press too hard find themselves politely but firmly redirected to other topics.
+What's puzzling is how thoroughly healed these injuries appear. For scars of such severity, one would expect ongoing medical complications, reduced physical capability, or at least some visible difficulty with certain movements. John Henry demonstrates none of these limitations, moving with full range of motion and showing no signs of the trauma that must have caused such extensive scarring.
+
+It's yet another mystery about a man who seems to collect them.
 
 ## The Personal Mystery
 

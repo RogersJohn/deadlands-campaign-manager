@@ -1,11 +1,12 @@
 # John Henry Faraday - The Truth
 
-**Born**: 1839, Location Unknown  
-**Died**: 1863  
-**Returned**: 1863  
-**Status**: HARROWED  
-**Occupation**: Gunsmith, Mad Scientist, Hexslinger  
-**Current Position**: Technical Specialist and Medical Officer, Vanderbilt Continental Express
+**Born**: 1839, Location Unknown
+**Died**: 1863 (Cannonball wound through the torso)
+**Returned**: 1863
+**Status**: HARROWED
+**Occupation (In Life)**: Medical Doctor
+**Occupation (Undeath)**: Doctor, Hexslinger, Supernatural Tinker
+**Current Position**: Medical Officer and Technical Specialist, Vanderbilt Continental Express
 
 > **WARNING: This information is known only to John Henry Faraday. Revealing his Harrowed status would result in being hunted, killed, or worse.**
 
@@ -13,7 +14,9 @@
 
 John Henry Faraday died several months ago.
 
-The specifics of his death remain traumatic to recall—violence, betrayal, pain, and then darkness. His body was broken, his blood spilled, his life ended. By every measure that matters, John Henry ceased to exist.
+The artillery shell came without warning—a cannonball that tore through the side of his torso, shattering ribs, pulverizing organs, and leaving a wound that no medical skill could treat. He was a trained doctor; he knew immediately that the injury was fatal. There would be no miraculous recovery, no last-minute salvation. Just pain, blood loss, shock, and then the darkness.
+
+His death was absolute. The body left behind bore wounds that made survival impossible. By every measure that matters, John Henry Faraday ceased to exist.
 
 But something brought him back.
 
@@ -43,7 +46,7 @@ Being Harrowed grants John Henry abilities that seem supernatural because they a
 
 **Doesn't Need to Eat or Drink**: Sustenance is optional. The manitou's animating force sustains the body regardless of conventional nutrition.
 
-**Incredible Durability**: Injuries that would kill a living man are merely inconvenient. Bullets pass through him, bones break and reset themselves, wounds that should be fatal become temporary setbacks. The "recent injuries" others notice are actually the visible evidence of his death and resurrection—marks that won't fully heal because the body isn't truly alive.
+**Incredible Durability**: Injuries that would kill a living man are merely inconvenient. Bullets pass through him, bones break and reset themselves, wounds that should be fatal become temporary setbacks.
 
 **Supernatural Healing**: Damage repairs itself at impossible speeds. What would take weeks to heal takes days. Fatal injuries become survivable given enough time.
 
@@ -51,35 +54,45 @@ Being Harrowed grants John Henry abilities that seem supernatural because they a
 
 **Hexslinging Powers**: The manitou's presence grants access to supernatural abilities that manifest as hexes. John Henry has discovered several, each more disturbing in its implications than the last.
 
+## The Cannonball Wound
+
+The scarring on John Henry's torso tells the story of his death—a massive impact wound where the cannonball tore through the right side of his body. The manitou reanimated his corpse, and while the supernatural healing closed the wounds enough to be functional, the scarring remains.
+
+When fully clothed, the injury is completely hidden. But without his shirt, the evidence is undeniable—a large, devastating impact zone that should have been instantly fatal. The scars don't hurt (the dead don't feel pain the same way), but they serve as a constant physical reminder of what he is.
+
+The fact that he survived such an injury would be impossible to explain to anyone who saw the scars. No conventional medical treatment could have saved someone with that wound. Which is why John Henry is extremely careful about who sees him without his shirt.
+
 ## The Hexes
 
-John Henry's hexslinging abilities, powered by the manitou within, include:
+John Henry's hexslinging abilities, powered by the manitou within, have evolved since his resurrection. The powers he currently possesses include:
 
-**Deflect**: Reality itself seems to bend around him, turning aside bullets and blows that should connect. The manitou protects its host, not from compassion but from self-interest—if John Henry dies permanently, so does the manitou.
+**Heal**: The power that made him invaluable as a medic—he can accelerate healing in others at supernatural speeds. Wounds close, bones knit, infections vanish. Those he treats don't know they're being touched by death made manifest, healed by power drawn from the grave itself. This was one of his earliest and most-used hexes, allowing him to maintain his cover as an exceptional doctor.
 
-**Ghost Rider**: He can move with supernatural stealth, seeming to fade from perception even when in plain sight. Observers' eyes slide past him as if he were already a ghost.
+**Boost**: A hex that grants supernatural speed and additional actions. When activated, John Henry can move faster, act quicker, and accomplish in seconds what should take minutes. He uses this sparingly, only in moments when normal speed would result in death or discovery. The manitou's power coursing through dead muscles, animating them beyond what living flesh could achieve.
 
-**Helpin' Hand**: John Henry can extend supernatural influence to aid others, granting them temporary abilities beyond their normal capabilities. The manitou's power flowing through him into others, a violation of natural law that feels wrong even as it proves useful.
+**Spiritual Pathway**: Perhaps the most unsettling of his hexes—the ability to become insubstantial, like a ghost. When activated, he can phase through solid matter, become intangible to physical attacks, exist partially in the spirit world. It's a reminder that he's not truly alive anymore, that the boundary between life and death has become permeable for him. Using this power feels like temporarily surrendering to what he truly is—a spirit animating dead flesh.
 
-**Mend**: The most disturbing of his hexes—he can accelerate healing in others as his own body heals itself, forcing living flesh to repair at impossible speeds. Those he heals don't know they're being touched by death made manifest.
+**Other Hexes**: The manitou has granted him access to additional powers: Helper Hex (extending supernatural aid to others), Boost (enhancing abilities), Noxious Breath (poison breath), and others. Each hex represents another thread of the manitou's influence, another way the demon's power manifests through his dead body.
 
-**Missed Me**: Attacks aimed at John Henry sometimes simply fail, as if reality itself rejects his permanent destruction. The manitou's supernatural influence bending probability.
+John Henry uses his hexes as sparingly as possible. Each activation strengthens the manitou's hold, each supernatural act pulls him further from humanity. But in moments of crisis, the temptation to use powers that could save lives—or save his own existence—becomes impossible to resist.
 
-**Forget**: Perhaps the most useful and most horrifying—John Henry can make people forget what they've witnessed, erasing memories that would reveal his true nature.
+## The Supernatural Tinkering
 
-## The Mad Science
+In life, John Henry was a doctor—his expertise was medicine, anatomy, and the treatment of illness and injury. He had no particular mechanical aptitude beyond what any educated person might possess.
 
-Before his death, John Henry possessed unusual talent with mechanical and medical innovation. Since his resurrection, these abilities have become something else entirely—Mad Science in the truest sense.
+Since his resurrection, the manitou has granted him supernatural understanding of mechanisms, devices, and equipment. This is not skill acquired through study or practice—it's knowledge that simply exists in his mind, placed there by the demon that animates his corpse.
 
-His inventions work through principles that conventional science cannot explain:
+His "tinkering" works through principles that conventional science cannot explain:
 
-**Impossible Materials**: Devices constructed from substances that shouldn't exist, alloys that defy metallurgy, organic components incorporated into mechanical systems.
+**Impossible Understanding**: John Henry knows how to repair and modify firearms despite never training as a gunsmith. He understands mechanical principles he never studied. The manitou grants insights that living craftsmen must acquire through years of apprenticeship.
 
-**Violation of Physical Law**: Machines that produce more energy than they consume, medical instruments that diagnose through means that physics doesn't accommodate, weapons that improve themselves over time.
+**Supernatural Enhancement**: Devices he modifies work better than they should. Weapons become more accurate, mechanisms more reliable, equipment more durable. These improvements defy conventional engineering because they're not conventional—they're touched by the manitou's power.
 
-**Intuitive Understanding**: John Henry knows how to build things he's never studied, understands principles he's never been taught. The manitou's supernatural nature grants insights that living scientists cannot access.
+**Intuitive Innovation**: Given tools and materials, John Henry can solve technical problems that stump trained engineers. Not through superior expertise, but through supernatural intuition that simply knows the answers.
 
-The line between genius innovation and unholy creation blurs in his workshop. Every device he builds carries a touch of the supernatural, though he frames them in conventional terms to avoid uncomfortable questions.
+This sudden mechanical expertise is deeply disturbing to John Henry. Every time he repairs a weapon or solves an engineering problem, he's using knowledge that came from the demon inside him. It's a constant reminder that his capabilities are no longer his own—they belong to the thing that killed him and stole his body.
+
+The line between skilled craftsmanship and unholy creation blurs in his workshop. Every device he builds or repairs carries a touch of the supernatural, though he carefully frames his work in conventional terms to avoid uncomfortable questions about where a medical doctor learned gunsmithing.
 
 ## The Terrible Secret
 
@@ -93,11 +106,17 @@ What makes John Henry's condition truly horrifying is that he must hide it absol
 
 **The Question of Humanity**: Is he still John Henry Faraday? Or is he a corpse being puppeteered by a demon wearing the memories of a dead man? The philosophical question haunts him more than the physical condition.
 
-## The Recent "Injury"
+## Living the Lie
 
-The scars and wounds that others notice are not from any recent injury—they're the visible evidence of his death and resurrection. The manitou reanimated a corpse, and while it can make the body functional, it cannot make it perfectly alive.
+John Henry must maintain the appearance of being alive, which requires constant deception:
 
-The marks of whatever killed him remain visible, a constant reminder of what he is. He moves carefully not from pain but from the need to maintain the illusion of living flesh that might hurt. He grimaces not from discomfort but from the horror of his own condition.
+**Simulating Breath**: He doesn't need to breathe, but must remember to do so anyway to maintain the illusion.
+
+**Faking Fatigue**: The body never tires, but showing superhuman endurance would raise questions.
+
+**Hiding the Scars**: The cannonball wound is absolutely concealed beneath clothing. Only in medical emergencies, when treating patients in situations requiring physical assistance, does anyone risk glimpsing the devastating scarring—and even then, he ensures witnesses are minimal and explanations are deflected.
+
+**Maintaining Temperature**: Dead flesh doesn't maintain normal body temperature. John Henry must be careful about prolonged physical contact that might reveal his unnatural coldness.
 
 ## The Constant Struggle
 
