@@ -15,11 +15,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Campaign management features (sessions, notes, tracking)
 - Interactive character sheet with dice rolling
 - Wound tracking and Fate Chip management
-- Campaign wiki system with markdown support
 - NPC and location generators
 - Mobile optimization and responsive design
 - Character export to PDF
 - Enhanced search and filtering for reference data
+
+## [1.2.1] - 2025-11-06
+
+### Fixed
+
+#### Wiki Visibility Issue
+- **Critical Fix:** Character bios without "private" in filename now properly display as PUBLIC
+- Fixed Cornelius Wilberforce III - Biography visibility (CHARACTER_SPECIFIC → PUBLIC)
+- Fixed Jack Horner - The Old Prospector visibility (CHARACTER_SPECIFIC → PUBLIC)
+- Established visibility rule: Filename contains "private" or "secret" → CHARACTER_SPECIFIC, otherwise → PUBLIC
+- Updated `import-wiki.js` to correctly categorize entries based on filename
+- All players can now see all public character bios (7 public entries total)
+
+#### Character Portrait Cache-Busting
+- Added cache-busting parameter to portrait URLs to force browser reload
+- Ensures users see updated portraits immediately without manual cache clearing
+- Format: `/portraits/[filename].jpg?v=[timestamp]`
+
+### Changed
+
+#### John Henry Farraday Portrait
+- Replaced character portrait with updated image (169 KB)
+- New image deployed to production with cache-busting URL
+- Database updated: `character_image_url` now includes timestamp parameter
+
+### Documentation
+- Created `WIKI_VISIBILITY_FIX.md` - Detailed documentation of wiki visibility fix
+- Updated `SESSION_STATUS.md` with session 2025-11-06 details
+- Updated `NEXT_SESSION.md` with completed tasks
+
+### Technical Details
+
+**Wiki Visibility Logic:**
+```javascript
+const isPrivate = filename.includes('private') || filename.includes('secret');
+const visibility = isPrivate ? 'CHARACTER_SPECIFIC' : 'PUBLIC';
+```
+
+**Files Modified:**
+- `backend/src/main/resources/static/portraits/doc-farraday.jpg`
+- `import-wiki.js`
+- Database: `wiki_entries` table (entries #8 and #9)
+- Database: `characters.character_image_url` (John Henry Farraday)
+
+**Commits:**
+- `5e893a9` - Update John Henry Farraday portrait
+- `bdb7a1c` - Fix wiki visibility
+- `5fa138d` - Add wiki visibility fix documentation
 
 ## [1.2.0] - 2025-11-05
 

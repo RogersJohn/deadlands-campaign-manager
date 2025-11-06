@@ -1,8 +1,16 @@
 # Next Session Plan - Character Editing System
 
-**Created:** 2025-11-05
+**Last Updated:** 2025-11-06
 **Priority:** HIGH
 **Estimated Time:** 3-4 hours
+
+---
+
+## Recent Completed Tasks (2025-11-06)
+
+✅ John Henry Farraday portrait updated with cache-busting
+✅ Wiki visibility fixed - character bios now properly public/private based on filename
+✅ All documentation updated
 
 ---
 

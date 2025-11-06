@@ -1,11 +1,130 @@
 # Session Status - Deadlands Campaign Manager
 
-**Last Updated:** 2025-11-05
+**Last Updated:** 2025-11-06
 **Status:** 🚀 DEPLOYED TO RAILWAY (Production) - Alpha Ready
 
 ## Project Overview
 
 Deadlands Campaign Manager - A Spring Boot 3.2.1 + React 18 web application for managing Deadlands Reloaded tabletop RPG campaigns. Successfully deployed to Railway.app for online access.
+
+---
+
+## Session 2025-11-06: Portrait Update & Wiki Visibility Fix
+
+### Summary
+Updated John Henry Farraday's character portrait and fixed wiki visibility issue where character bios without "private" in their filename were incorrectly marked as character-specific instead of public.
+
+### What We Accomplished
+
+#### 1. ✅ John Henry Farraday Portrait Update
+**Replaced character portrait with new image:**
+
+- Located new portrait: `Character Sheets/Doc Farraday/DocFarraday.jpeg` (169 KB)
+- Copied to backend: `backend/src/main/resources/static/portraits/doc-farraday.jpg`
+- Added cache-busting parameter to database URL to force browser reload
+- Committed and pushed to GitHub for Railway auto-deployment
+
+**Database Update:**
+- Changed portrait URL: `/portraits/doc-farraday.jpg?v=1762435520563`
+- Cache-busting ensures all browsers load the new image immediately
+
+**Files Modified:**
+- `backend/src/main/resources/static/portraits/doc-farraday.jpg` - New portrait image
+
+**Commit:** `5e893a9` - Update John Henry Farraday portrait
+
+#### 2. ✅ Wiki Visibility Fix - Character Bios Now Public
+**Problem:** Players could only see some character bios, not all public ones.
+
+**Root Cause:** Two character bios were incorrectly set as `CHARACTER_SPECIFIC`:
+- Cornelius Wilberforce III - Biography
+- Jack Horner - The Old Prospector
+
+These filenames (`cornelius-bio.md`, `jack-horner-bio.md`) did NOT contain "private" or "secret" keywords, so they should have been `PUBLIC`.
+
+**New Rule Established:**
+```
+If filename contains "private" or "secret" → CHARACTER_SPECIFIC (owner + GM only)
+Otherwise → PUBLIC (all players can see)
+```
+
+**Database Updates:**
+- Changed Cornelius bio: `CHARACTER_SPECIFIC` → `PUBLIC`
+- Changed Jack Horner bio: `CHARACTER_SPECIFIC` → `PUBLIC`
+
+**Files Modified:**
+- `import-wiki.js` - Fixed visibility settings for future imports
+- Database: `wiki_entries` table (entries #8 and #9)
+
+**Current Wiki Visibility:**
+
+**PUBLIC (7 entries - all players see):**
+1. The Great Civil War (campaign lore)
+2. The Great Railroad Race (campaign lore)
+3. Global Affairs & The Weird West (campaign lore)
+4. Mexicali Bob - Public Profile
+5. John Henry Farraday - Public Profile
+6. Cornelius Wilberforce III - Biography ✅ NOW PUBLIC
+7. Jack Horner - The Old Prospector ✅ NOW PUBLIC
+
+**CHARACTER_SPECIFIC (2 entries - owner + GM only):**
+- Mexicali Bob - Private Background
+- John Henry Farraday - Secret Past
+
+**Impact:** DaveOBrien (player4) now sees 8 wiki entries instead of 5.
+
+**Commits:**
+- `bdb7a1c` - Fix wiki visibility
+- `5fa138d` - Add documentation
+
+**Documentation Created:**
+- `WIKI_VISIBILITY_FIX.md` - Detailed fix documentation
+
+### Files Created This Session
+1. `WIKI_VISIBILITY_FIX.md` - Documentation of wiki visibility fix
+
+### Files Modified This Session
+1. `backend/src/main/resources/static/portraits/doc-farraday.jpg` - New portrait
+2. `import-wiki.js` - Fixed wiki visibility rules
+3. Database: `characters.character_image_url` - Cache-busting URL
+4. Database: `wiki_entries` - Updated visibility for 2 entries
+
+### Technical Details
+
+**Portrait Cache-Busting:**
+- Added timestamp query parameter to image URL
+- Forces browsers to reload new image instead of using cache
+- Format: `/portraits/doc-farraday.jpg?v=[timestamp]`
+
+**Wiki Visibility Logic:**
+```javascript
+// In import-wiki.js
+const isPrivate = filename.includes('private') || filename.includes('secret');
+const visibility = isPrivate ? 'CHARACTER_SPECIFIC' : 'PUBLIC';
+const isPublic = !isPrivate;
+```
+
+### Current Status
+
+**✅ Fully Working:**
+- All 7 characters with balanced XP (~120 XP each)
+- Character creation wizard (9 steps)
+- Wiki system with 9 entries (7 public, 2 private)
+- Character portraits with cache-busting
+- Western-themed UI
+- Authentication and authorization
+- Production deployment on Railway
+
+**✅ Production URLs:**
+- Frontend: https://deadlands-frontend.up.railway.app
+- Backend: https://deadlands-campaign-manager-production.up.railway.app/api
+
+**✅ Test Accounts:**
+All passwords: `password`
+- gamemaster - GAME_MASTER role
+- player1, player2, player3 - PLAYER roles
+- DaveOBrien (formerly player4) - PLAYER role, owns John Henry Farraday
+- player6 - PLAYER role
 
 ---
 
