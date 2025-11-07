@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   Box,
@@ -12,6 +12,7 @@ import {
   Tab,
   Card,
   CardContent,
+  Button,
 } from '@mui/material'
 import {
   Person as PersonIcon,
@@ -19,6 +20,7 @@ import {
   Shield as ShieldIcon,
   Backpack as BackpackIcon,
   AutoAwesome as MagicIcon,
+  Edit as EditIcon,
 } from '@mui/icons-material'
 import { useState } from 'react'
 import characterService from '../services/characterService'
@@ -48,6 +50,7 @@ function TabPanel(props: TabPanelProps) {
 
 const CharacterSheet = () => {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [currentTab, setCurrentTab] = useState(0)
 
   const { data: character, isLoading } = useQuery({
@@ -122,9 +125,18 @@ const CharacterSheet = () => {
   return (
     <Box>
       {/* Header with character name */}
-      <Typography variant="h3" gutterBottom fontWeight="bold">
-        {character.name}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h3" fontWeight="bold">
+          {character.name}
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<EditIcon />}
+          onClick={() => navigate(`/character/${id}/edit`)}
+        >
+          Edit Character
+        </Button>
+      </Box>
 
       {/* Tabs Navigation */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>

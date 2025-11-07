@@ -21,8 +21,8 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @EntityListeners(AuditingEntityListener.class)
-@lombok.EqualsAndHashCode(exclude = {"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds", "player"})
-@lombok.ToString(exclude = {"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds", "player"})
+@lombok.EqualsAndHashCode(exclude = {"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds", "player", "deletedBy"})
+@lombok.ToString(exclude = {"skills", "edges", "hindrances", "equipment", "arcanePowers", "wounds", "player", "deletedBy"})
 public class Character {
 
     @Id
@@ -139,4 +139,13 @@ public class Character {
 
     @LastModifiedDate
     private LocalDateTime updatedAt;
+
+    // Soft Delete Fields
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "deleted_by")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "characters", "password"})
+    private User deletedBy;
 }

@@ -223,9 +223,30 @@ public class CharacterController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('GAME_MASTER')")
-    public ResponseEntity<?> deleteCharacter(@PathVariable Long id) {
-        characterRepository.deleteById(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<?> deleteCharacter(@PathVariable Long id, Authentication authentication) {
+        // Use findByIdIncludingDeleted to prevent double-deletion
+        Character character = characterRepository.findByIdIncludingDeleted(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check if user has permission to delete this character (owner OR GM)
+        if (user.getRole() != User.Role.GAME_MASTER &&
+            !character.getPlayer().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).build();
+        }
+
+        // Check if already deleted
+        if (character.getDeletedAt() != null) {
+            return ResponseEntity.status(410).body("Character already deleted"); // 410 Gone
+        }
+
+        // Soft delete: set deletedAt and deletedBy
+        character.setDeletedAt(java.time.LocalDateTime.now());
+        character.setDeletedBy(user);
+        characterRepository.save(character);
+
+        return ResponseEntity.noContent().build();
     }
 }

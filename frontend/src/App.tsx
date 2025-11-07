@@ -6,6 +6,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import CharacterSheet from './pages/CharacterSheet'
 import CharacterCreate from './pages/CharacterCreate'
+import CharacterEdit from './pages/CharacterEdit'
 import ChangePassword from './pages/ChangePassword'
 import Wiki from './pages/Wiki'
 import Layout from './components/Layout'
@@ -24,6 +25,7 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="character/new" element={<CharacterCreate />} />
           <Route path="character/:id" element={<CharacterSheet />} />
+          <Route path="character/:id/edit" element={<CharacterEdit />} />
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="wiki" element={<Wiki />} />
           <Route path="wiki/:slug" element={<Wiki />} />
