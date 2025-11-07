@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - Character editing for owners (NEXT SESSION PRIORITY)
+- Character deletion with authorization
+- Interactive dropdown menus for character editing
 - Point-buy validation system (skills: 15pts, edges/hindrances limits)
 - Hindrance point conversion (2pts → +1 edge, +1 attribute, +skill, +$500)
 - Equipment budget tracking ($500 starting funds)
@@ -16,9 +18,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Interactive character sheet with dice rolling
 - Wound tracking and Fate Chip management
 - NPC and location generators
-- Mobile optimization and responsive design
 - Character export to PDF
 - Enhanced search and filtering for reference data
+
+## [1.3.0] - 2025-11-07
+
+### Added
+
+#### Character Equipment Distribution
+- Added comprehensive starting equipment for all 7 player characters
+- Period-appropriate weapons for Deadlands setting:
+  - **Spencer Repeater Rifle** (2d8 damage, 20" range, 7 shots) - Primary long gun
+  - **Colt 1860 Army** (.44 percussion revolver, 2d6+1 damage, 12" range, 6 shots)
+  - **Bowie Knife** (STR+1d6 damage) - Close combat weapon
+- Ammunition stores (100 rounds each type)
+- Complete horse tack and gear (saddle, bridle, saddlebags)
+- Frontier survival equipment (bedroll, canteen, matches, coffee pot)
+- Tools and rope (50ft lariat, basic tool kit)
+- Trail rations (1 week supply)
+- Equipment intelligently skipped for characters with existing similar items
+
+### Changed
+
+#### Documentation Reorganization
+- Restructured entire documentation system into organized folders:
+  - **docs/setup/** - Setup and deployment guides
+  - **docs/development/** - Development plans and technical docs
+  - **docs/sessions/** - Session summaries and planning
+  - **docs/archive/** - Completed/obsolete documentation
+- Moved 12 completed documents to archive
+- Updated README.md with new documentation structure
+- Added Documentation section to README with clear navigation
+- Updated Development Roadmap with completed features (wiki, mobile UI)
+- Fixed broken documentation links
+
+#### Character Data Cleanup
+- Removed artifact notes from Jack Horner character
+- Cleaned up meaningless reference data
+
+### Fixed
+
+#### Mobile Tab Navigation
+- Fixed character sheet tabs not scrolling on mobile devices
+- Added `variant="scrollable"` to MUI Tabs component
+- Added `scrollButtons="auto"` for navigation arrows
+- Added `allowScrollButtonsMobile` for mobile support
+- Users can now navigate back to Overview tab from any tab on mobile
+
+#### Railway Frontend Build
+- Created `railway.json` and `railway.toml` configuration files
+- Specified correct Dockerfile path for monorepo structure
+- Fixed "failed to read dockerfile" error on Railway deployment
+- Documented troubleshooting steps in archived RAILWAY_BUILD_FIX.md
+
+### Documentation
+- Created comprehensive session documentation system
+- Archived 12 completed documentation files
+- Organized 7 session-specific documents
+- Moved 4 development planning documents
+- Moved 3 setup/deployment guides
+- Updated README.md with documentation navigation
+- Updated CHANGELOG.md with session 2025-11-07 details
+
+### Technical Details
+
+**Equipment Loading:**
+- Created `add_equipment.js` script for bulk equipment distribution
+- Smart duplicate detection to avoid overwriting existing items
+- Period-appropriate weapon stats from Deadlands Reloaded
+- Equipment types: WEAPON_MELEE, WEAPON_RANGED, AMMUNITION, GEAR, CONSUMABLE
+
+**Mobile Tab Fix:**
+```tsx
+<Tabs
+  value={currentTab}
+  onChange={handleTabChange}
+  variant="scrollable"           // Added
+  scrollButtons="auto"            // Added
+  allowScrollButtonsMobile        // Added
+>
+```
+
+**Files Modified:**
+- `frontend/src/pages/CharacterSheet.tsx` (mobile tabs)
+- `railway.json` (new)
+- `railway.toml` (new)
+- Database: `equipment` table (113 new items across 7 characters)
+- Database: `characters` table (removed artifact notes from Jack Horner)
+- Reorganized 29 markdown documentation files
 
 ## [1.2.1] - 2025-11-06
 

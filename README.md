@@ -38,10 +38,11 @@ A comprehensive web-based campaign management system for Deadlands Reloaded tabl
   - Improved legibility throughout the application
   - Professional dark mode theme with Western flair
 
-- **Campaign Wiki** (Coming Soon)
-  - Permission-based content unlocking
-  - Campaign lore and session notes
-  - NPC and location database
+- **Campaign Wiki** ✅
+  - Permission-based content unlocking (public/private wiki entries)
+  - Campaign lore and session notes in Markdown format
+  - Player-specific and GM-only content
+  - Character backstories and campaign information
 
 - **Generators** (Coming Soon)
   - NPC generator with full stats
@@ -76,8 +77,6 @@ A comprehensive web-based campaign management system for Deadlands Reloaded tabl
 **Want to get up and running immediately with all 7 characters imported?**
 
 See **[QUICKSTART.md](QUICKSTART.md)** - Get your campaign running in 15 minutes!
-
-For character import details, see **[CHARACTER_IMPORT.md](CHARACTER_IMPORT.md)**
 
 ## Detailed Setup Instructions
 
@@ -258,33 +257,43 @@ VITE_API_URL=https://your-backend-domain.com/api
 ### Completed ✅
 - [x] Project structure setup
 - [x] Authentication system
-- [x] Basic character management
-- [x] Character sheet viewing
+- [x] Character management (view, create)
+- [x] Character sheet viewing with tabbed interface
 - [x] Reference data system with tooltips
-- [x] Sourcebook integration
+- [x] Sourcebook integration (500+ reference entries)
 - [x] Alphabetical sorting of character data
+- [x] Campaign wiki with markdown support
+- [x] Permission-based wiki content (public/private)
+- [x] Character creation wizard (9-step process)
+- [x] Western-themed UI with authentic styling
+- [x] Mobile-responsive tabs and navigation
 
 ### In Progress 🚧
-- [ ] Expand reference database (target: 500+ entries)
-- [ ] Character creation wizard
+- [ ] Character editing interface
+- [ ] Character deletion (with authorization)
 
 ### Planned 📋
-- [ ] Character editing interface
+- [ ] Advanced character editing with dropdowns
 - [ ] Interactive dice rolling
 - [ ] Wound and Fate Chip tracking
 - [ ] Campaign management features
-- [ ] Wiki system with markdown support
-- [ ] Permission-based wiki content
 - [ ] NPC generator
 - [ ] Location generator
 - [ ] Random tables and generators
-- [ ] Session management
+- [ ] Session management and notes
 - [ ] Combat tracker
 - [ ] File uploads for character images
 - [ ] Export characters to PDF
-- [ ] Mobile optimization
 
-See [SESSION_STATUS.md](SESSION_STATUS.md) for detailed feature proposals and priorities.
+## Documentation
+
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick setup guide
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture overview
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+- **[docs/setup/](docs/setup/)** - Detailed setup and deployment guides
+- **[docs/development/](docs/development/)** - Development plans and technical docs
+- **[docs/sessions/](docs/sessions/)** - Session summaries and planning
+- **[docs/archive/](docs/archive/)** - Completed project documentation
 
 ## Contributing
 
