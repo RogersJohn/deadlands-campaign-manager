@@ -39,7 +39,10 @@
       "Bash(DATABASE_URL=\"postgresql://postgres:MIYRwGqttlrIeJSvgYWstxkmvxRXtMBt@centerbeam.proxy.rlwy.net:31016/railway\" UPDATE=true node:*)",
       "Bash(./mvnw spring-boot:run:*)",
       "Bash(mvn spring-boot:run:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 10 npm run dev)"
     ],
     "deny": [],
     "ask": []

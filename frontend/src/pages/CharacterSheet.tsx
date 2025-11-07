@@ -132,7 +132,10 @@ const CharacterSheet = () => {
         <Button
           variant="contained"
           startIcon={<EditIcon />}
-          onClick={() => navigate(`/character/${id}/edit`)}
+          onClick={() => {
+            console.log('Edit button clicked, navigating to:', `/character/${id}/edit`)
+            navigate(`/character/${id}/edit`)
+          }}
         >
           Edit Character
         </Button>
