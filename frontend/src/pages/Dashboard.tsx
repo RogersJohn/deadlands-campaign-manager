@@ -65,7 +65,7 @@ const Dashboard = () => {
                 <Button size="small" onClick={() => navigate(`/character/${character.id}`)}>
                   View
                 </Button>
-                <Button size="small" color="secondary">
+                <Button size="small" color="secondary" onClick={() => navigate(`/character/${character.id}/edit`)}>
                   Edit
                 </Button>
               </CardActions>
