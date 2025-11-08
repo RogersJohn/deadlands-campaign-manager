@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned
-- Character editing for owners (NEXT SESSION PRIORITY)
+- Character editing for owners (NEXT SESSION PRIORITY - paused due to deployment issues)
 - Character deletion with authorization
 - Interactive dropdown menus for character editing
 - Point-buy validation system (skills: 15pts, edges/hindrances limits)
@@ -20,6 +20,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NPC and location generators
 - Character export to PDF
 - Enhanced search and filtering for reference data
+
+## [1.3.1] - 2025-11-08 - DEPLOYMENT STABILIZATION
+
+### Fixed
+- **Critical:** Recovered from deployment failures caused by configuration changes
+- Reverted to Docker-based deployment (stable and reliable)
+- Restored frontend service name to `deadlands-frontend` (preserving user URLs)
+- Fixed CORS configuration for frontend authentication
+- Resolved package-lock.json conflicts from serve package
+
+### Changed
+- Restored all Docker and Railway configuration files
+  - `backend/Dockerfile` - Maven multi-stage build
+  - `frontend/Dockerfile` - Node + nginx multi-stage build
+  - `frontend/nginx.conf` - SPA routing configuration
+  - `railway.json` and `railway.toml` - Build configuration
+- Removed `serve` package from frontend (using nginx in Docker instead)
+- Updated `.gitignore` to exclude screenshot files
+
+### Infrastructure
+- **Git Tag:** `stable-deployment-2025-11-08` created for recovery point
+- All Railway services verified operational:
+  - PostgreSQL database (11 users, 63 skill references)
+  - Spring Boot backend API (Java 17, port 8080)
+  - React frontend (nginx, port 3000)
+- Production URLs stable and accessible
+- Documented complete Railway configuration
+
+### Lessons Learned
+- Always create git tags before infrastructure changes
+- Never make multiple deployment config changes simultaneously
+- Docker approach more stable than auto-detection for production
+- Service naming affects user-shared URLs
+
+### Documentation
+- Created comprehensive session summary: `docs/SESSION_2025-11-08_DEPLOYMENT_STABILIZATION.md`
+- Documented all Railway service configurations
+- Recorded default user accounts and credentials
+- Established safe deployment workflow for future changes
 
 ## [1.3.0] - 2025-11-07
 
