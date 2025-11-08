@@ -184,7 +184,11 @@ const CharacterSheet = () => {
                 >
                   {character.characterImageUrl ? (
                     <img
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}${character.characterImageUrl}`}
+                      src={
+                        character.characterImageUrl.startsWith('http')
+                          ? character.characterImageUrl
+                          : `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}${character.characterImageUrl}`
+                      }
                       alt={`${character.name} portrait`}
                       style={{
                         width: '100%',

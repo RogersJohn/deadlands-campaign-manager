@@ -30,6 +30,11 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material'
 import {
   Add as AddIcon,
@@ -152,6 +157,8 @@ const CharacterCreate = () => {
   const queryClient = useQueryClient()
   const [activeStep, setActiveStep] = useState(0)
   const [errors, setErrors] = useState<string[]>([])
+  const [showXpDialog, setShowXpDialog] = useState(true)
+  const [xpInput, setXpInput] = useState<string>('0')
 
   const [formData, setFormData] = useState<Partial<Character>>({
     name: '',
@@ -238,7 +245,8 @@ const CharacterCreate = () => {
       if (!formData.occupation?.trim()) errors.push('Occupation is required')
     }
 
-    if (activeStep === 1) {
+    // Attribute validation - only enforce 5 point limit for 0 XP characters
+    if (activeStep === 1 && (formData.totalXp || 0) === 0) {
       const attributePoints: Record<string, number> = {
         'd4': 0,
         'd6': 1,
@@ -266,18 +274,64 @@ const CharacterCreate = () => {
     return errors
   }
 
+  const calculateXpSpent = (): number => {
+    let xpSpent = 0
+
+    // Calculate attribute costs (each die step above d4 costs XP)
+    const attributeCost: Record<string, number> = {
+      'd4': 0,
+      'd6': 1,
+      'd8': 2,
+      'd10': 3,
+      'd12': 4,
+    }
+
+    xpSpent += attributeCost[formData.agilityDie || 'd4']
+    xpSpent += attributeCost[formData.smartsDie || 'd4']
+    xpSpent += attributeCost[formData.spiritDie || 'd4']
+    xpSpent += attributeCost[formData.strengthDie || 'd4']
+    xpSpent += attributeCost[formData.vigorDie || 'd4']
+
+    // Skills cost (each die step costs XP)
+    formData.skills?.forEach((skill) => {
+      xpSpent += attributeCost[skill.dieValue || 'd4']
+    })
+
+    // Edges typically cost 2 XP each (simplified - could vary by edge type)
+    xpSpent += (formData.edges?.length || 0) * 2
+
+    // Hindrances give bonus XP (negative cost)
+    formData.hindrances?.forEach((hindrance) => {
+      if (hindrance.severity === 'MAJOR') {
+        xpSpent -= 2
+      } else if (hindrance.severity === 'MINOR') {
+        xpSpent -= 1
+      }
+    })
+
+    return xpSpent
+  }
+
   const handleSubmit = () => {
-    // Calculate derived stats before submission
+    // Calculate derived stats and XP spent before submission
     const derivedStats = calculateAllDerivedStats(formData)
+    const xpSpent = calculateXpSpent()
     const characterToSubmit = {
       ...formData,
       ...derivedStats,
+      spentXp: xpSpent,
     }
     createCharacterMutation.mutate(characterToSubmit as Character)
   }
 
   // Skills management
   const addSkill = (skillRef: SkillReference) => {
+    // Check if skill already exists
+    const existingSkill = formData.skills?.find(s => s.skillReferenceId === skillRef.id)
+    if (existingSkill) {
+      return // Silently ignore duplicate - already in character
+    }
+
     const newSkill: Skill = {
       name: skillRef.name,
       dieValue: skillRef.defaultValue || 'd4',
@@ -303,6 +357,12 @@ const CharacterCreate = () => {
 
   // Edges management
   const addEdge = (edgeRef: EdgeReference) => {
+    // Check if edge already exists
+    const existingEdge = formData.edges?.find(e => e.edgeReferenceId === edgeRef.id)
+    if (existingEdge) {
+      return // Silently ignore duplicate - already in character
+    }
+
     const newEdge: Edge = {
       name: edgeRef.name,
       type: edgeRef.type,
@@ -323,6 +383,12 @@ const CharacterCreate = () => {
 
   // Hindrances management
   const addHindrance = (hindranceRef: HindranceReference) => {
+    // Check if hindrance already exists
+    const existingHindrance = formData.hindrances?.find(h => h.hindranceReferenceId === hindranceRef.id)
+    if (existingHindrance) {
+      return // Silently ignore duplicate - already in character
+    }
+
     const newHindrance: Hindrance = {
       name: hindranceRef.name,
       severity: hindranceRef.severity,
@@ -343,6 +409,12 @@ const CharacterCreate = () => {
 
   // Equipment management
   const addEquipment = (equipRef: EquipmentReference) => {
+    // Check if equipment already exists
+    const existingEquip = formData.equipment?.find(e => e.equipmentReferenceId === equipRef.id)
+    if (existingEquip) {
+      return // Silently ignore duplicate - already in character
+    }
+
     const newEquip: Equipment = {
       name: equipRef.name,
       type: equipRef.type,
@@ -387,6 +459,12 @@ const CharacterCreate = () => {
     const updated = [...(formData.arcanePowers || [])]
     updated.splice(index, 1)
     setFormData({ ...formData, arcanePowers: updated })
+  }
+
+  const handleXpConfirm = () => {
+    const xp = parseInt(xpInput) || 0
+    setFormData({ ...formData, totalXp: xp })
+    setShowXpDialog(false)
   }
 
   const renderStepContent = () => {
@@ -459,14 +537,22 @@ const CharacterCreate = () => {
             <Typography variant="h6" gutterBottom>
               Attributes (Savage Worlds)
             </Typography>
-            <Alert severity="info" sx={{ mb: 3 }}>
-              Characters start with d4 in all attributes. You have <strong>5 points</strong> to
-              distribute.
-              <br />
-              d6 costs 1 point, d8 costs 2 points, d10 costs 3 points, d12 costs 4 points.
-              <br />
-              <strong>Points used: {usedPoints}/5</strong>
-            </Alert>
+            {(formData.totalXp || 0) === 0 ? (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Characters start with d4 in all attributes. You have <strong>5 points</strong> to
+                distribute.
+                <br />
+                d6 costs 1 point, d8 costs 2 points, d10 costs 3 points, d12 costs 4 points.
+                <br />
+                <strong>Points used: {usedPoints}/5</strong>
+              </Alert>
+            ) : (
+              <Alert severity="info" sx={{ mb: 3 }}>
+                Characters start with d4 in all attributes. Each die step costs XP (see XP tracker above).
+                <br />
+                d6 costs 1 XP, d8 costs 2 XP, d10 costs 3 XP, d12 costs 4 XP.
+              </Alert>
+            )}
             <Grid container spacing={3}>
               <Grid item xs={12} sm={6}>
                 <FormControl fullWidth>
@@ -1237,9 +1323,83 @@ const CharacterCreate = () => {
 
   return (
     <Box>
+      {/* XP Budget Dialog */}
+      <Dialog open={showXpDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>Set Character XP Budget</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            How much XP should this character have? This will set the budget for character
+            creation. New characters typically start with 0 XP, while experienced characters may
+            have more.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            fullWidth
+            type="number"
+            label="Total XP"
+            value={xpInput}
+            onChange={(e) => setXpInput(e.target.value)}
+            inputProps={{ min: 0, step: 1 }}
+            helperText="Enter the total XP this character should have"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => navigate('/dashboard')}>Cancel</Button>
+          <Button variant="contained" onClick={handleXpConfirm}>
+            Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       <Typography variant="h4" gutterBottom>
         Create New Character
       </Typography>
+
+      {/* XP Budget Display */}
+      {!showXpDialog && (
+        <Paper
+          sx={{
+            p: 2,
+            mt: 2,
+            mb: 3,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+          }}
+        >
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={4}>
+              <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
+                XP Budget
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                {formData.totalXp || 0}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
+                XP Spent
+              </Typography>
+              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                {calculateXpSpent()}
+              </Typography>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
+                XP Remaining
+              </Typography>
+              <Typography
+                variant="h5"
+                sx={{
+                  fontWeight: 'bold',
+                  color: (formData.totalXp || 0) - calculateXpSpent() < 0 ? '#ffcdd2' : 'white',
+                }}
+              >
+                {(formData.totalXp || 0) - calculateXpSpent()}
+              </Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
 
       <Paper sx={{ p: 3, mt: 3 }}>
         <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
@@ -1274,7 +1434,7 @@ const CharacterCreate = () => {
                 onClick={handleSubmit}
                 disabled={createCharacterMutation.isPending}
               >
-                {createCharacterMutation.isPending ? 'Creating...' : 'Create Character'}
+                {createCharacterMutation.isPending ? 'Saving...' : 'Save Character'}
               </Button>
             ) : (
               <Button variant="contained" onClick={handleNext}>

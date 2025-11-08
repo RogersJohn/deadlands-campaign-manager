@@ -257,6 +257,13 @@ const CharacterEdit = () => {
 
   // Skills management
   const addSkill = (skillRef: SkillReference) => {
+    // Check if skill already exists
+    const existingSkill = formData.skills?.find(s => s.skillReferenceId === skillRef.id)
+    if (existingSkill) {
+      setErrors([`${skillRef.name} is already added to this character`])
+      return
+    }
+
     const newSkill: Skill = {
       name: skillRef.name,
       dieValue: skillRef.defaultValue || 'd4',
@@ -393,24 +400,40 @@ const CharacterEdit = () => {
     acc[skill.attribute].push(skill)
     return acc
   }, {} as Record<string, SkillReference[]>)
+  // Sort skills alphabetically within each attribute group
+  Object.keys(skillsByAttribute).forEach(attr => {
+    skillsByAttribute[attr].sort((a, b) => a.name.localeCompare(b.name))
+  })
 
   const edgesByType = edgeReferences.reduce((acc, edge) => {
     if (!acc[edge.type]) acc[edge.type] = []
     acc[edge.type].push(edge)
     return acc
   }, {} as Record<string, EdgeReference[]>)
+  // Sort edges alphabetically within each type group
+  Object.keys(edgesByType).forEach(type => {
+    edgesByType[type].sort((a, b) => a.name.localeCompare(b.name))
+  })
 
   const hindrancesBySeverity = hindranceReferences.reduce((acc, hindrance) => {
     if (!acc[hindrance.severity]) acc[hindrance.severity] = []
     acc[hindrance.severity].push(hindrance)
     return acc
   }, {} as Record<string, HindranceReference[]>)
+  // Sort hindrances alphabetically within each severity group
+  Object.keys(hindrancesBySeverity).forEach(severity => {
+    hindrancesBySeverity[severity].sort((a, b) => a.name.localeCompare(b.name))
+  })
 
   const equipmentByType = equipmentReferences.reduce((acc, equip) => {
     if (!acc[equip.type]) acc[equip.type] = []
     acc[equip.type].push(equip)
     return acc
   }, {} as Record<string, EquipmentReference[]>)
+  // Sort equipment alphabetically within each type group
+  Object.keys(equipmentByType).forEach(type => {
+    equipmentByType[type].sort((a, b) => a.name.localeCompare(b.name))
+  })
 
   return (
     <Box>
@@ -501,6 +524,16 @@ const CharacterEdit = () => {
                     />
                   }
                   label="Non-Player Character (NPC)"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Portrait Image URL"
+                  value={formData.characterImageUrl || ''}
+                  onChange={(e) => handleFormChange({ characterImageUrl: e.target.value })}
+                  placeholder="https://example.com/portrait.jpg"
+                  helperText="Enter a URL to an image for the character portrait"
                 />
               </Grid>
               <Grid item xs={12}>
@@ -658,30 +691,33 @@ const CharacterEdit = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {formData.skills.map((skill, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{skill.name}</TableCell>
-                        <TableCell>
-                          <FormControl size="small" sx={{ minWidth: 80 }}>
-                            <Select
-                              value={skill.dieValue}
-                              onChange={(e) => updateSkillDie(index, e.target.value)}
-                            >
-                              {SKILL_DIE_OPTIONS.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                  {opt}
-                                </MenuItem>
-                              ))}
-                            </Select>
-                          </FormControl>
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton size="small" onClick={() => removeSkill(index)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {[...(formData.skills || [])].sort((a, b) => a.name.localeCompare(b.name)).map((skill) => {
+                      const originalIndex = formData.skills!.findIndex(s => s.skillReferenceId === skill.skillReferenceId)
+                      return (
+                        <TableRow key={skill.skillReferenceId}>
+                          <TableCell>{skill.name}</TableCell>
+                          <TableCell>
+                            <FormControl size="small" sx={{ minWidth: 80 }}>
+                              <Select
+                                value={skill.dieValue}
+                                onChange={(e) => updateSkillDie(originalIndex, e.target.value)}
+                              >
+                                {SKILL_DIE_OPTIONS.map((opt) => (
+                                  <MenuItem key={opt} value={opt}>
+                                    {opt}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton size="small" onClick={() => removeSkill(originalIndex)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </Box>
@@ -747,17 +783,20 @@ const CharacterEdit = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {formData.edges.map((edge, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{edge.name}</TableCell>
-                        <TableCell>{edge.type}</TableCell>
-                        <TableCell align="right">
-                          <IconButton size="small" onClick={() => removeEdge(index)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {[...(formData.edges || [])].sort((a, b) => a.name.localeCompare(b.name)).map((edge) => {
+                      const originalIndex = formData.edges!.findIndex(e => e.edgeReferenceId === edge.edgeReferenceId && e.name === edge.name)
+                      return (
+                        <TableRow key={`${edge.edgeReferenceId}-${originalIndex}`}>
+                          <TableCell>{edge.name}</TableCell>
+                          <TableCell>{edge.type}</TableCell>
+                          <TableCell align="right">
+                            <IconButton size="small" onClick={() => removeEdge(originalIndex)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </Box>
@@ -823,17 +862,20 @@ const CharacterEdit = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {formData.hindrances.map((hindrance, index) => (
-                      <TableRow key={index}>
-                        <TableCell>{hindrance.name}</TableCell>
-                        <TableCell>{hindrance.severity}</TableCell>
-                        <TableCell align="right">
-                          <IconButton size="small" onClick={() => removeHindrance(index)}>
-                            <DeleteIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {[...(formData.hindrances || [])].sort((a, b) => a.name.localeCompare(b.name)).map((hindrance) => {
+                      const originalIndex = formData.hindrances!.findIndex(h => h.hindranceReferenceId === hindrance.hindranceReferenceId && h.name === hindrance.name)
+                      return (
+                        <TableRow key={`${hindrance.hindranceReferenceId}-${originalIndex}`}>
+                          <TableCell>{hindrance.name}</TableCell>
+                          <TableCell>{hindrance.severity}</TableCell>
+                          <TableCell align="right">
+                            <IconButton size="small" onClick={() => removeHindrance(originalIndex)}>
+                              <DeleteIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
                   </TableBody>
                 </Table>
               </Box>

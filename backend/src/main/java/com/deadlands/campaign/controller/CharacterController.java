@@ -185,6 +185,24 @@ public class CharacterController {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         character.setPlayer(user);
+
+        // Set bidirectional relationships for all child entities
+        if (character.getSkills() != null) {
+            character.getSkills().forEach(skill -> skill.setCharacter(character));
+        }
+        if (character.getEdges() != null) {
+            character.getEdges().forEach(edge -> edge.setCharacter(character));
+        }
+        if (character.getHindrances() != null) {
+            character.getHindrances().forEach(hindrance -> hindrance.setCharacter(character));
+        }
+        if (character.getEquipment() != null) {
+            character.getEquipment().forEach(equipment -> equipment.setCharacter(character));
+        }
+        if (character.getArcanePowers() != null) {
+            character.getArcanePowers().forEach(power -> power.setCharacter(character));
+        }
+
         Character savedCharacter = characterRepository.save(character);
         return ResponseEntity.ok(savedCharacter);
     }
@@ -205,18 +223,82 @@ public class CharacterController {
             return ResponseEntity.status(403).build();
         }
 
-        // Update character fields
+        // Update basic character fields
         character.setName(characterDetails.getName());
         character.setOccupation(characterDetails.getOccupation());
+        character.setIsNpc(characterDetails.getIsNpc());
+        character.setNotes(characterDetails.getNotes());
+        character.setCharacterImageUrl(characterDetails.getCharacterImageUrl());
+
+        // Update legacy attribute dies (deprecated, but still supported)
         character.setCognitionDie(characterDetails.getCognitionDie());
         character.setDeftnessDie(characterDetails.getDeftnessDie());
         character.setNimblenessDie(characterDetails.getNimblenessDie());
         character.setQuicknessDie(characterDetails.getQuicknessDie());
+
+        // Update Savage Worlds attribute dies
+        character.setAgilityDie(characterDetails.getAgilityDie());
         character.setSmartsDie(characterDetails.getSmartsDie());
         character.setSpiritDie(characterDetails.getSpiritDie());
         character.setStrengthDie(characterDetails.getStrengthDie());
         character.setVigorDie(characterDetails.getVigorDie());
-        character.setNotes(characterDetails.getNotes());
+
+        // Update derived stats
+        character.setPace(characterDetails.getPace());
+        character.setSize(characterDetails.getSize());
+        character.setGrit(characterDetails.getGrit());
+        character.setParry(characterDetails.getParry());
+        character.setToughness(characterDetails.getToughness());
+        character.setCharisma(characterDetails.getCharisma());
+
+        // Update XP tracking
+        character.setTotalXp(characterDetails.getTotalXp());
+        character.setSpentXp(characterDetails.getSpentXp());
+
+        // Update skills collection
+        character.getSkills().clear();
+        if (characterDetails.getSkills() != null) {
+            characterDetails.getSkills().forEach(skill -> {
+                skill.setCharacter(character);
+                character.getSkills().add(skill);
+            });
+        }
+
+        // Update edges collection
+        character.getEdges().clear();
+        if (characterDetails.getEdges() != null) {
+            characterDetails.getEdges().forEach(edge -> {
+                edge.setCharacter(character);
+                character.getEdges().add(edge);
+            });
+        }
+
+        // Update hindrances collection
+        character.getHindrances().clear();
+        if (characterDetails.getHindrances() != null) {
+            characterDetails.getHindrances().forEach(hindrance -> {
+                hindrance.setCharacter(character);
+                character.getHindrances().add(hindrance);
+            });
+        }
+
+        // Update equipment collection
+        character.getEquipment().clear();
+        if (characterDetails.getEquipment() != null) {
+            characterDetails.getEquipment().forEach(equipment -> {
+                equipment.setCharacter(character);
+                character.getEquipment().add(equipment);
+            });
+        }
+
+        // Update arcane powers collection
+        character.getArcanePowers().clear();
+        if (characterDetails.getArcanePowers() != null) {
+            characterDetails.getArcanePowers().forEach(power -> {
+                power.setCharacter(character);
+                character.getArcanePowers().add(power);
+            });
+        }
 
         Character updatedCharacter = characterRepository.save(character);
         return ResponseEntity.ok(updatedCharacter);
