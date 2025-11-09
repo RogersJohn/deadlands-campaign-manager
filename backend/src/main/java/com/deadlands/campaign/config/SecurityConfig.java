@@ -67,18 +67,18 @@ public class SecurityConfig {
                         // Allow OPTIONS requests for CORS preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // Public endpoints
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers("/api/reference/**").permitAll()
-                        .requestMatchers("/api/portraits/**").permitAll()
+                        .requestMatchers("/auth/login", "/auth/register").permitAll()
+                        .requestMatchers("/reference/**").permitAll()
+                        .requestMatchers("/portraits/**").permitAll()
                         // Authenticated endpoints
-                        .requestMatchers("/api/auth/change-password").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/characters", "/api/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
-                        .requestMatchers(HttpMethod.POST, "/api/characters").hasAnyRole("PLAYER", "GAME_MASTER")
-                        .requestMatchers(HttpMethod.PUT, "/api/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
-                        .requestMatchers(HttpMethod.DELETE, "/api/characters/**").hasRole("GAME_MASTER")
-                        .requestMatchers("/api/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers("/auth/change-password").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.POST, "/characters").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.PUT, "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.DELETE, "/characters/**").hasRole("GAME_MASTER")
+                        .requestMatchers("/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         // Admin endpoints
-                        .requestMatchers("/api/admin/**").hasRole("GAME_MASTER")
+                        .requestMatchers("/admin/**").hasRole("GAME_MASTER")
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 );
