@@ -63,3 +63,6 @@ Thumbs.db
 *.tmp
 *.temp
 *.jpg
+
+### Migration Scripts (contain production credentials) ###
+migrate-*.js
