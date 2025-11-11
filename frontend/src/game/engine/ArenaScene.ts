@@ -356,6 +356,14 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       this.updateMovementRange(); // Refresh to show/hide ranges
     });
 
+    // Listen for illumination changes from React (TYPE-SAFE)
+    this.gameEvents.on('illuminationChange', (payload) => {
+      console.log('[ArenaScene] Illumination changed:', payload.level);
+      if (this.combatManager) {
+        this.combatManager.setIllumination(payload.level);
+      }
+    });
+
     // Set up camera zoom controls
     this.setupZoomControls();
   }

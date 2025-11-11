@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Container, Typography, Paper, Box, Button, CircularProgress, Alert, Grid, Card, CardContent, CardMedia, CardActionArea, Radio, RadioGroup, FormControlLabel } from '@mui/material';
+import { WbSunny as SunIcon, WbTwilight as TwilightIcon, Brightness3 as MoonIcon, Brightness1 as DarkIcon } from '@mui/icons-material';
 import { GameCanvas } from './components/GameCanvas';
 import { WeaponSelection } from './components/WeaponSelection';
 import { ActionMenu } from './components/ActionMenu';
 import { StatusEffects } from './components/StatusEffects';
 import { CalledShotDialog } from './components/CalledShotDialog';
-import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget } from './types/GameTypes';
+import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
 import { wrapGameEvents, TypedGameEvents } from './events/GameEvents';
@@ -42,6 +43,7 @@ export function GameArena() {
   const [showWeaponRanges, setShowWeaponRanges] = useState(true);
   const [showMovementRanges, setShowMovementRanges] = useState(true);
   const [movementBudget, setMovementBudget] = useState({ current: 0, max: 0 });
+  const [illumination, setIllumination] = useState<Illumination>(Illumination.BRIGHT);
 
   // PHASE 1: Called shot dialog state
   const [calledShotDialogOpen, setCalledShotDialogOpen] = useState(false);
@@ -105,6 +107,14 @@ export function GameArena() {
       gameEvents.emit('movementRangesToggle', { enabled: showMovementRanges });
     }
   }, [gameEvents, showMovementRanges]);
+
+  // Emit illumination changes to Phaser (TYPE-SAFE)
+  useEffect(() => {
+    if (gameEvents) {
+      console.log('Emitting illumination to Phaser:', illumination);
+      gameEvents.emit('illuminationChange', { level: illumination });
+    }
+  }, [gameEvents, illumination]);
 
   // Fetch characters on component mount
   useEffect(() => {
@@ -479,6 +489,67 @@ export function GameArena() {
                   </RadioGroup>
                 </Box>
               </Box>
+            </Paper>
+
+            {/* Illumination Control */}
+            <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                {illumination === Illumination.BRIGHT && <SunIcon sx={{ fontSize: '16px', color: '#FFD700' }} />}
+                {illumination === Illumination.DIM && <TwilightIcon sx={{ fontSize: '16px', color: '#FF8C00' }} />}
+                {illumination === Illumination.DARK && <MoonIcon sx={{ fontSize: '16px', color: '#4169E1' }} />}
+                {illumination === Illumination.PITCH_BLACK && <DarkIcon sx={{ fontSize: '16px', color: '#696969' }} />}
+                <Typography sx={{ fontSize: '10px', color: '#d4b896' }}>Illumination:</Typography>
+              </Box>
+              <RadioGroup
+                value={illumination}
+                onChange={(e) => setIllumination(e.target.value as Illumination)}
+                sx={{ gap: 0.5 }}
+              >
+                <FormControlLabel
+                  value={Illumination.BRIGHT}
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#FFD700' } }} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <SunIcon sx={{ fontSize: '14px', color: '#FFD700' }} />
+                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Bright (0)</Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+                <FormControlLabel
+                  value={Illumination.DIM}
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#FF8C00' } }} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <TwilightIcon sx={{ fontSize: '14px', color: '#FF8C00' }} />
+                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Dim (-1)</Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+                <FormControlLabel
+                  value={Illumination.DARK}
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#4169E1' } }} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <MoonIcon sx={{ fontSize: '14px', color: '#4169E1' }} />
+                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Dark (-2)</Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+                <FormControlLabel
+                  value={Illumination.PITCH_BLACK}
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#696969' } }} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <DarkIcon sx={{ fontSize: '14px', color: '#696969' }} />
+                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Pitch Black (-4)</Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+              </RadioGroup>
             </Paper>
 
             {/* Scrollable Map Container */}

@@ -9,7 +9,7 @@
  * - Single source of truth for all game events
  */
 
-import { Equipment, CombatLogEntry, DiceRollEvent, CombatAction, CalledShotTarget } from '../types/GameTypes';
+import { Equipment, CombatLogEntry, DiceRollEvent, CombatAction, CalledShotTarget, Illumination } from '../types/GameTypes';
 import { TurnPhase } from '../engine/CombatManager';
 
 // =============================================================================
@@ -39,6 +39,10 @@ export interface WeaponRangesToggleEvent {
 
 export interface MovementRangesToggleEvent {
   enabled: boolean;
+}
+
+export interface IlluminationChangeEvent {
+  level: Illumination;
 }
 
 // =============================================================================
@@ -89,6 +93,7 @@ export interface GameEventMap {
   'cameraFollowToggle': CameraFollowToggleEvent;
   'weaponRangesToggle': WeaponRangesToggleEvent;
   'movementRangesToggle': MovementRangesToggleEvent;
+  'illuminationChange': IlluminationChangeEvent;
 
   // Phaser → React
   'combatLogUpdate': CombatLogUpdateEvent;
