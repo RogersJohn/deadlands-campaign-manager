@@ -13,6 +13,9 @@ export const CALLED_SHOT_MODIFIERS = {
   tiny: { toHit: -4, damageBonus: 0, description: 'Tiny Target' },
 };
 
+// Combat log size limit to prevent unbounded memory growth
+const MAX_COMBAT_LOG_ENTRIES = 100;
+
 export class CombatManager {
   private turnNumber = 1;
   private currentPhase: TurnPhase = 'player';
@@ -122,6 +125,12 @@ export class CombatManager {
       type,
     };
     this.combatLog.push(entry);
+
+    // Prevent unbounded growth - keep only last N entries
+    if (this.combatLog.length > MAX_COMBAT_LOG_ENTRIES) {
+      this.combatLog = this.combatLog.slice(-MAX_COMBAT_LOG_ENTRIES);
+    }
+
     this.onLogUpdate([...this.combatLog]);
   }
 

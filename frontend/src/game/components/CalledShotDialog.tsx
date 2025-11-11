@@ -12,6 +12,40 @@ import {
 } from '@mui/material';
 import { CalledShotTarget } from '../types/GameTypes';
 
+// Deadlands Game Arena theme colors (distinct from main app theme)
+const GAME_COLORS = {
+  background: {
+    dark: '#1a0f08',      // Darkest background
+    paper: '#2d1b0e',     // Dialog/card background
+  },
+  border: {
+    primary: '#8b4513',   // Saddle brown
+    secondary: '#4a3425', // Dark brown
+  },
+  text: {
+    primary: '#f5e6d3',   // Cream
+    secondary: '#d4b896', // Tan
+    muted: '#8b7355',     // Muted brown
+  },
+  accent: {
+    selected: 'rgba(65, 105, 225, 0.2)', // Blue highlight
+    hover: 'rgba(139, 69, 19, 0.2)',     // Brown hover
+  },
+  status: {
+    positive: '#44ff44',  // Green
+    negative: '#ff6666',  // Red
+  },
+} as const;
+
+const DIALOG_SIZES = {
+  minWidth: 400,
+  titleFontSize: '20px',
+  labelFontSize: '12px',
+  optionFontSize: '13px',
+  modifierFontSize: '11px',
+  descFontSize: '10px',
+} as const;
+
 interface CalledShotDialogProps {
   open: boolean;
   onSelect: (target: CalledShotTarget) => void;
@@ -73,18 +107,18 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
       onClose={onCancel}
       PaperProps={{
         sx: {
-          backgroundColor: '#2d1b0e',
-          border: '2px solid #8b4513',
-          minWidth: 400,
+          backgroundColor: GAME_COLORS.background.paper,
+          border: `2px solid ${GAME_COLORS.border.primary}`,
+          minWidth: DIALOG_SIZES.minWidth,
         },
       }}
     >
       <DialogTitle
         sx={{
-          color: '#f5e6d3',
+          color: GAME_COLORS.text.primary,
           fontFamily: 'Rye, serif',
-          fontSize: '20px',
-          borderBottom: '1px solid #8b4513',
+          fontSize: DIALOG_SIZES.titleFontSize,
+          borderBottom: `1px solid ${GAME_COLORS.border.primary}`,
           pb: 1,
         }}
       >
@@ -95,8 +129,8 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
           <FormLabel
             component="legend"
             sx={{
-              color: '#d4b896',
-              fontSize: '12px',
+              color: GAME_COLORS.text.secondary,
+              fontSize: DIALOG_SIZES.labelFontSize,
               mb: 1,
             }}
           >
@@ -112,12 +146,14 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
                 sx={{
                   mb: 1,
                   p: 1.5,
-                  backgroundColor: selectedTarget === option.value ? 'rgba(65, 105, 225, 0.2)' : '#1a0f08',
-                  border: '1px solid #4a3425',
+                  backgroundColor: selectedTarget === option.value
+                    ? GAME_COLORS.accent.selected
+                    : GAME_COLORS.background.dark,
+                  border: `1px solid ${GAME_COLORS.border.secondary}`,
                   borderRadius: 1,
                   cursor: 'pointer',
                   '&:hover': {
-                    backgroundColor: 'rgba(139, 69, 19, 0.2)',
+                    backgroundColor: GAME_COLORS.accent.hover,
                   },
                 }}
                 onClick={() => setSelectedTarget(option.value)}
@@ -125,8 +161,8 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Typography
                     sx={{
-                      color: '#f5e6d3',
-                      fontSize: '13px',
+                      color: GAME_COLORS.text.primary,
+                      fontSize: DIALOG_SIZES.optionFontSize,
                       fontWeight: 'bold',
                     }}
                   >
@@ -135,8 +171,8 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
                   <Box sx={{ display: 'flex', gap: 1 }}>
                     <Typography
                       sx={{
-                        color: '#ff6666',
-                        fontSize: '11px',
+                        color: GAME_COLORS.status.negative,
+                        fontSize: DIALOG_SIZES.modifierFontSize,
                         fontWeight: 'bold',
                       }}
                     >
@@ -145,8 +181,8 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
                     {option.bonus > 0 && (
                       <Typography
                         sx={{
-                          color: '#44ff44',
-                          fontSize: '11px',
+                          color: GAME_COLORS.status.positive,
+                          fontSize: DIALOG_SIZES.modifierFontSize,
                           fontWeight: 'bold',
                         }}
                       >
@@ -157,8 +193,8 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
                 </Box>
                 <Typography
                   sx={{
-                    color: '#8b7355',
-                    fontSize: '10px',
+                    color: GAME_COLORS.text.muted,
+                    fontSize: DIALOG_SIZES.descFontSize,
                     mt: 0.5,
                   }}
                 >
@@ -175,8 +211,8 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
             onClick={onCancel}
             fullWidth
             sx={{
-              color: '#d4b896',
-              borderColor: '#8b4513',
+              color: GAME_COLORS.text.secondary,
+              borderColor: GAME_COLORS.border.primary,
               '&:hover': {
                 borderColor: '#a0522d',
                 backgroundColor: 'rgba(139, 69, 19, 0.1)',
@@ -190,8 +226,8 @@ export const CalledShotDialog: React.FC<CalledShotDialogProps> = ({
             onClick={handleConfirm}
             fullWidth
             sx={{
-              backgroundColor: '#8b4513',
-              color: '#f5e6d3',
+              backgroundColor: GAME_COLORS.border.primary,
+              color: GAME_COLORS.text.primary,
               fontWeight: 'bold',
               '&:hover': {
                 backgroundColor: '#a0522d',
