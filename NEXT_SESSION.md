@@ -2,12 +2,26 @@
 
 ## Primary Objectives
 
-### 1. Verify Production Application Functionality
+### 1. Deploy Application to Railway
 **Priority: CRITICAL**
 
-The database migration is complete, but the application hasn't been tested with the migrated data.
+**CURRENT STATUS:** Database migration complete, but APPLICATION SERVICES NOT DEPLOYED.
+Testing URL https://deadlands-campaign-manager-production.up.railway.app returns "Application not found".
 
-**Tasks:**
+**Root Cause:** Railway services (frontend/backend) have not been created or deployed yet. Only the database exists.
+
+**Required Actions:**
+1. **Create Railway Services:**
+   - Create frontend service (connect to GitHub, set Dockerfile path: `frontend/Dockerfile`)
+   - Create backend service (connect to GitHub, set Dockerfile path: `backend/Dockerfile`)
+
+2. **Configure Environment Variables:**
+   - Frontend: VITE_API_URL
+   - Backend: DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD, CORS_ORIGINS, SPRING_PROFILES_ACTIVE
+
+3. **Trigger Initial Deployments**
+
+4. **Then Test:**
 - Access production at deadlands-campaign-manager-production.up.railway.app
 - Test user login with migrated credentials (try gamemaster and JohnDoyle)
 - Verify all 9 characters appear in character list
