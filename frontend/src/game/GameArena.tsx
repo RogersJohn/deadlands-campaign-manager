@@ -298,26 +298,144 @@ export function GameArena() {
       ) : (
         /* Game Canvas */
         <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
-          {/* Left Column - Weapons & Dice Log */}
+          {/* Left Column - Environment Controls & Dice Log */}
           <Box sx={{ width: 220, display: 'flex', flexDirection: 'column', gap: 2, flexShrink: 0 }}>
-            {/* Weapon Selection */}
-            <Paper sx={{ p: 2, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
-              <Typography
-                sx={{
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  color: '#f5e6d3',
-                  mb: 1,
-                  fontFamily: 'Rye, serif',
-                }}
+            {/* Camera Follow Toggle */}
+            <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
+              <Typography sx={{ fontSize: '10px', color: '#d4b896', mb: 0.5 }}>Camera:</Typography>
+              <RadioGroup
+                row
+                value={cameraFollowEnabled ? 'follow' : 'manual'}
+                onChange={(e) => setCameraFollowEnabled(e.target.value === 'follow')}
+                sx={{ gap: 0.5 }}
               >
-                ⚔️ Weapons
-              </Typography>
-              <WeaponSelection
-                weapons={selectedCharacter?.equipment || []}
-                selectedWeapon={selectedWeapon}
-                onSelectWeapon={handleSelectWeapon}
-              />
+                <FormControlLabel
+                  value="follow"
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#4169e1' } }} />}
+                  label={<Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Follow</Typography>}
+                  sx={{ m: 0 }}
+                />
+                <FormControlLabel
+                  value="manual"
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#4169e1' } }} />}
+                  label={<Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Manual</Typography>}
+                  sx={{ m: 0 }}
+                />
+              </RadioGroup>
+            </Paper>
+
+            {/* Range Display Toggles */}
+            <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                {/* Weapon Ranges Toggle */}
+                <Box>
+                  <Typography sx={{ fontSize: '10px', color: '#d4b896', mb: 0.5 }}>Weapon Ranges:</Typography>
+                  <RadioGroup
+                    row
+                    value={showWeaponRanges ? 'show' : 'hide'}
+                    onChange={(e) => setShowWeaponRanges(e.target.value === 'show')}
+                    sx={{ gap: 0.5 }}
+                  >
+                    <FormControlLabel
+                      value="show"
+                      control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#44ff44' } }} />}
+                      label={<Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Show</Typography>}
+                      sx={{ m: 0 }}
+                    />
+                    <FormControlLabel
+                      value="hide"
+                      control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#ff4444' } }} />}
+                      label={<Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Hide</Typography>}
+                      sx={{ m: 0 }}
+                    />
+                  </RadioGroup>
+                </Box>
+
+                {/* Movement Ranges Toggle */}
+                <Box>
+                  <Typography sx={{ fontSize: '10px', color: '#d4b896', mb: 0.5 }}>Movement Ranges:</Typography>
+                  <RadioGroup
+                    row
+                    value={showMovementRanges ? 'show' : 'hide'}
+                    onChange={(e) => setShowMovementRanges(e.target.value === 'show')}
+                    sx={{ gap: 0.5 }}
+                  >
+                    <FormControlLabel
+                      value="show"
+                      control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#4169e1' } }} />}
+                      label={<Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Show</Typography>}
+                      sx={{ m: 0 }}
+                    />
+                    <FormControlLabel
+                      value="hide"
+                      control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#ff4444' } }} />}
+                      label={<Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Hide</Typography>}
+                      sx={{ m: 0 }}
+                    />
+                  </RadioGroup>
+                </Box>
+              </Box>
+            </Paper>
+
+            {/* Illumination Control */}
+            <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
+                {illumination === Illumination.BRIGHT && <SunIcon sx={{ fontSize: '14px', color: '#FFD700' }} />}
+                {illumination === Illumination.DIM && <TwilightIcon sx={{ fontSize: '14px', color: '#FF8C00' }} />}
+                {illumination === Illumination.DARK && <MoonIcon sx={{ fontSize: '14px', color: '#4169E1' }} />}
+                {illumination === Illumination.PITCH_BLACK && <DarkIcon sx={{ fontSize: '14px', color: '#696969' }} />}
+                <Typography sx={{ fontSize: '10px', color: '#d4b896' }}>Illumination:</Typography>
+              </Box>
+              <RadioGroup
+                value={illumination}
+                onChange={(e) => setIllumination(e.target.value as Illumination)}
+                sx={{ gap: 0.5 }}
+              >
+                <FormControlLabel
+                  value={Illumination.BRIGHT}
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#FFD700' } }} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <SunIcon sx={{ fontSize: '12px', color: '#FFD700' }} />
+                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Bright (0)</Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+                <FormControlLabel
+                  value={Illumination.DIM}
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#FF8C00' } }} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <TwilightIcon sx={{ fontSize: '12px', color: '#FF8C00' }} />
+                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Dim (-1)</Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+                <FormControlLabel
+                  value={Illumination.DARK}
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#4169E1' } }} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <MoonIcon sx={{ fontSize: '12px', color: '#4169E1' }} />
+                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Dark (-2)</Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+                <FormControlLabel
+                  value={Illumination.PITCH_BLACK}
+                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#696969' } }} />}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <DarkIcon sx={{ fontSize: '12px', color: '#696969' }} />
+                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Pitch Black (-4)</Typography>
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+              </RadioGroup>
             </Paper>
 
             {/* Dice Log */}
@@ -424,134 +542,6 @@ export function GameArena() {
 
           {/* Center Column - Game Canvas */}
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-            {/* Camera Follow Toggle */}
-            <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
-              <RadioGroup
-                row
-                value={cameraFollowEnabled ? 'follow' : 'manual'}
-                onChange={(e) => setCameraFollowEnabled(e.target.value === 'follow')}
-              >
-                <FormControlLabel
-                  value="follow"
-                  control={<Radio size="small" sx={{ color: '#8b4513', '&.Mui-checked': { color: '#4169e1' } }} />}
-                  label={<Typography sx={{ fontSize: '12px', color: '#f5e6d3' }}>Follow Player</Typography>}
-                />
-                <FormControlLabel
-                  value="manual"
-                  control={<Radio size="small" sx={{ color: '#8b4513', '&.Mui-checked': { color: '#4169e1' } }} />}
-                  label={<Typography sx={{ fontSize: '12px', color: '#f5e6d3' }}>Manual Camera</Typography>}
-                />
-              </RadioGroup>
-            </Paper>
-
-            {/* Range Display Toggles */}
-            <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                {/* Weapon Ranges Toggle */}
-                <Box>
-                  <Typography sx={{ fontSize: '10px', color: '#d4b896', mb: 0.5 }}>Weapon Ranges:</Typography>
-                  <RadioGroup
-                    row
-                    value={showWeaponRanges ? 'show' : 'hide'}
-                    onChange={(e) => setShowWeaponRanges(e.target.value === 'show')}
-                  >
-                    <FormControlLabel
-                      value="show"
-                      control={<Radio size="small" sx={{ color: '#8b4513', '&.Mui-checked': { color: '#44ff44' } }} />}
-                      label={<Typography sx={{ fontSize: '11px', color: '#f5e6d3' }}>Show</Typography>}
-                    />
-                    <FormControlLabel
-                      value="hide"
-                      control={<Radio size="small" sx={{ color: '#8b4513', '&.Mui-checked': { color: '#ff4444' } }} />}
-                      label={<Typography sx={{ fontSize: '11px', color: '#f5e6d3' }}>Hide</Typography>}
-                    />
-                  </RadioGroup>
-                </Box>
-
-                {/* Movement Ranges Toggle */}
-                <Box>
-                  <Typography sx={{ fontSize: '10px', color: '#d4b896', mb: 0.5 }}>Movement Ranges:</Typography>
-                  <RadioGroup
-                    row
-                    value={showMovementRanges ? 'show' : 'hide'}
-                    onChange={(e) => setShowMovementRanges(e.target.value === 'show')}
-                  >
-                    <FormControlLabel
-                      value="show"
-                      control={<Radio size="small" sx={{ color: '#8b4513', '&.Mui-checked': { color: '#4169e1' } }} />}
-                      label={<Typography sx={{ fontSize: '11px', color: '#f5e6d3' }}>Show</Typography>}
-                    />
-                    <FormControlLabel
-                      value="hide"
-                      control={<Radio size="small" sx={{ color: '#8b4513', '&.Mui-checked': { color: '#ff4444' } }} />}
-                      label={<Typography sx={{ fontSize: '11px', color: '#f5e6d3' }}>Hide</Typography>}
-                    />
-                  </RadioGroup>
-                </Box>
-              </Box>
-            </Paper>
-
-            {/* Illumination Control */}
-            <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5 }}>
-                {illumination === Illumination.BRIGHT && <SunIcon sx={{ fontSize: '16px', color: '#FFD700' }} />}
-                {illumination === Illumination.DIM && <TwilightIcon sx={{ fontSize: '16px', color: '#FF8C00' }} />}
-                {illumination === Illumination.DARK && <MoonIcon sx={{ fontSize: '16px', color: '#4169E1' }} />}
-                {illumination === Illumination.PITCH_BLACK && <DarkIcon sx={{ fontSize: '16px', color: '#696969' }} />}
-                <Typography sx={{ fontSize: '10px', color: '#d4b896' }}>Illumination:</Typography>
-              </Box>
-              <RadioGroup
-                value={illumination}
-                onChange={(e) => setIllumination(e.target.value as Illumination)}
-                sx={{ gap: 0.5 }}
-              >
-                <FormControlLabel
-                  value={Illumination.BRIGHT}
-                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#FFD700' } }} />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <SunIcon sx={{ fontSize: '14px', color: '#FFD700' }} />
-                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Bright (0)</Typography>
-                    </Box>
-                  }
-                  sx={{ m: 0 }}
-                />
-                <FormControlLabel
-                  value={Illumination.DIM}
-                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#FF8C00' } }} />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <TwilightIcon sx={{ fontSize: '14px', color: '#FF8C00' }} />
-                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Dim (-1)</Typography>
-                    </Box>
-                  }
-                  sx={{ m: 0 }}
-                />
-                <FormControlLabel
-                  value={Illumination.DARK}
-                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#4169E1' } }} />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <MoonIcon sx={{ fontSize: '14px', color: '#4169E1' }} />
-                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Dark (-2)</Typography>
-                    </Box>
-                  }
-                  sx={{ m: 0 }}
-                />
-                <FormControlLabel
-                  value={Illumination.PITCH_BLACK}
-                  control={<Radio size="small" sx={{ py: 0, color: '#8b4513', '&.Mui-checked': { color: '#696969' } }} />}
-                  label={
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <DarkIcon sx={{ fontSize: '14px', color: '#696969' }} />
-                      <Typography sx={{ fontSize: '10px', color: '#f5e6d3' }}>Pitch Black (-4)</Typography>
-                    </Box>
-                  }
-                  sx={{ m: 0 }}
-                />
-              </RadioGroup>
-            </Paper>
-
             {/* Scrollable Map Container */}
             <Box
               sx={{
@@ -696,6 +686,17 @@ export function GameArena() {
                 character={selectedCharacter}
               />
             </Paper>
+
+            {/* Weapon Selection */}
+            {selectedCharacter && (
+              <Paper sx={{ p: 2, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
+                <WeaponSelection
+                  character={selectedCharacter}
+                  selectedWeapon={selectedWeapon}
+                  onSelectWeapon={handleSelectWeapon}
+                />
+              </Paper>
+            )}
 
             {/* Health Bar */}
             <Paper
