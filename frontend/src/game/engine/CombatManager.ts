@@ -213,20 +213,27 @@ export class CombatManager {
 
     if (attackRoll.total < targetNumber) {
       this.addLog(`Miss! (Rolled ${attackRoll.total} vs ${targetText})`, 'miss');
+
+      // BUG FIX: Clear aim and called shot even on miss
+      this.playerAiming = false;
+      this.calledShotTarget = null;
+
       return { hit: false, rollDetails: `🎲 ${attackRoll.total}` };
     }
 
     this.addLog(`Hit! (Rolled ${attackRoll.total} vs ${targetText})${attackRoll.raises > 0 ? ` with ${attackRoll.raises} raise(s)!` : ''}`, 'success');
 
     // Step 2: Roll damage using Savage Worlds damage calculation
+    // BUG FIX: Correct parameter order (was: strengthDie, damage, raises)
     const damageResult = calculateDamageWithRaises(
-      this.character.strengthDie || '1d6',
-      weapon.damage || 'Str+d4',
-      attackRoll.raises
+      weapon.damage || 'Str+d4',        // baseDamage
+      attackRoll.raises,                 // attackRaises
+      this.character.strengthDie || '1d6' // strengthDie
     );
 
     // PHASE 1: Apply called shot damage bonus
-    let finalDamage = damageResult.totalDamage;
+    // BUG FIX: damageResult.total, not totalDamage
+    let finalDamage = damageResult.total;
     if (calledShotMod && calledShotMod.damageBonus > 0) {
       finalDamage += calledShotMod.damageBonus;
       this.addLog(`${calledShotMod.description}! (+${calledShotMod.damageBonus} damage)`, 'success');
@@ -240,7 +247,7 @@ export class CombatManager {
         roller: this.character.name,
         purpose: 'Damage',
         dieType: weapon.damage || 'Str+d4',
-        rolls: [damageResult.totalDamage],
+        rolls: [damageResult.total],
         total: finalDamage,
         exploded: false,
       });
@@ -304,15 +311,17 @@ export class CombatManager {
     this.addLog(`${enemy.name} hits! (Rolled ${attackRoll.total} vs Parry ${this.character.parry})${attackRoll.raises > 0 ? ` with ${attackRoll.raises} raise(s)!` : ''}`, 'damage');
 
     // Roll damage
+    // BUG FIX: Correct parameter order
     const damageResult = calculateDamageWithRaises(
-      enemy.strengthDie,
-      'Str', // Just strength for unarmed
-      attackRoll.raises
+      'Str',              // baseDamage
+      attackRoll.raises,  // attackRaises
+      enemy.strengthDie   // strengthDie
     );
 
     // Compare to player Toughness
-    const woundsDealt = damageResult.totalDamage >= (this.character.toughness || 2)
-      ? Math.floor((damageResult.totalDamage - (this.character.toughness || 2)) / 4) + 1
+    // BUG FIX: damageResult.total, not totalDamage
+    const woundsDealt = damageResult.total >= (this.character.toughness || 2)
+      ? Math.floor((damageResult.total - (this.character.toughness || 2)) / 4) + 1
       : 0;
 
     if (woundsDealt > 0) {
@@ -321,7 +330,7 @@ export class CombatManager {
       this.playerHealth = Math.max(0, this.playerHealth - actualDamage);
 
       this.addLog(
-        `💥 Damage: ${damageResult.totalDamage} vs Toughness ${this.character.toughness} = ${woundsDealt} wound(s)!`,
+        `💥 Damage: ${damageResult.total} vs Toughness ${this.character.toughness} = ${woundsDealt} wound(s)!`,
         'damage'
       );
       this.addLog(`You: ${this.playerHealth}/${this.playerMaxHealth} HP | Wounds: ${this.playerWounds}`, 'damage');
@@ -333,13 +342,13 @@ export class CombatManager {
       }
 
       return true;
-    } else if (damageResult.totalDamage >= (this.character.toughness || 2) - 4) {
+    } else if (damageResult.total >= (this.character.toughness || 2) - 4) {
       // Even if no wounds, they might be shaken
       this.playerShaken = true;
-      this.addLog(`You are SHAKEN! (Damage ${damageResult.totalDamage} vs Toughness ${this.character.toughness})`, 'damage');
+      this.addLog(`You are SHAKEN! (Damage ${damageResult.total} vs Toughness ${this.character.toughness})`, 'damage');
       return true;
     } else {
-      this.addLog(`No effect! (Damage ${damageResult.totalDamage} vs Toughness ${this.character.toughness})`, 'miss');
+      this.addLog(`No effect! (Damage ${damageResult.total} vs Toughness ${this.character.toughness})`, 'miss');
       return false;
     }
   }

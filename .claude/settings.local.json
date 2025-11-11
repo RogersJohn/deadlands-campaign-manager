@@ -48,7 +48,8 @@
       "Bash(npm run build:*)",
       "Bash(railway logs:*)",
       "Bash(railway domain:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []
