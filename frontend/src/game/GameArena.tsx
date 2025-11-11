@@ -223,11 +223,12 @@ export function GameArena() {
                       {character.characterImageUrl ? (
                         <CardMedia
                           component="img"
-                          height="140"
+                          height="200"
                           image={character.characterImageUrl}
                           alt={character.name}
                           sx={{
                             objectFit: 'cover',
+                            objectPosition: 'top',
                             backgroundColor: '#1a0f08',
                           }}
                           onError={(e: any) => {
@@ -238,7 +239,7 @@ export function GameArena() {
                       ) : (
                         <Box
                           sx={{
-                            height: 140,
+                            height: 200,
                             backgroundColor: '#1a0f08',
                             display: 'flex',
                             alignItems: 'center',
