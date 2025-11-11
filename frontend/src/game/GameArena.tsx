@@ -8,6 +8,7 @@ import { CalledShotDialog } from './components/CalledShotDialog';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget } from './types/GameTypes';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
+import { wrapGameEvents, TypedGameEvents } from './events/GameEvents';
 
 interface CombatState {
   playerHealth: number;
@@ -36,6 +37,7 @@ export function GameArena() {
   const [selectedWeapon, setSelectedWeapon] = useState<Equipment | undefined>();
   const [remainingActions, setRemainingActions] = useState(1);
   const [phaserGameRef, setPhaserGameRef] = useState<any>(null);
+  const [gameEvents, setGameEvents] = useState<TypedGameEvents | null>(null);
   const [cameraFollowEnabled, setCameraFollowEnabled] = useState(true);
   const [showWeaponRanges, setShowWeaponRanges] = useState(true);
   const [showMovementRanges, setShowMovementRanges] = useState(true);
@@ -68,39 +70,41 @@ export function GameArena() {
   const handlePhaserGameReady = useCallback((game: any) => {
     console.log('Phaser game ready');
     setPhaserGameRef(game);
+    // Wrap game events with type-safe wrapper
+    setGameEvents(wrapGameEvents(game));
   }, []);
 
-  // Emit weapon changes to Phaser when weapon or game ref changes
+  // Emit weapon changes to Phaser when weapon or game ref changes (TYPE-SAFE)
   useEffect(() => {
-    if (phaserGameRef && selectedWeapon) {
+    if (gameEvents && selectedWeapon) {
       console.log('Emitting weapon to Phaser:', selectedWeapon.name);
-      phaserGameRef.events.emit('weaponSelected', selectedWeapon);
+      gameEvents.emit('weaponSelected', { weapon: selectedWeapon });
     }
-  }, [phaserGameRef, selectedWeapon]);
+  }, [gameEvents, selectedWeapon]);
 
-  // Emit camera follow changes to Phaser
+  // Emit camera follow changes to Phaser (TYPE-SAFE)
   useEffect(() => {
-    if (phaserGameRef) {
+    if (gameEvents) {
       console.log('Emitting camera follow to Phaser:', cameraFollowEnabled);
-      phaserGameRef.events.emit('cameraFollowToggle', cameraFollowEnabled);
+      gameEvents.emit('cameraFollowToggle', { enabled: cameraFollowEnabled });
     }
-  }, [phaserGameRef, cameraFollowEnabled]);
+  }, [gameEvents, cameraFollowEnabled]);
 
-  // Emit weapon ranges toggle changes to Phaser
+  // Emit weapon ranges toggle changes to Phaser (TYPE-SAFE)
   useEffect(() => {
-    if (phaserGameRef) {
+    if (gameEvents) {
       console.log('Emitting weapon ranges toggle to Phaser:', showWeaponRanges);
-      phaserGameRef.events.emit('weaponRangesToggle', showWeaponRanges);
+      gameEvents.emit('weaponRangesToggle', { enabled: showWeaponRanges });
     }
-  }, [phaserGameRef, showWeaponRanges]);
+  }, [gameEvents, showWeaponRanges]);
 
-  // Emit movement ranges toggle changes to Phaser
+  // Emit movement ranges toggle changes to Phaser (TYPE-SAFE)
   useEffect(() => {
-    if (phaserGameRef) {
+    if (gameEvents) {
       console.log('Emitting movement ranges toggle to Phaser:', showMovementRanges);
-      phaserGameRef.events.emit('movementRangesToggle', showMovementRanges);
+      gameEvents.emit('movementRangesToggle', { enabled: showMovementRanges });
     }
-  }, [phaserGameRef, showMovementRanges]);
+  }, [gameEvents, showMovementRanges]);
 
   // Fetch characters on component mount
   useEffect(() => {
@@ -155,20 +159,20 @@ export function GameArena() {
       return;
     }
 
-    // Emit action event to Phaser game
-    if (phaserGameRef && remainingActions > 0) {
-      phaserGameRef.events.emit('playerActionSelected', { action, power });
+    // Emit action event to Phaser game (TYPE-SAFE)
+    if (gameEvents && remainingActions > 0) {
+      gameEvents.emit('playerActionSelected', { action, power });
       setRemainingActions(prev => prev - 1);
     }
   };
 
-  // PHASE 1: Handle called shot target selection
+  // PHASE 1: Handle called shot target selection (TYPE-SAFE)
   const handleCalledShotSelect = (target: CalledShotTarget) => {
     setCalledShotDialogOpen(false);
 
     // Send target to Phaser game via CombatManager
-    if (phaserGameRef) {
-      phaserGameRef.events.emit('calledShotSelected', target);
+    if (gameEvents) {
+      gameEvents.emit('calledShotSelected', { target });
     }
 
     console.log('Called shot target selected:', target);

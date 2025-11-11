@@ -1,8 +1,12 @@
 import Phaser from 'phaser';
 import { GameCharacter, GameEnemy, CombatLogEntry, Equipment } from '../types/GameTypes';
 import { CombatManager, TurnPhase } from './CombatManager';
+import { TypedGameEvents, wrapSceneEvents } from '../events/GameEvents';
 
 export class ArenaScene extends Phaser.Scene {
+  // Type-safe event bus (wraps game.events, not scene.events)
+  private gameEvents!: TypedGameEvents;
+
   // Grid settings
   private readonly TILE_SIZE = 32; // 32x32 pixel tiles
   private readonly GRID_WIDTH = 200; // 200 tiles wide
@@ -300,33 +304,36 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     // Show initial movement range
     this.updateMovementRange();
 
-    // Listen for action button events from React
-    this.game.events.on('playerActionSelected', (action: any) => {
-      this.handlePlayerAction(action);
+    // Initialize type-safe event bus
+    this.gameEvents = wrapSceneEvents(this);
+
+    // Listen for action button events from React (TYPE-SAFE)
+    this.gameEvents.on('playerActionSelected', (payload) => {
+      this.handlePlayerAction(payload);
     });
 
-    // PHASE 1: Listen for called shot target selection from React
-    this.game.events.on('calledShotSelected', (target: any) => {
+    // PHASE 1: Listen for called shot target selection from React (TYPE-SAFE)
+    this.gameEvents.on('calledShotSelected', (payload) => {
       if (this.combatManager) {
-        this.combatManager.setCalledShotTarget(target);
-        this.game.events.emit('combatLogUpdate', [...this.combatManager.getCombatLog()]);
+        this.combatManager.setCalledShotTarget(payload.target);
+        this.gameEvents.emit('combatLogUpdate', { log: [...this.combatManager.getCombatLog()] });
       }
-      console.log('[ArenaScene] Called shot target selected:', target);
+      console.log('[ArenaScene] Called shot target selected:', payload.target);
     });
 
-    // Listen for weapon selection changes from React
-    this.game.events.on('weaponSelected', (weapon: Equipment) => {
-      console.log('[ArenaScene] Weapon object received:', JSON.stringify(weapon, null, 2));
-      this.selectedWeapon = weapon;
+    // Listen for weapon selection changes from React (TYPE-SAFE)
+    this.gameEvents.on('weaponSelected', (payload) => {
+      console.log('[ArenaScene] Weapon object received:', JSON.stringify(payload.weapon, null, 2));
+      this.selectedWeapon = payload.weapon;
       console.log('[ArenaScene] this.selectedWeapon after assignment:', JSON.stringify(this.selectedWeapon, null, 2));
       this.updateMovementRange(); // Refresh range indicators
     });
 
-    // Listen for camera follow toggle from React
-    this.game.events.on('cameraFollowToggle', (enabled: boolean) => {
-      console.log('[ArenaScene] Camera follow toggled:', enabled);
-      this.cameraFollowEnabled = enabled;
-      if (enabled && this.player) {
+    // Listen for camera follow toggle from React (TYPE-SAFE)
+    this.gameEvents.on('cameraFollowToggle', (payload) => {
+      console.log('[ArenaScene] Camera follow toggled:', payload.enabled);
+      this.cameraFollowEnabled = payload.enabled;
+      if (payload.enabled && this.player) {
         // Re-enable camera follow
         this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
       } else {
@@ -335,17 +342,17 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       }
     });
 
-    // Listen for weapon ranges toggle from React
-    this.game.events.on('weaponRangesToggle', (enabled: boolean) => {
-      console.log('[ArenaScene] Weapon ranges display toggled:', enabled);
-      this.showWeaponRanges = enabled;
+    // Listen for weapon ranges toggle from React (TYPE-SAFE)
+    this.gameEvents.on('weaponRangesToggle', (payload) => {
+      console.log('[ArenaScene] Weapon ranges display toggled:', payload.enabled);
+      this.showWeaponRanges = payload.enabled;
       this.updateMovementRange(); // Refresh to show/hide ranges
     });
 
-    // Listen for movement ranges toggle from React
-    this.game.events.on('movementRangesToggle', (enabled: boolean) => {
-      console.log('[ArenaScene] Movement ranges display toggled:', enabled);
-      this.showMovementRanges = enabled;
+    // Listen for movement ranges toggle from React (TYPE-SAFE)
+    this.gameEvents.on('movementRangesToggle', (payload) => {
+      console.log('[ArenaScene] Movement ranges display toggled:', payload.enabled);
+      this.showMovementRanges = payload.enabled;
       this.updateMovementRange(); // Refresh to show/hide ranges
     });
 
