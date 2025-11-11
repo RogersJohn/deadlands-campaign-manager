@@ -74,6 +74,7 @@ export interface GameEnemy {
   // AI state
   aiState: 'idle' | 'patrol' | 'chase' | 'attack';
   hasActed: boolean; // Whether this enemy has taken its turn
+  hasRun: boolean; // Whether this enemy ran this turn (for -2 to hit penalty)
 }
 
 export interface CombatState {
@@ -117,6 +118,14 @@ export type CombatActionType =
   | 'finishing_move'
   | 'evasion'
   | 'withdraw';
+
+export type CalledShotTarget = 'head' | 'vitals' | 'limb' | 'small' | 'tiny' | null;
+
+export interface CalledShotModifier {
+  toHit: number;
+  damageBonus: number;
+  description: string;
+}
 
 export interface CombatAction {
   type: CombatActionType;

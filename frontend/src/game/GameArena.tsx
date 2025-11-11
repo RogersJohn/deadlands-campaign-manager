@@ -4,7 +4,8 @@ import { GameCanvas } from './components/GameCanvas';
 import { WeaponSelection } from './components/WeaponSelection';
 import { ActionMenu } from './components/ActionMenu';
 import { StatusEffects } from './components/StatusEffects';
-import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction } from './types/GameTypes';
+import { CalledShotDialog } from './components/CalledShotDialog';
+import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget } from './types/GameTypes';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
 
@@ -39,6 +40,9 @@ export function GameArena() {
   const [showWeaponRanges, setShowWeaponRanges] = useState(true);
   const [showMovementRanges, setShowMovementRanges] = useState(true);
   const [movementBudget, setMovementBudget] = useState({ current: 0, max: 0 });
+
+  // PHASE 1: Called shot dialog state
+  const [calledShotDialogOpen, setCalledShotDialogOpen] = useState(false);
 
 
   const handleCombatStateUpdate = useCallback((state: CombatState) => {
@@ -145,11 +149,33 @@ export function GameArena() {
   const handleSelectAction = (action: CombatAction, power?: string) => {
     console.log('Action selected:', action.name, power ? `Power: ${power}` : '');
 
+    // PHASE 1: Handle called shot - open dialog for target selection
+    if (action.type === 'called_shot') {
+      setCalledShotDialogOpen(true);
+      return;
+    }
+
     // Emit action event to Phaser game
     if (phaserGameRef && remainingActions > 0) {
       phaserGameRef.events.emit('playerActionSelected', { action, power });
       setRemainingActions(prev => prev - 1);
     }
+  };
+
+  // PHASE 1: Handle called shot target selection
+  const handleCalledShotSelect = (target: CalledShotTarget) => {
+    setCalledShotDialogOpen(false);
+
+    // Send target to Phaser game via CombatManager
+    if (phaserGameRef) {
+      phaserGameRef.events.emit('calledShotSelected', target);
+    }
+
+    console.log('Called shot target selected:', target);
+  };
+
+  const handleCalledShotCancel = () => {
+    setCalledShotDialogOpen(false);
   };
 
   return (
@@ -713,6 +739,13 @@ export function GameArena() {
           </Box>
         </Box>
       )}
+
+      {/* PHASE 1: Called Shot Dialog */}
+      <CalledShotDialog
+        open={calledShotDialogOpen}
+        onSelect={handleCalledShotSelect}
+        onCancel={handleCalledShotCancel}
+      />
     </Container>
   );
 }

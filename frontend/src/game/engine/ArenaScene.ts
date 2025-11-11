@@ -305,6 +305,15 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       this.handlePlayerAction(action);
     });
 
+    // PHASE 1: Listen for called shot target selection from React
+    this.game.events.on('calledShotSelected', (target: any) => {
+      if (this.combatManager) {
+        this.combatManager.setCalledShotTarget(target);
+        this.game.events.emit('combatLogUpdate', [...this.combatManager.getCombatLog()]);
+      }
+      console.log('[ArenaScene] Called shot target selected:', target);
+    });
+
     // Listen for weapon selection changes from React
     this.game.events.on('weaponSelected', (weapon: Equipment) => {
       console.log('[ArenaScene] Weapon object received:', JSON.stringify(weapon, null, 2));
@@ -454,6 +463,7 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       gridY,
       aiState: 'idle',
       hasActed: false,
+      hasRun: false, // PHASE 1: Running target modifier
     };
     this.enemyData.push(enemyData);
 
@@ -822,6 +832,20 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     // Deduct from movement budget
     this.movementBudget = Math.max(0, this.movementBudget - distanceMoved);
 
+    // PHASE 1: Clear aim when player moves (Savage Worlds rule)
+    if (this.combatManager && this.combatManager.getPlayerAiming()) {
+      this.combatManager.setPlayerAiming(false);
+      const logEntry = {
+        id: `${Date.now()}-${Math.random()}`,
+        timestamp: Date.now(),
+        message: 'Aim cancelled by movement',
+        type: 'info' as const,
+      };
+      const currentLog = this.combatManager.getCombatLog();
+      currentLog.push(logEntry);
+      this.game.events.emit('combatLogUpdate', [...currentLog]);
+    }
+
     // Emit movement budget update to React
     this.game.events.emit('movementBudgetUpdate', {
       current: this.movementBudget,
@@ -997,6 +1021,15 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       case 'defend':
         console.log('Full Defense action - not yet implemented');
         break;
+      case 'aim': {
+        // PHASE 1: Aim action - gives +2 to next ranged attack
+        if (this.combatManager) {
+          this.combatManager.setPlayerAiming(true);
+          this.game.events.emit('combatLogUpdate', [...this.combatManager.getCombatLog()]);
+        }
+        console.log('Aim action: +2 to next ranged attack');
+        break;
+      }
       case 'run': {
         // Sprint action: Pace + d6 movement
         // Roll a d6 for extra movement
@@ -1007,6 +1040,11 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
         // Update movement budget
         this.movementBudget = totalMovement;
         this.maxMovementBudget = totalMovement;
+
+        // PHASE 1: Mark player as having run this turn (for enemy attacks)
+        if (this.combatManager) {
+          this.combatManager.setPlayerHasRun(true);
+        }
 
         // Log the sprint
         const logEntry = {
@@ -1159,7 +1197,8 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     // End enemy turn after a delay
     this.time.delayedCall(2000, () => {
       if (this.combatManager && this.combatManager.getCurrentPhase() !== 'defeat') {
-        this.combatManager.endEnemyTurn();
+        // PHASE 1: Pass enemies array to clear running flags
+        this.combatManager.endEnemyTurn(this.enemyData);
         this.updateMovementRange();
       }
     });

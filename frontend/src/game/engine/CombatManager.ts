@@ -1,8 +1,17 @@
 import { DiceRoller } from './DiceRoller';
 import { rollSavageWorldsDice, calculateDamageWithRaises, rollDamage } from './SavageWorldsRules';
-import { GameCharacter, GameEnemy, CombatLogEntry, DiceRollEvent } from '../types/GameTypes';
+import { GameCharacter, GameEnemy, CombatLogEntry, DiceRollEvent, CalledShotTarget } from '../types/GameTypes';
 
 export type TurnPhase = 'player' | 'enemy' | 'victory' | 'defeat';
+
+// Called shot modifiers per Savage Worlds rules
+export const CALLED_SHOT_MODIFIERS = {
+  head: { toHit: -4, damageBonus: 4, description: 'Head Shot' },
+  vitals: { toHit: -4, damageBonus: 4, description: 'Vital Shot' },
+  limb: { toHit: -2, damageBonus: 0, description: 'Limb Shot' },
+  small: { toHit: -2, damageBonus: 0, description: 'Small Target' },
+  tiny: { toHit: -4, damageBonus: 0, description: 'Tiny Target' },
+};
 
 export class CombatManager {
   private turnNumber = 1;
@@ -12,6 +21,11 @@ export class CombatManager {
   private playerMaxHealth: number;
   private playerWounds = 0;
   private playerShaken = false;
+
+  // Phase 1: Ranged Combat Modifiers
+  private playerAiming = false; // +2 to next ranged attack
+  private calledShotTarget: CalledShotTarget = null; // Target for called shot
+  private playerHasRun = false; // Whether player ran this turn
 
   constructor(
     private character: GameCharacter,
@@ -66,6 +80,40 @@ export class CombatManager {
     this.playerShaken = shaken;
   }
 
+  // Phase 1: Aim action methods
+  public setPlayerAiming(aiming: boolean) {
+    this.playerAiming = aiming;
+    if (aiming) {
+      this.addLog('Taking careful aim... (+2 to next ranged attack)', 'info');
+    }
+  }
+
+  public getPlayerAiming(): boolean {
+    return this.playerAiming;
+  }
+
+  // Phase 1: Called shot methods
+  public setCalledShotTarget(target: CalledShotTarget) {
+    this.calledShotTarget = target;
+    if (target && target in CALLED_SHOT_MODIFIERS) {
+      const mod = CALLED_SHOT_MODIFIERS[target];
+      this.addLog(`Called Shot: ${mod.description} (${mod.toHit} to hit, +${mod.damageBonus} damage)`, 'info');
+    }
+  }
+
+  public getCalledShotTarget(): CalledShotTarget {
+    return this.calledShotTarget;
+  }
+
+  // Phase 1: Running state methods
+  public setPlayerHasRun(hasRun: boolean) {
+    this.playerHasRun = hasRun;
+  }
+
+  public getPlayerHasRun(): boolean {
+    return this.playerHasRun;
+  }
+
   private addLog(message: string, type: 'info' | 'success' | 'damage' | 'miss') {
     const entry: CombatLogEntry = {
       id: `${Date.now()}-${Math.random()}`,
@@ -79,15 +127,33 @@ export class CombatManager {
 
   /**
    * Player attacks an enemy using Savage Worlds combat rules
+   * PHASE 1: Now includes aim bonus, called shot, running target, and range penalties
    */
   public playerAttackEnemy(enemy: GameEnemy, weapon: { name: string; damage?: string; rangePenalty?: number; range?: string } = { name: 'Fists', damage: 'Str+d4', rangePenalty: 0 }, distance: number = 1): { hit: boolean; rollDetails?: string } {
-    const rangePenalty = weapon.rangePenalty || 0;
-    const rangeText = rangePenalty < 0 ? ` at range (${rangePenalty})` : '';
-    this.addLog(`${this.character.name} attacks ${enemy.name} with ${weapon.name}${rangeText}!`, 'info');
-
     // Determine if ranged attack and if in melee range
     const isRangedWeapon = weapon.range !== undefined;
     const isInMeleeRange = distance <= 1;
+
+    // PHASE 1: Calculate all modifiers
+    const rangePenalty = weapon.rangePenalty || 0;
+    const woundPenalty = this.playerWounds * -1;
+    const aimBonus = this.playerAiming && isRangedWeapon ? 2 : 0;
+    const runningPenalty = enemy.hasRun ? -2 : 0;
+    const calledShotMod = this.calledShotTarget && this.calledShotTarget in CALLED_SHOT_MODIFIERS
+      ? CALLED_SHOT_MODIFIERS[this.calledShotTarget]
+      : null;
+    const calledShotPenalty = calledShotMod?.toHit || 0;
+
+    // Build attack description with all modifiers
+    const modifiers: string[] = [];
+    if (rangePenalty < 0) modifiers.push(`range ${rangePenalty}`);
+    if (woundPenalty < 0) modifiers.push(`wounds ${woundPenalty}`);
+    if (aimBonus > 0) modifiers.push(`aim +${aimBonus}`);
+    if (runningPenalty < 0) modifiers.push(`running target -2`);
+    if (calledShotPenalty < 0) modifiers.push(`${calledShotMod?.description} ${calledShotPenalty}`);
+
+    const modText = modifiers.length > 0 ? ` (${modifiers.join(', ')})` : '';
+    this.addLog(`${this.character.name} attacks ${enemy.name} with ${weapon.name}${modText}!`, 'info');
 
     // Savage Worlds Rule: Parry only applies to ranged attacks if attacker is within melee range
     let attackSkill: string;
@@ -115,8 +181,8 @@ export class CombatManager {
       targetNumber = enemy.parry;
     }
 
-    // Combine wound penalty and range penalty
-    const totalModifier = (this.playerWounds * -1) + rangePenalty;
+    // PHASE 1: Combine all modifiers
+    const totalModifier = woundPenalty + rangePenalty + aimBonus + runningPenalty + calledShotPenalty;
 
     const attackRoll = rollSavageWorldsDice(
       attackDie,
@@ -159,6 +225,13 @@ export class CombatManager {
       attackRoll.raises
     );
 
+    // PHASE 1: Apply called shot damage bonus
+    let finalDamage = damageResult.totalDamage;
+    if (calledShotMod && calledShotMod.damageBonus > 0) {
+      finalDamage += calledShotMod.damageBonus;
+      this.addLog(`${calledShotMod.description}! (+${calledShotMod.damageBonus} damage)`, 'success');
+    }
+
     // Emit damage rolls
     if (this.onDiceRoll) {
       this.onDiceRoll({
@@ -168,14 +241,14 @@ export class CombatManager {
         purpose: 'Damage',
         dieType: weapon.damage || 'Str+d4',
         rolls: [damageResult.totalDamage],
-        total: damageResult.totalDamage,
+        total: finalDamage,
         exploded: false,
       });
     }
 
     // Step 3: Compare damage to enemy Toughness
-    const woundsDealt = damageResult.totalDamage >= enemy.toughness
-      ? Math.floor((damageResult.totalDamage - enemy.toughness) / 4) + 1
+    const woundsDealt = finalDamage >= enemy.toughness
+      ? Math.floor((finalDamage - enemy.toughness) / 4) + 1
       : 0;
 
     if (woundsDealt > 0) {
@@ -183,7 +256,7 @@ export class CombatManager {
       enemy.health = Math.max(0, enemy.health - actualDamage);
 
       this.addLog(
-        `💥 Damage: ${damageResult.totalDamage} vs Toughness ${enemy.toughness} = ${woundsDealt} wound(s)!`,
+        `💥 Damage: ${finalDamage} vs Toughness ${enemy.toughness} = ${woundsDealt} wound(s)!`,
         'success'
       );
       this.addLog(`${enemy.name}: ${enemy.health}/${enemy.maxHealth} HP`, 'damage');
@@ -192,11 +265,20 @@ export class CombatManager {
         this.addLog(`${enemy.name} is defeated!`, 'success');
       }
 
-      const rollDetails = `🎲 Attack: ${attackRoll.total}\n💥 Damage: ${damageResult.totalDamage}`;
+      // PHASE 1: Clear aim and called shot after attack
+      this.playerAiming = false;
+      this.calledShotTarget = null;
+
+      const rollDetails = `🎲 Attack: ${attackRoll.total}\n💥 Damage: ${finalDamage}`;
       return { hit: true, rollDetails };
     } else {
-      this.addLog(`Shaken but no wounds! (Damage ${damageResult.totalDamage} vs Toughness ${enemy.toughness})`, 'miss');
-      return { hit: false, rollDetails: `🎲 ${attackRoll.total}\n💥 ${damageResult.totalDamage}` };
+      this.addLog(`Shaken but no wounds! (Damage ${finalDamage} vs Toughness ${enemy.toughness})`, 'miss');
+
+      // PHASE 1: Clear aim and called shot after attack (even on miss)
+      this.playerAiming = false;
+      this.calledShotTarget = null;
+
+      return { hit: false, rollDetails: `🎲 ${attackRoll.total}\n💥 ${finalDamage}` };
     }
   }
 
@@ -267,15 +349,28 @@ export class CombatManager {
    */
   public endPlayerTurn() {
     this.addLog('--- End Player Turn ---', 'info');
+
+    // PHASE 1: Clear running flag for player
+    this.playerHasRun = false;
+
     this.currentPhase = 'enemy';
     this.onPhaseChange(this.currentPhase, this.turnNumber);
   }
 
   /**
    * End enemy turn and start new player turn
+   * PHASE 1: Clear running flags for all enemies at start of new turn
    */
-  public endEnemyTurn() {
+  public endEnemyTurn(enemies?: GameEnemy[]) {
     this.turnNumber++;
+
+    // PHASE 1: Clear running flags for all enemies
+    if (enemies) {
+      enemies.forEach(enemy => {
+        enemy.hasRun = false;
+      });
+    }
+
     this.addLog(`--- Turn ${this.turnNumber} - Your Turn ---`, 'info');
     this.currentPhase = 'player';
     this.onPhaseChange(this.currentPhase, this.turnNumber);

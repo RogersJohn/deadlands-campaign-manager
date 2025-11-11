@@ -42,7 +42,13 @@
       "Bash(git mv:*)",
       "Bash(npm run dev:*)",
       "Bash(npx tsc:*)",
-      "Bash(timeout 10 npm run dev)"
+      "Bash(timeout 10 npm run dev)",
+      "Bash(../mvnw.cmd clean package:*)",
+      "Bash(git revert:*)",
+      "Bash(npm run build:*)",
+      "Bash(railway logs:*)",
+      "Bash(railway domain:*)",
+      "Bash(node -e:*)"
     ],
     "deny": [],
     "ask": []
