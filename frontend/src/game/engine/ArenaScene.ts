@@ -875,9 +875,6 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     this.playerGridX = gridX;
     this.playerGridY = gridY;
 
-    // Update movement range visualization to show remaining movement
-    this.updateMovementRange();
-
     // Update pixel position
     const pixelX = gridX * this.TILE_SIZE + this.TILE_SIZE / 2;
     const pixelY = gridY * this.TILE_SIZE + this.TILE_SIZE / 2;
