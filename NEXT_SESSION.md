@@ -2,43 +2,52 @@
 
 ## Primary Objectives
 
-### 1. Deploy Application to Railway
-**Priority: CRITICAL**
+### 1. Production Application Status
+**Priority: TESTING** | **Status: ✅ DEPLOYED & FIXED**
 
-**CURRENT STATUS:** Database migration complete, but APPLICATION SERVICES NOT DEPLOYED.
-Testing URL https://deadlands-campaign-manager-production.up.railway.app returns "Application not found".
+**CURRENT STATUS (2025-11-11 20:00 UTC):**
+Both frontend and backend services are deployed and properly configured.
 
-**Root Cause:** Railway services (frontend/backend) have not been created or deployed yet. Only the database exists.
+**Production URLs:**
+- **Frontend:** https://deadlands-frontend-production.up.railway.app
+- **Backend:** https://deadlands-campaign-manager-production-053e.up.railway.app/api
 
-**Required Actions:**
-1. **Create Railway Services:**
-   - Create frontend service (connect to GitHub, set Dockerfile path: `frontend/Dockerfile`)
-   - Create backend service (connect to GitHub, set Dockerfile path: `backend/Dockerfile`)
+**Recent Fixes (2025-11-11):**
+1. ✅ **Database Connection Fixed** - Backend was connecting to empty Railway internal database
+   - Updated `SPRING_DATASOURCE_URL` to correct production database
+   - Backend redeployed with correct connection to switchyard.proxy.rlwy.net:15935
+   - All 9 characters verified present in database
 
-2. **Configure Environment Variables:**
-   - Frontend: VITE_API_URL
-   - Backend: DATABASE_URL, DATABASE_USERNAME, DATABASE_PASSWORD, CORS_ORIGINS, SPRING_PROFILES_ACTIVE
+2. ✅ **Character Portrait Display Improved** (Commit: 07e468e)
+   - Increased portrait height from 140px → 200px
+   - Added `objectPosition: 'top'` to show faces clearly
+   - Deployed to production via git push
 
-3. **Trigger Initial Deployments**
+**Deployment Verification:**
+- ✅ Frontend: nginx serving React app (HTTP 200)
+- ✅ Backend: Spring Boot running with `/api` context path
+- ✅ Database: Connected to correct production database (switchyard.proxy.rlwy.net:15935)
+- ✅ Data integrity: 9 characters, 11 users, 63 skill references verified in database
+- 🔄 Backend redeployment in progress (should complete by 20:05 UTC)
 
-4. **Then Test:**
-- Access production at deadlands-campaign-manager-production.up.railway.app
-- Test user login with migrated credentials (try gamemaster and JohnDoyle)
-- Verify all 9 characters appear in character list
-- Check that character details load correctly (stats, skills, edges, etc.)
-- Test character portrait display
-- Verify wiki entries are accessible
+**Testing Checklist:**
+Once backend redeploys (check after ~20:05 UTC):
+1. [ ] Login works with migrated credentials (gamemaster, JohnDoyle)
+2. [ ] All 9 characters visible in Game Arena character selection
+3. [ ] Character portraits display with faces clearly visible (objectPosition: top)
+4. [ ] Character details load correctly
+5. [ ] Game Arena v1.0 features functional
 
-**Why this matters:**
-- Migration was successful at database level, but application integration is unverified
-- Users cannot use the system until login/character access is confirmed working
-- Character portrait URLs from old system may be broken
+**Workflow Going Forward:**
+- Small incremental changes pushed immediately to production
+- Git push triggers automatic Railway deployment
+- Frontend deployments: ~2-3 minutes
+- Backend deployments: ~3-4 minutes
 
-**Context needed:**
-- Production URL: deadlands-campaign-manager-production.up.railway.app
-- Old prod database: centerbeam.proxy.rlwy.net:31016 (illustrious-solace)
-- New prod database: switchyard.proxy.rlwy.net:15935 (cozy-fulfillment)
-- 11 users migrated with original passwords preserved
+**Context:**
+- Production database: switchyard.proxy.rlwy.net:15935 (cozy-fulfillment)
+- Old database (archived): centerbeam.proxy.rlwy.net:31016 (illustrious-solace)
+- 11 users migrated with original BCrypt passwords preserved
 - 9 characters migrated (8 from old prod + 1 "frank" from local)
 
 ### 2. Security Cleanup
