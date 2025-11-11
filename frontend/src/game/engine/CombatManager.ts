@@ -1,6 +1,6 @@
 import { DiceRoller } from './DiceRoller';
 import { rollSavageWorldsDice, calculateDamageWithRaises, rollDamage } from './SavageWorldsRules';
-import { GameCharacter, GameEnemy, CombatLogEntry, DiceRollEvent, CalledShotTarget } from '../types/GameTypes';
+import { GameCharacter, GameEnemy, CombatLogEntry, DiceRollEvent, CalledShotTarget, Illumination, ILLUMINATION_MODIFIERS } from '../types/GameTypes';
 
 export type TurnPhase = 'player' | 'enemy' | 'victory' | 'defeat';
 
@@ -16,6 +16,9 @@ export const CALLED_SHOT_MODIFIERS = {
 // Combat log size limit to prevent unbounded memory growth
 const MAX_COMBAT_LOG_ENTRIES = 100;
 
+// Gang Up bonus cap (Savage Worlds rule)
+const MAX_GANG_UP_BONUS = 4;
+
 export class CombatManager {
   private turnNumber = 1;
   private currentPhase: TurnPhase = 'player';
@@ -29,6 +32,10 @@ export class CombatManager {
   private playerAiming = false; // +2 to next ranged attack
   private calledShotTarget: CalledShotTarget = null; // Target for called shot
   private playerHasRun = false; // Whether player ran this turn
+
+  // Critical Rules: Illumination, Multi-Action, Gang Up
+  private illumination: Illumination = Illumination.BRIGHT; // Current lighting conditions
+  private actionsThisTurn = 0; // Multi-action tracking
 
   constructor(
     private character: GameCharacter,
@@ -117,6 +124,60 @@ export class CombatManager {
     return this.playerHasRun;
   }
 
+  // Critical Rules: Illumination methods
+  public setIllumination(level: Illumination) {
+    this.illumination = level;
+    const penalty = ILLUMINATION_MODIFIERS[level];
+    const desc = level === Illumination.BRIGHT ? 'Bright light (no penalty)' :
+                 level === Illumination.DIM ? 'Dim light (-1)' :
+                 level === Illumination.DARK ? 'Dark (-2)' :
+                 'Pitch black (-4)';
+    this.addLog(`Lighting changed: ${desc}`, 'info');
+  }
+
+  public getIllumination(): Illumination {
+    return this.illumination;
+  }
+
+  // Critical Rules: Multi-action methods
+  public getActionsThisTurn(): number {
+    return this.actionsThisTurn;
+  }
+
+  public incrementActions(): void {
+    this.actionsThisTurn++;
+  }
+
+  public getMultiActionPenalty(): number {
+    // First action (actionsThisTurn=0): no penalty
+    // Second action (actionsThisTurn=1): -2
+    // Third action (actionsThisTurn=2): -4, etc.
+    return this.actionsThisTurn > 0 ? this.actionsThisTurn * -2 : 0;
+  }
+
+  // Critical Rules: Gang Up bonus calculation
+  // Count adjacent allies (within 1 square) attacking same target
+  public calculateGangUpBonus(
+    targetX: number,
+    targetY: number,
+    alliesPositions: Array<{ x: number; y: number }>
+  ): number {
+    let adjacentAllies = 0;
+
+    for (const ally of alliesPositions) {
+      const distance = Math.max(
+        Math.abs(ally.x - targetX),
+        Math.abs(ally.y - targetY)
+      );
+      if (distance <= 1) {
+        adjacentAllies++;
+      }
+    }
+
+    // +1 per adjacent ally, capped at +4
+    return Math.min(adjacentAllies, MAX_GANG_UP_BONUS);
+  }
+
   private addLog(message: string, type: 'info' | 'success' | 'damage' | 'miss') {
     const entry: CombatLogEntry = {
       id: `${Date.now()}-${Math.random()}`,
@@ -137,8 +198,14 @@ export class CombatManager {
   /**
    * Player attacks an enemy using Savage Worlds combat rules
    * PHASE 1: Now includes aim bonus, called shot, running target, and range penalties
+   * CRITICAL RULES: Now includes illumination, multi-action, and gang-up bonuses
    */
-  public playerAttackEnemy(enemy: GameEnemy, weapon: { name: string; damage?: string; rangePenalty?: number; range?: string } = { name: 'Fists', damage: 'Str+d4', rangePenalty: 0 }, distance: number = 1): { hit: boolean; rollDetails?: string } {
+  public playerAttackEnemy(
+    enemy: GameEnemy,
+    weapon: { name: string; damage?: string; rangePenalty?: number; range?: string } = { name: 'Fists', damage: 'Str+d4', rangePenalty: 0 },
+    distance: number = 1,
+    alliesPositions: Array<{ x: number; y: number }> = [] // For gang-up calculation
+  ): { hit: boolean; rollDetails?: string } {
     // Determine if ranged attack and if in melee range
     const isRangedWeapon = weapon.range !== undefined;
     const isInMeleeRange = distance <= 1;
@@ -153,6 +220,11 @@ export class CombatManager {
       : null;
     const calledShotPenalty = calledShotMod?.toHit || 0;
 
+    // CRITICAL RULES: Calculate new modifiers
+    const illuminationPenalty = ILLUMINATION_MODIFIERS[this.illumination];
+    const multiActionPenalty = this.getMultiActionPenalty();
+    const gangUpBonus = this.calculateGangUpBonus(enemy.gridX, enemy.gridY, alliesPositions);
+
     // Build attack description with all modifiers
     const modifiers: string[] = [];
     if (rangePenalty < 0) modifiers.push(`range ${rangePenalty}`);
@@ -160,6 +232,9 @@ export class CombatManager {
     if (aimBonus > 0) modifiers.push(`aim +${aimBonus}`);
     if (runningPenalty < 0) modifiers.push(`running target -2`);
     if (calledShotPenalty < 0) modifiers.push(`${calledShotMod?.description} ${calledShotPenalty}`);
+    if (illuminationPenalty < 0) modifiers.push(`lighting ${illuminationPenalty}`);
+    if (multiActionPenalty < 0) modifiers.push(`multi-action ${multiActionPenalty}`);
+    if (gangUpBonus > 0) modifiers.push(`gang up +${gangUpBonus}`);
 
     const modText = modifiers.length > 0 ? ` (${modifiers.join(', ')})` : '';
     this.addLog(`${this.character.name} attacks ${enemy.name} with ${weapon.name}${modText}!`, 'info');
@@ -190,8 +265,12 @@ export class CombatManager {
       targetNumber = enemy.parry;
     }
 
-    // PHASE 1: Combine all modifiers
-    const totalModifier = woundPenalty + rangePenalty + aimBonus + runningPenalty + calledShotPenalty;
+    // PHASE 1 + CRITICAL RULES: Combine all modifiers
+    const totalModifier = woundPenalty + rangePenalty + aimBonus + runningPenalty + calledShotPenalty +
+                          illuminationPenalty + multiActionPenalty + gangUpBonus;
+
+    // CRITICAL RULES: Increment action counter (attack counts as an action)
+    this.incrementActions();
 
     const attackRoll = rollSavageWorldsDice(
       attackDie,
@@ -300,15 +379,31 @@ export class CombatManager {
 
   /**
    * Enemy attacks player
+   * CRITICAL RULES: Now includes illumination and gang-up bonuses
    */
-  public enemyAttackPlayer(enemy: GameEnemy): boolean {
-    this.addLog(`${enemy.name} attacks ${this.character.name}!`, 'info');
+  public enemyAttackPlayer(
+    enemy: GameEnemy,
+    playerPosition: { x: number; y: number },
+    otherEnemyPositions: Array<{ x: number; y: number }> = []
+  ): boolean {
+    // CRITICAL RULES: Calculate modifiers
+    const illuminationPenalty = ILLUMINATION_MODIFIERS[this.illumination];
+    const gangUpBonus = this.calculateGangUpBonus(playerPosition.x, playerPosition.y, otherEnemyPositions);
+
+    const modifiers: string[] = [];
+    if (illuminationPenalty < 0) modifiers.push(`lighting ${illuminationPenalty}`);
+    if (gangUpBonus > 0) modifiers.push(`gang up +${gangUpBonus}`);
+    const modText = modifiers.length > 0 ? ` (${modifiers.join(', ')})` : '';
+
+    this.addLog(`${enemy.name} attacks ${this.character.name}${modText}!`, 'info');
+
+    const totalModifier = illuminationPenalty + gangUpBonus;
 
     // Fighting roll vs player's Parry (enemy is NOT a Wild Card)
     const attackRoll = rollSavageWorldsDice(
       enemy.fightingDie,
       false, // Enemy is NOT a Wild Card
-      0, // No modifiers for now
+      totalModifier,
       this.character.parry || 2
     );
 
@@ -378,6 +473,7 @@ export class CombatManager {
   /**
    * End enemy turn and start new player turn
    * PHASE 1: Clear running flags for all enemies at start of new turn
+   * CRITICAL RULES: Reset multi-action counter at start of new turn
    */
   public endEnemyTurn(enemies?: GameEnemy[]) {
     this.turnNumber++;
@@ -388,6 +484,9 @@ export class CombatManager {
         enemy.hasRun = false;
       });
     }
+
+    // CRITICAL RULES: Reset action counter for new turn
+    this.actionsThisTurn = 0;
 
     this.addLog(`--- Turn ${this.turnNumber} - Your Turn ---`, 'info');
     this.currentPhase = 'player';

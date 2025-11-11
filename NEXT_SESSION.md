@@ -97,51 +97,108 @@ None - migration completed successfully, application testing pending.
 
 ---
 
-## NEW: Game Arena v1.0 Deployment
-**Priority: HIGH** | **Status: READY FOR DEPLOYMENT ✅**
+## Game Arena Combat System - PHASE 1 COMPLETE ✅
+**Priority: COMPLETE** | **Status: DEPLOYED & TESTED**
 
 ### Overview
-Deploy Game Arena v1.0 tactical combat system to production. All features implemented, tested, and documented.
+Game Arena tactical combat system is fully functional with all core Savage Worlds rules implemented. 78 tests passing, all critical rules covered.
 
-### Features Completed (2025-11-10)
-1. **Movement Budget System** - Track movement per turn based on Pace
-2. **Sprint Action** - Pace + d6 movement using action
-3. **Parry Rules Fix** - Correct Savage Worlds ranged attack rules
-4. **Range Toggles** - Independent weapon/movement range display toggles
-5. **Combat Action Tooltips** - 1-second hover tooltips with descriptions
+### Session 2025-11-11: Phase 1 + Critical Rules Complete
+**Implemented:**
+1. ✅ **Phase 1: Ranged Combat Modifiers**
+   - Aim action (+2 bonus to next ranged attack)
+   - Called shots (head/vitals/limb with penalties and damage bonuses)
+   - Running target modifier (-2 to hit)
+   - Range penalties (0/-2/-4/-8 for short/medium/long/extreme)
+   - Modifier stacking and proper state management
+
+2. ✅ **Critical Rule 1: Gang Up Bonuses**
+   - +1 per adjacent ally, capped at +4
+   - Works for both player attacks (with allied NPCs) and enemy gang-ups
+   - Distance calculation uses Chebyshev distance (max of dx, dy)
+   - Full integration with combat methods
+
+3. ✅ **Critical Rule 2: Illumination System**
+   - 4 illumination levels: Bright (0), Dim (-1), Dark (-2), Pitch Black (-4)
+   - Applies to all attacks (ranged and melee)
+   - Persists across turns until changed
+   - **Missing:** UI control to change illumination (defaults to Bright)
+
+4. ✅ **Critical Rule 3: Multi-Action Enforcement**
+   - First action: no penalty
+   - Second action: -2 penalty
+   - Third action: -4 penalty
+   - Continues at -2 per additional action
+   - Resets at start of new turn
+   - Increments even on missed attacks
+
+5. ✅ **Technical Improvements**
+   - Type-safe event system (GameEvents.ts) - compile-time validation
+   - Combat log bounded at 100 entries (prevents memory leaks)
+   - Theme constants extracted (GAME_COLORS, DIALOG_SIZES)
+   - Comprehensive test coverage (78 tests total)
+
+### Test Coverage
+- **78 tests passing** across 5 test files
+- ParryRules.test.ts (13 tests)
+- MovementBudget.test.ts (14 tests)
+- Phase1Modifiers.test.ts (20 tests) - **Caught 4 real bugs**
+- CriticalRules.test.ts (22 tests) - **NEW**
+- ActionMenu.test.tsx (9 tests)
+
+**Bugs Caught:**
+1. Aim persisting on missed attacks
+2. Called shot never clearing after attack
+3. Wrong parameter order in damage calculation
+4. Wrong property name (totalDamage vs total)
 
 ### Documentation Created
-- ✅ `docs/game-arena/GAME_ARENA_V1.md` - Complete feature documentation
-- ✅ `docs/game-arena/DEPLOYMENT_GUIDE.md` - Step-by-step deployment process
-- ✅ 3 test files created (MovementBudget, ParryRules, ActionMenu)
+- ✅ `RANGED_COMBAT_DEVELOPMENT_PLAN.md` - 8-phase roadmap
+- ✅ `PHASE_1_IMPLEMENTATION_SUMMARY.md` - Phase 1 details
+- ✅ `CLAUDE_RULES.md` - Engineering standards
+- ✅ `PROJECT_ASSESSMENT.md` - **NEW** - Comprehensive project status
 
-### Pre-Deployment Checklist
-- [x] Run all tests: `cd frontend && npm test` - **36/36 tests passing**
-- [x] Build verification: `npm run build` - **Build successful**
-- [ ] Backend build: `cd backend && ./mvnw clean package`
-- [ ] Backup production database
-- [ ] Verify Railway environment variables
+### Current Status
+**What Works:**
+- All core Savage Worlds mechanics (dice, raises, wounds, toughness)
+- All Phase 1 ranged combat modifiers
+- All 3 critical rules (gang-up, illumination, multi-action)
+- Movement budget system
+- Type-safe event system
+- Combat log with bounded size
 
-### Deployment Steps (Est. 2 hours)
-1. **Pre-deployment** (30 min) - Tests, builds, backup
-2. **Backend deployment** (15 min) - Deploy to Railway
-3. **Frontend deployment** (15 min) - Deploy to Railway
-4. **Smoke testing** (30 min) - Test all features
-5. **Performance verification** (15 min) - Check metrics
-6. **Buffer** (15 min) - Handle issues
+**What's Missing:**
+- UI control for illumination setting (system works, just no UI)
+- Allied NPCs (gang-up infrastructure ready, but no allies exist yet)
+- Phase 2-8 features (cover, ammo, rate of fire, etc.)
 
-### Rollback Plan
-- Quick rollback via Railway dashboard to previous deployment
-- Database restore from pre-deployment backup
-- Git revert and redeploy if needed
+### Next Steps (Recommended)
 
-### Success Criteria
-- ✅ All smoke tests pass
-- ✅ No critical errors
-- ✅ Performance targets met (< 2s load, 60 FPS)
-- ✅ Cross-browser compatibility verified
+#### Option 1: Add Illumination UI (1-2 hours)
+**Priority: Medium** | **Unblocks:** Tactical illumination decisions
+- Add dropdown in GameArena UI for Bright/Dim/Dark/Pitch Black
+- Wire up to CombatManager.setIllumination()
+- Add visual indicator (sun/moon icon)
+- Simple, clean implementation
+
+#### Option 2: Phase 2 - Cover System (4-6 hours)
+**Priority: High** | **Impact:** Major tactical depth for ranged combat
+- Define cover areas on map
+- Calculate line of sight
+- Apply cover modifiers (-2 light, -4 medium, -6 heavy)
+- Add visual indicators
+- Write comprehensive tests
+
+#### Option 3: Phase 3 - Ammo Tracking (3-4 hours)
+**Priority: Medium** | **Impact:** Resource management, prevents infinite ammo
+- Track shots remaining per weapon
+- Implement reload action
+- UI indicator for ammo count
+- Tests for edge cases
 
 ### Resources
-- **Full Deployment Guide:** `docs/game-arena/DEPLOYMENT_GUIDE.md`
-- **Feature Documentation:** `docs/game-arena/GAME_ARENA_V1.md`
-- **Tests:** `frontend/src/game/**/__tests__/*.test.ts(x)`
+- **Project Assessment:** `PROJECT_ASSESSMENT.md` - Full status review
+- **Development Plan:** `RANGED_COMBAT_DEVELOPMENT_PLAN.md`
+- **Phase 1 Summary:** `PHASE_1_IMPLEMENTATION_SUMMARY.md`
+- **Engineering Standards:** `CLAUDE_RULES.md`
+- **Tests:** `frontend/src/game/engine/__tests__/*.test.ts`

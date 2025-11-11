@@ -127,6 +127,21 @@ export interface CalledShotModifier {
   description: string;
 }
 
+// Illumination levels (Savage Worlds core rule)
+export enum Illumination {
+  BRIGHT = 'bright',      // Full daylight, no penalty
+  DIM = 'dim',           // Twilight, torchlight: -1 to attacks/Notice
+  DARK = 'dark',         // Moonlight, distant light: -2 to attacks/Notice
+  PITCH_BLACK = 'pitch_black', // No light at all: -4 to attacks/Notice
+}
+
+export const ILLUMINATION_MODIFIERS: Record<Illumination, number> = {
+  [Illumination.BRIGHT]: 0,
+  [Illumination.DIM]: -1,
+  [Illumination.DARK]: -2,
+  [Illumination.PITCH_BLACK]: -4,
+};
+
 export interface CombatAction {
   type: CombatActionType;
   name: string;

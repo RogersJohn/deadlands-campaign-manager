@@ -980,7 +980,10 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       ? { name: this.selectedWeapon.name, damage: this.selectedWeapon.damage, rangePenalty: totalPenalty, range: this.selectedWeapon.range }
       : { name: 'Fists', damage: 'Str+d4', rangePenalty: totalPenalty };
 
-    const result = this.combatManager.playerAttackEnemy(enemy, weapon, distance);
+    // TODO: Pass allied NPC positions when implemented (for gang-up bonuses)
+    const alliesPositions: Array<{ x: number; y: number }> = [];
+
+    const result = this.combatManager.playerAttackEnemy(enemy, weapon, distance, alliesPositions);
 
     // Emit health update
     this.game.events.emit('healthUpdate', {
@@ -1109,8 +1112,14 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
 
       // Check if already adjacent to player
       if (this.isAdjacentToPlayer(enemy.gridX, enemy.gridY)) {
+        // Calculate gang-up: other enemies adjacent to player
+        const playerPos = { x: this.playerGridX, y: this.playerGridY };
+        const otherEnemies = this.enemyData
+          .filter(e => e.id !== enemy.id && e.health > 0 && this.isAdjacentToPlayer(e.gridX, e.gridY))
+          .map(e => ({ x: e.gridX, y: e.gridY }));
+
         // Attack player
-        this.combatManager!.enemyAttackPlayer(enemy);
+        this.combatManager!.enemyAttackPlayer(enemy, playerPos, otherEnemies);
 
         // Emit wounds and shaken status updates
         this.game.events.emit('woundsUpdate', {
@@ -1179,7 +1188,13 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
           // Attack if now adjacent
           if (this.isAdjacentToPlayer(newX, newY)) {
             this.time.delayedCall(400, () => {
-              this.combatManager!.enemyAttackPlayer(enemy);
+              // Calculate gang-up: other enemies adjacent to player
+              const playerPos = { x: this.playerGridX, y: this.playerGridY };
+              const otherEnemies = this.enemyData
+                .filter(e => e.id !== enemy.id && e.health > 0 && this.isAdjacentToPlayer(e.gridX, e.gridY))
+                .map(e => ({ x: e.gridX, y: e.gridY }));
+
+              this.combatManager!.enemyAttackPlayer(enemy, playerPos, otherEnemies);
 
               // Emit wounds and shaken status updates
               this.game.events.emit('woundsUpdate', {

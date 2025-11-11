@@ -142,10 +142,6 @@ const Wiki = () => {
   // Wiki list view
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Campaign Wiki
-      </Typography>
-
       {/* Search bar */}
       <TextField
         fullWidth

@@ -97,10 +97,6 @@ const ChangePassword: React.FC = () => {
     <Container maxWidth="sm">
       <Box sx={{ mt: 8 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom align="center">
-            Change Password
-          </Typography>
-
           {error && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {error}

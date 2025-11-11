@@ -33,10 +33,7 @@ const Dashboard = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 4 }}>
-        <Typography variant="h4" component="h1">
-          My Characters
-        </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4 }}>
         <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/character/new')}>
           New Character
         </Button>

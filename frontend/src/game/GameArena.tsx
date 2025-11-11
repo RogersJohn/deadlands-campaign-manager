@@ -183,29 +183,7 @@ export function GameArena() {
   };
 
   return (
-    <Container maxWidth={false} sx={{ mt: 4, mb: 4, maxWidth: '100%' }}>
-      {/* Header */}
-      <Paper
-        sx={{
-          p: 1.5,
-          mb: 2,
-          backgroundColor: '#3d2817',
-          borderBottom: '4px solid #8b4513',
-        }}
-      >
-        <Typography
-          variant="h4"
-          sx={{
-            fontFamily: 'Rye, serif',
-            color: '#f5e6d3',
-            textAlign: 'center',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.8)',
-          }}
-        >
-          Combat Test Arena
-        </Typography>
-      </Paper>
-
+    <Container maxWidth={false} sx={{ mt: 2, mb: 4, maxWidth: '100%' }}>
       {!gameStarted ? (
         /* Character Selection Screen */
         <Paper sx={{ p: 4, backgroundColor: '#2d1b0e' }}>

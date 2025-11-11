@@ -1,4 +1,4 @@
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   AppBar,
   Box,
@@ -23,13 +23,27 @@ import {
   Lock as LockIcon,
   SportsEsports as GameIcon,
 } from '@mui/icons-material'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAuthStore } from '../store/authStore'
 
 const Layout = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, logout } = useAuthStore()
   const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // Determine page title based on current route
+  const pageTitle = useMemo(() => {
+    const path = location.pathname
+    if (path === '/dashboard') return 'My Characters'
+    if (path.startsWith('/game/arena')) return 'Combat Arena'
+    if (path.startsWith('/wiki')) return 'Campaign Wiki'
+    if (path.startsWith('/character/new')) return 'Create Character'
+    if (path.includes('/edit')) return 'Edit Character'
+    if (path.startsWith('/character/')) return 'Character Sheet'
+    if (path === '/change-password') return 'Change Password'
+    return null
+  }, [location.pathname])
 
   const handleLogout = () => {
     logout()
@@ -58,6 +72,19 @@ const Layout = () => {
           </IconButton>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Deadlands Campaign Manager
+            {pageTitle && (
+              <Typography
+                component="span"
+                variant="h6"
+                sx={{
+                  ml: 2,
+                  color: '#d4af37', // Gold color for page title
+                  fontWeight: 400,
+                }}
+              >
+                | {pageTitle}
+              </Typography>
+            )}
           </Typography>
           <Typography variant="body2" sx={{ mr: 2 }}>
             {user?.username} ({user?.role})

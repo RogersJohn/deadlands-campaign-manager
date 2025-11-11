@@ -1351,10 +1351,6 @@ const CharacterCreate = () => {
         </DialogActions>
       </Dialog>
 
-      <Typography variant="h4" gutterBottom>
-        Create New Character
-      </Typography>
-
       {/* XP Budget Display */}
       {!showXpDialog && (
         <Paper
