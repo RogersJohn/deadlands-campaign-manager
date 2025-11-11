@@ -51,6 +51,8 @@ export class ArenaScene extends Phaser.Scene {
   private showMovementRanges = true;
 
   // Movement budget
+  // Dynamically updates as player moves - range visualization reflects remaining movement
+  // Extensible for vehicles/horses: just update movementBudget and call updateMovementRange()
   private movementBudget = 0; // Remaining movement this turn
   private maxMovementBudget = 0; // Total movement available this turn
 
@@ -526,7 +528,9 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       this.lineOfSightGraphics.clear();
     }
 
-    const pace = this.character.pace || 6;
+    // Use remaining movement budget instead of base pace
+    // This updates dynamically as player moves or sprints
+    const remainingMovement = this.movementBudget;
 
     // Highlight all tiles within movement range (only if enabled)
     if (this.showMovementRanges) {
@@ -534,7 +538,7 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
         for (let y = 0; y < this.GRID_HEIGHT; y++) {
           const distance = this.getGridDistance(this.playerGridX, this.playerGridY, x, y);
 
-          if (distance <= pace && distance > 0) {
+          if (distance <= remainingMovement && distance > 0) {
             // Check if tile is occupied by enemy
             const isOccupied = this.enemyData.some(enemy => enemy.gridX === x && enemy.gridY === y && enemy.health > 0);
 
@@ -870,6 +874,9 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     // Update grid position
     this.playerGridX = gridX;
     this.playerGridY = gridY;
+
+    // Update movement range visualization to show remaining movement
+    this.updateMovementRange();
 
     // Update pixel position
     const pixelX = gridX * this.TILE_SIZE + this.TILE_SIZE / 2;
