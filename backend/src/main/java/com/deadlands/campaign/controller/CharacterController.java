@@ -1,6 +1,9 @@
 package com.deadlands.campaign.controller;
 
 import com.deadlands.campaign.model.Character;
+import com.deadlands.campaign.model.Equipment;
+import com.deadlands.campaign.model.Skill;
+import com.deadlands.campaign.model.Edge;
 import com.deadlands.campaign.model.User;
 import com.deadlands.campaign.repository.CharacterRepository;
 import com.deadlands.campaign.repository.UserRepository;
@@ -50,6 +53,8 @@ public class CharacterController {
         dto.setSize(character.getSize());
         dto.setWind(character.getWind());
         dto.setGrit(character.getGrit());
+        dto.setParry(character.getParry());
+        dto.setToughness(character.getToughness());
         // Savage Worlds attributes
         dto.setAgilityDie(character.getAgilityDie());
         dto.setSmartsDie(character.getSmartsDie());
@@ -74,6 +79,52 @@ public class CharacterController {
             dto.setPlayerName(character.getPlayer().getUsername());
         }
 
+        // Add equipment (for game arena)
+        dto.setEquipment(character.getEquipment().stream()
+                .map(this::toEquipmentDTO)
+                .toList());
+
+        // Add skills (for combat rolls)
+        dto.setSkills(character.getSkills().stream()
+                .map(this::toSkillDTO)
+                .toList());
+
+        // Add edges (for special abilities)
+        dto.setEdges(character.getEdges().stream()
+                .map(this::toEdgeDTO)
+                .toList());
+
+        return dto;
+    }
+
+    private EquipmentDTO toEquipmentDTO(Equipment equipment) {
+        EquipmentDTO dto = new EquipmentDTO();
+        dto.setId(equipment.getId());
+        dto.setName(equipment.getName());
+        dto.setDescription(equipment.getDescription());
+        dto.setType(equipment.getType() != null ? equipment.getType().toString() : null);
+        dto.setQuantity(equipment.getQuantity());
+        dto.setDamage(equipment.getDamage());
+        dto.setRange(equipment.getRange());
+        dto.setRof(equipment.getRof());
+        dto.setShots(equipment.getShots());
+        dto.setIsEquipped(equipment.getIsEquipped());
+        return dto;
+    }
+
+    private SkillDTO toSkillDTO(Skill skill) {
+        SkillDTO dto = new SkillDTO();
+        dto.setId(skill.getId());
+        dto.setName(skill.getName());
+        dto.setDieValue(skill.getDieValue());
+        return dto;
+    }
+
+    private EdgeDTO toEdgeDTO(Edge edge) {
+        EdgeDTO dto = new EdgeDTO();
+        dto.setId(edge.getId());
+        dto.setName(edge.getName());
+        dto.setDescription(edge.getDescription());
         return dto;
     }
 
@@ -85,6 +136,8 @@ public class CharacterController {
         private Integer size;
         private Integer wind;
         private Integer grit;
+        private Integer parry;
+        private Integer toughness;
         // Savage Worlds attributes
         private String agilityDie;
         private String smartsDie;
@@ -103,6 +156,9 @@ public class CharacterController {
         private Integer spentXp;
         private Long playerId;
         private String playerName;
+        private java.util.List<EquipmentDTO> equipment;
+        private java.util.List<SkillDTO> skills;
+        private java.util.List<EdgeDTO> edges;
 
         // Getters and setters
         public Long getId() { return id; }
@@ -119,6 +175,10 @@ public class CharacterController {
         public void setWind(Integer wind) { this.wind = wind; }
         public Integer getGrit() { return grit; }
         public void setGrit(Integer grit) { this.grit = grit; }
+        public Integer getParry() { return parry; }
+        public void setParry(Integer parry) { this.parry = parry; }
+        public Integer getToughness() { return toughness; }
+        public void setToughness(Integer toughness) { this.toughness = toughness; }
         public String getAgilityDie() { return agilityDie; }
         public void setAgilityDie(String agilityDie) { this.agilityDie = agilityDie; }
         public String getCognitionDie() { return cognitionDie; }
@@ -151,6 +211,72 @@ public class CharacterController {
         public void setPlayerId(Long playerId) { this.playerId = playerId; }
         public String getPlayerName() { return playerName; }
         public void setPlayerName(String playerName) { this.playerName = playerName; }
+        public java.util.List<EquipmentDTO> getEquipment() { return equipment; }
+        public void setEquipment(java.util.List<EquipmentDTO> equipment) { this.equipment = equipment; }
+        public java.util.List<SkillDTO> getSkills() { return skills; }
+        public void setSkills(java.util.List<SkillDTO> skills) { this.skills = skills; }
+        public java.util.List<EdgeDTO> getEdges() { return edges; }
+        public void setEdges(java.util.List<EdgeDTO> edges) { this.edges = edges; }
+    }
+
+    static class EquipmentDTO {
+        private Long id;
+        private String name;
+        private String description;
+        private String type;
+        private Integer quantity;
+        private String damage;
+        private String range;
+        private Integer rof;
+        private Integer shots;
+        private Boolean isEquipped;
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+        public String getType() { return type; }
+        public void setType(String type) { this.type = type; }
+        public Integer getQuantity() { return quantity; }
+        public void setQuantity(Integer quantity) { this.quantity = quantity; }
+        public String getDamage() { return damage; }
+        public void setDamage(String damage) { this.damage = damage; }
+        public String getRange() { return range; }
+        public void setRange(String range) { this.range = range; }
+        public Integer getRof() { return rof; }
+        public void setRof(Integer rof) { this.rof = rof; }
+        public Integer getShots() { return shots; }
+        public void setShots(Integer shots) { this.shots = shots; }
+        public Boolean getIsEquipped() { return isEquipped; }
+        public void setIsEquipped(Boolean isEquipped) { this.isEquipped = isEquipped; }
+    }
+
+    static class SkillDTO {
+        private Long id;
+        private String name;
+        private String dieValue;
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getDieValue() { return dieValue; }
+        public void setDieValue(String dieValue) { this.dieValue = dieValue; }
+    }
+
+    static class EdgeDTO {
+        private Long id;
+        private String name;
+        private String description;
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
     }
 
     @GetMapping("/{id}")

@@ -21,6 +21,7 @@ import {
   MenuBook as WikiIcon,
   Logout as LogoutIcon,
   Lock as LockIcon,
+  SportsEsports as GameIcon,
 } from '@mui/icons-material'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
@@ -38,6 +39,7 @@ const Layout = () => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'My Characters', icon: <PersonIcon />, path: '/dashboard' },
+    { text: 'Game', icon: <GameIcon />, path: '/game/arena' },
     { text: 'Wiki', icon: <WikiIcon />, path: '/wiki' },
     { text: 'Change Password', icon: <LockIcon />, path: '/change-password' },
   ]

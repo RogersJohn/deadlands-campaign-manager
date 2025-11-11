@@ -66,3 +66,23 @@ Thumbs.db
 
 ### Migration Scripts (contain production credentials) ###
 migrate-*.js
+
+### Database utility scripts (may contain credentials) ###
+list-users.js
+test-login.js
+update-all-passwords.js
+update-password.js
+check-images.js
+
+### Production database configuration (contains credentials) ###
+backend/src/main/resources/application-proddb.yml
+backend/run-with-prod-db.bat
+
+### Node modules at root (from npm installs) ###
+node_modules/
+
+### Windows null device reference ###
+nul
+
+### Claude settings ###
+.claude/settings.local.json

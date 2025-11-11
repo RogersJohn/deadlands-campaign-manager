@@ -7,19 +7,101 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Planned
-- Character editing for owners (NEXT SESSION PRIORITY - paused due to deployment issues)
+### Game Arena v1.0 - Ready for Deployment (2025-11-10)
+**Status:** ✅ Ready for production deployment
+
+#### Added
+- **Movement Budget System**
+  - Characters have limited movement per turn based on Pace (typically 6 squares)
+  - Real-time movement tracking with visual feedback
+  - Movement budget resets at start of each player turn
+  - Chebyshev distance calculation (diagonals count as 1 square)
+  - Movement budget display in HUD with progress bar showing X/Y squares
+  - Blue progress bar (gray when depleted)
+
+- **Sprint Action**
+  - "Run" action allows sprinting for Pace + d6 movement
+  - Automatically rolls d6 and updates movement budget
+  - Consumes action for the turn
+  - Results logged in combat log with roll details
+  - Location: `ArenaScene.ts:1000-1036`
+
+- **Parry Rules (Savage Worlds Compliance)**
+  - Correct implementation of ranged attack parry rules per Savage Worlds rulebook
+  - **Melee attacks:** Always use target's Parry
+  - **Ranged attacks in melee range (≤1 square):** Use target's Parry
+  - **Ranged attacks beyond melee range (>1 square):** Use TN 4
+  - Proper skill selection (Fighting vs Shooting/Throwing)
+  - Accurate combat log messages distinguishing "vs TN 4" and "vs Parry X"
+  - Attack info tooltips show appropriate target text
+
+- **Range Display Toggles**
+  - Independent radio button toggles for weapon ranges and movement ranges
+  - **Weapon Ranges Toggle:** Show/hide color-coded weapon range indicators (green/orange/red)
+  - **Movement Ranges Toggle:** Show/hide blue movement range indicators
+  - Toggles grouped in single "Range Display Toggles" panel
+  - Real-time visual feedback on grid
+  - Location: `GameArena.tsx:423-468`
+
+- **Combat Action Tooltips**
+  - Hover tooltips on all 21 combat action dropdown items
+  - 1-second delay before tooltip appears (prevents accidental triggers)
+  - Displays full action description
+  - Shows modifiers in orange text (e.g., "+2 attack/damage, -2 Parry")
+  - Also available for arcane powers dropdown
+  - Styled to match Deadlands theme (dark brown background, brown border)
+  - Location: `ActionMenu.tsx:283-327`
+
+#### Testing
+- **Test Infrastructure Setup Complete:**
+  - Installed Vitest, React Testing Library, and jsdom
+  - Created `vitest.config.ts` and test setup file
+  - Added test scripts to package.json (`npm test`, `npm test:ui`, `npm test:coverage`)
+  - **All 36 tests passing** ✅
+- **Created 3 comprehensive test files:**
+  - `MovementBudget.test.ts` - 14 tests covering initialization, deduction, sprint action, validation
+  - `ParryRules.test.ts` - 13 tests covering melee range detection, target calculation, weapon types
+  - `ActionMenu.test.tsx` - 9 UI component tests for tooltips, arcane powers, rendering
+- **Build Verification:**
+  - Frontend build successful (`npm run build`) ✅
+  - Production bundle size: 2.3 MB (591 KB gzipped)
+
+#### Documentation
+- **Created comprehensive documentation:**
+  - `GAME_ARENA_V1.md` - Complete feature documentation with implementation details
+  - `DEPLOYMENT_GUIDE.md` - Step-by-step deployment process with lessons learned from previous deployments
+  - Updated `next_session.md` with deployment checklist and rollback plan
+
+#### Technical
+- Event-based communication between React and Phaser for all new features
+- Movement budget events: `movementBudgetUpdate`
+- Range toggle events: `weaponRangesToggle`, `movementRangesToggle`
+- State management across React (UI) and Phaser (game logic)
+
+#### Changed
+- Combat system now enforces correct Savage Worlds parry rules
+- Movement range display now respects toggle state
+- Attack info popups show appropriate target text (TN vs Parry)
+- Action menu dropdown enhanced with detailed tooltips
+
+#### Fixed
+- Parry incorrectly applied to all ranged attacks (was not checking melee range)
+- Movement not limited by character's Pace value
+- No visual distinction between weapon and movement ranges
+- No way to hide range indicators when they clutter the view
+
+### Planned (Future Versions)
+- Character editing for owners
 - Character deletion with authorization
 - Interactive dropdown menus for character editing
 - Point-buy validation system (skills: 15pts, edges/hindrances limits)
 - Hindrance point conversion (2pts → +1 edge, +1 attribute, +skill, +$500)
 - Equipment budget tracking ($500 starting funds)
 - Campaign management features (sessions, notes, tracking)
-- Interactive character sheet with dice rolling
-- Wound tracking and Fate Chip management
-- NPC and location generators
-- Character export to PDF
-- Enhanced search and filtering for reference data
+- Advanced AI enemy tactics (v1.1)
+- Full implementation of all 21 combat actions (v1.1)
+- Arcane power effects system (v1.1)
+- Save/resume combat state (v1.1)
 
 ## [1.3.1] - 2025-11-08 - DEPLOYMENT STABILIZATION
 

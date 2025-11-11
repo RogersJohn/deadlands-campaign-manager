@@ -10,6 +10,7 @@ import CharacterEdit from './pages/CharacterEdit'
 import ChangePassword from './pages/ChangePassword'
 import Wiki from './pages/Wiki'
 import Layout from './components/Layout'
+import { GameArena } from './game/GameArena'
 
 function App() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
@@ -29,6 +30,7 @@ function App() {
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="wiki" element={<Wiki />} />
           <Route path="wiki/:slug" element={<Wiki />} />
+          <Route path="game/arena" element={<GameArena />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/dashboard" />} />
