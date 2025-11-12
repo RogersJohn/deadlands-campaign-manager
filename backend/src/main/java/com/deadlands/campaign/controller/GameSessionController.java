@@ -119,7 +119,7 @@ public class GameSessionController {
         GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(sessionId)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
 
-        Character character = characterRepository.findById(request.getCharacterId())
+        com.deadlands.campaign.model.Character character = characterRepository.findById(request.getCharacterId())
                 .orElseThrow(() -> new RuntimeException("Character not found"));
 
         // Check if character belongs to player
@@ -344,7 +344,7 @@ public class GameSessionController {
         // For player tokens, tokenId is the character ID
         try {
             Long characterId = Long.parseLong(tokenId);
-            Character character = characterRepository.findById(characterId).orElse(null);
+            com.deadlands.campaign.model.Character character = characterRepository.findById(characterId).orElse(null);
 
             if (character == null) {
                 return false;

@@ -31,7 +31,7 @@ public class RateLimitService {
 
     /**
      * Resolve a bucket for login attempts.
-     * More restrictive: 10 attempts per hour per IP.
+     * More restrictive: 30 attempts per 10 minutes per IP.
      *
      * @param ip The client IP address
      * @return Bucket for rate limiting login attempts
@@ -54,10 +54,10 @@ public class RateLimitService {
 
     /**
      * Create a bucket for login rate limiting.
-     * More restrictive: 10 attempts per hour.
+     * Allows 30 attempts per 10 minutes (more lenient for E2E testing while still preventing brute force).
      */
     private Bucket createLoginBucket() {
-        Bandwidth limit = Bandwidth.classic(10, Refill.intervally(10, Duration.ofHours(1)));
+        Bandwidth limit = Bandwidth.classic(30, Refill.intervally(30, Duration.ofMinutes(10)));
         return Bucket.builder()
                 .addLimit(limit)
                 .build();
