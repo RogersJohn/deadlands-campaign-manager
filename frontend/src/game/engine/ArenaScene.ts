@@ -191,6 +191,7 @@ export class ArenaScene extends Phaser.Scene {
       padding: { x: 6, y: 4 },
     });
     this.coverTooltip.setDepth(100);
+    this.coverTooltip.setScrollFactor(0); // Fix to screen (HUD element)
     this.coverTooltip.setVisible(false);
 
     // Create test enemies around the player
