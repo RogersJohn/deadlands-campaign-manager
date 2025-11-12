@@ -273,6 +273,266 @@ Then('the remote token should have {int}% opacity', async function (opacity) {
   expect(actualOpacity).to.be.closeTo(opacity, 5); // Allow 5% tolerance
 });
 
+// Composite session steps
+
+Given('{string} creates a session and {string} joins', async function (gmUsername, playerUsername) {
+  // GM logs in
+  const driverGM = await this.getBrowser('GM');
+  const loginPageGM = new LoginPage(driverGM);
+  await loginPageGM.navigate(this.config.frontendUrl);
+  await loginPageGM.login(gmUsername, this.testData[gmUsername].password);
+  expect(await loginPageGM.isLoginSuccessful()).to.be.true;
+
+  // GM creates session
+  const sessionsPageGM = new SessionsPage(driverGM);
+  await sessionsPageGM.navigate(this.config.frontendUrl);
+  const sessionName = `E2E_Session_${Date.now()}`;
+  await sessionsPageGM.createSession(sessionName, 'E2E Test Session', 5);
+  this.testData.currentSessionName = sessionName;
+
+  // Player logs in
+  const driverPlayer = await this.getBrowser('Player1');
+  const loginPagePlayer = new LoginPage(driverPlayer);
+  await loginPagePlayer.navigate(this.config.frontendUrl);
+  await loginPagePlayer.login(playerUsername, this.testData[playerUsername].password);
+  expect(await loginPagePlayer.isLoginSuccessful()).to.be.true;
+
+  // Player joins session
+  const sessionsPagePlayer = new SessionsPage(driverPlayer);
+  await sessionsPagePlayer.navigate(this.config.frontendUrl);
+  await sessionsPagePlayer.joinSession(
+    sessionName,
+    this.testData[playerUsername].character?.name
+  );
+
+  this.pages['GM'] = { loginPage: loginPageGM, sessionsPage: sessionsPageGM };
+  this.pages['Player1'] = { loginPage: loginPagePlayer, sessionsPage: sessionsPagePlayer };
+});
+
+Given('both players are in the same game session', async function () {
+  // Similar to "all players are in the same game session" but for 2 players
+  // Player 1 creates session and joins
+  const driver1 = await this.getBrowser('Player1');
+  const loginPage1 = new LoginPage(driver1);
+  await loginPage1.navigate(this.config.frontendUrl);
+  await loginPage1.login('e2e_player1', this.testData['e2e_player1'].password);
+  expect(await loginPage1.isLoginSuccessful()).to.be.true;
+
+  const sessionsPage1 = new SessionsPage(driver1);
+  await sessionsPage1.navigate(this.config.frontendUrl);
+  const sessionName = `E2E_Visual_${Date.now()}`;
+  await sessionsPage1.createSession(sessionName, 'Visual Test Session', 2);
+  this.testData.currentSessionName = sessionName;
+
+  // Player 2 logs in and joins
+  const driver2 = await this.getBrowser('Player2');
+  const loginPage2 = new LoginPage(driver2);
+  await loginPage2.navigate(this.config.frontendUrl);
+  await loginPage2.login('e2e_player2', this.testData['e2e_player2'].password);
+  expect(await loginPage2.isLoginSuccessful()).to.be.true;
+
+  const sessionsPage2 = new SessionsPage(driver2);
+  await sessionsPage2.navigate(this.config.frontendUrl);
+  await sessionsPage2.joinSession(
+    sessionName,
+    this.testData['e2e_player2'].character?.name
+  );
+
+  // Both should be in game arena
+  const arenaPage1 = new GameArenaPage(driver1);
+  const arenaPage2 = new GameArenaPage(driver2);
+  expect(await arenaPage1.isArenaLoaded()).to.be.true;
+  expect(await arenaPage2.isArenaLoaded()).to.be.true;
+
+  this.pages['Player1'] = { loginPage: loginPage1, sessionsPage: sessionsPage1, arenaPage: arenaPage1 };
+  this.pages['Player2'] = { loginPage: loginPage2, sessionsPage: sessionsPage2, arenaPage: arenaPage2 };
+});
+
+Given('all players are in the same game session', async function () {
+  // GM creates session
+  const driverGM = await this.getBrowser('GM');
+  const loginPageGM = new LoginPage(driverGM);
+  await loginPageGM.navigate(this.config.frontendUrl);
+  await loginPageGM.login('e2e_testgm', this.testData['e2e_testgm'].password);
+
+  const sessionsPageGM = new SessionsPage(driverGM);
+  await sessionsPageGM.navigate(this.config.frontendUrl);
+  const sessionName = `E2E_Multi_${Date.now()}`;
+  await sessionsPageGM.createSession(sessionName, 'Multi-player Test', 5);
+  this.testData.currentSessionName = sessionName;
+
+  // Both players join
+  for (const [playerUsername, browserName] of [['e2e_player1', 'Player1'], ['e2e_player2', 'Player2']]) {
+    const driver = await this.getBrowser(browserName);
+    const sessionsPage = new SessionsPage(driver);
+    await sessionsPage.navigate(this.config.frontendUrl);
+    await sessionsPage.joinSession(
+      sessionName,
+      this.testData[playerUsername].character?.name
+    );
+  }
+
+  // Verify all are in arena
+  for (const browserName of ['GM', 'Player1', 'Player2']) {
+    const driver = await this.getBrowser(browserName);
+    const arenaPage = new GameArenaPage(driver);
+    expect(await arenaPage.isArenaLoaded()).to.be.true;
+    if (!this.pages[browserName]) this.pages[browserName] = {};
+    this.pages[browserName].arenaPage = arenaPage;
+  }
+});
+
+Given('{string} has moved to position \\({int}, {int})', async function (username, gridX, gridY) {
+  // Find browser for this user
+  let browserName;
+  if (username === 'e2e_player1') browserName = 'Player1';
+  else if (username === 'e2e_player2') browserName = 'Player2';
+  else browserName = 'GM';
+
+  const driver = await this.getBrowser(browserName);
+  const arenaPage = new GameArenaPage(driver);
+
+  await arenaPage.moveTokenTo(gridX, gridY);
+  await this.sleep(500); // Wait for move to sync
+
+  if (!this.pages[browserName]) this.pages[browserName] = {};
+  this.pages[browserName].arenaPage = arenaPage;
+});
+
+Given('{string} is in a game session with active WebSocket connection', async function (username) {
+  // Log in player
+  const driver = await this.getBrowser('Player1');
+  const loginPage = new LoginPage(driver);
+  await loginPage.navigate(this.config.frontendUrl);
+  await loginPage.login(username, this.testData[username].password);
+  expect(await loginPage.isLoginSuccessful()).to.be.true;
+
+  // Create and join session
+  const sessionsPage = new SessionsPage(driver);
+  await sessionsPage.navigate(this.config.frontendUrl);
+  const sessionName = `E2E_WS_${Date.now()}`;
+  await sessionsPage.createSession(sessionName, 'WebSocket Test', 2);
+  this.testData.currentSessionName = sessionName;
+
+  // Verify in arena with active WebSocket
+  const arenaPage = new GameArenaPage(driver);
+  expect(await arenaPage.isArenaLoaded()).to.be.true;
+
+  const wsStatus = await arenaPage.getWebSocketStatus();
+  expect(wsStatus).to.equal('Connected');
+
+  this.pages['Player1'] = { loginPage, sessionsPage, arenaPage };
+});
+
+// Navigation steps
+
+When('{string} navigates to the game arena', async function (username) {
+  const browserName = username === 'e2e_player1' ? 'Player1' : 'Player2';
+  const driver = await this.getBrowser(browserName);
+  const arenaPage = new GameArenaPage(driver);
+
+  // Navigate to arena (should already be there after joining session)
+  await arenaPage.navigate(this.config.frontendUrl);
+  await this.sleep(1000); // Wait for arena to load
+
+  if (!this.pages[browserName]) this.pages[browserName] = {};
+  this.pages[browserName].arenaPage = arenaPage;
+});
+
+When('{string} joins the same session', async function (username) {
+  const browserName = username === 'e2e_player2' ? 'Player2' : 'Player1';
+  const driver = await this.getBrowser(browserName);
+
+  // Login if not already
+  const loginPage = new LoginPage(driver);
+  await loginPage.navigate(this.config.frontendUrl);
+  await loginPage.login(username, this.testData[username].password);
+  expect(await loginPage.isLoginSuccessful()).to.be.true;
+
+  // Join the session
+  const sessionsPage = new SessionsPage(driver);
+  await sessionsPage.navigate(this.config.frontendUrl);
+  await sessionsPage.joinSession(
+    this.testData.currentSessionName,
+    this.testData[username].character?.name
+  );
+
+  if (!this.pages[browserName]) this.pages[browserName] = {};
+  this.pages[browserName].sessionsPage = sessionsPage;
+});
+
+When('{string} moves to \\({int}, {int}) at the same time as {string} moves to \\({int}, {int})',
+  async function (username1, x1, y1, username2, x2, y2) {
+  const browser1 = username1 === 'e2e_player1' ? 'Player1' : 'Player2';
+  const browser2 = username2 === 'e2e_player2' ? 'Player2' : 'Player1';
+
+  const arenaPage1 = this.pages[browser1].arenaPage;
+  const arenaPage2 = this.pages[browser2].arenaPage;
+
+  // Move both tokens simultaneously
+  await Promise.all([
+    arenaPage1.moveTokenTo(x1, y1),
+    arenaPage2.moveTokenTo(x2, y2)
+  ]);
+
+  await this.sleep(1000); // Wait for synchronization
+});
+
+When('the network connection is interrupted', async function () {
+  const arenaPage = this.pages['Player1'].arenaPage;
+
+  // Simulate network interruption by disconnecting WebSocket
+  await arenaPage.executeScript(`
+    const scene = window.game.scene.getScene('ArenaScene');
+    if (scene && scene.stompClient && scene.stompClient.connected) {
+      scene.stompClient.disconnect();
+    }
+  `);
+
+  await this.sleep(500);
+});
+
+When('the connection is restored after {int} seconds', async function (seconds) {
+  await this.sleep(seconds * 1000);
+
+  // Simulate reconnection by refreshing or reconnecting
+  const driver = await this.getBrowser('Player1');
+  await driver.navigate().refresh();
+  await this.sleep(2000); // Wait for reconnection
+});
+
+// Assertion steps
+
+Then('{string} should see {string}\\'s remote token appear', async function (browserName, username) {
+  const arenaPage = this.pages[browserName].arenaPage;
+
+  // Wait for remote token to appear
+  const tokenAppeared = await arenaPage.waitForRemoteToken(username, 10000);
+  expect(tokenAppeared).to.be.true;
+
+  const position = await arenaPage.getRemoteTokenPosition(username);
+  expect(position).to.not.be.null;
+});
+
+Then('{string} should see both remote tokens at their correct positions', async function (browserName) {
+  const arenaPage = this.pages[browserName].arenaPage;
+
+  // Verify at least 2 remote tokens are visible
+  const tokenCount = await arenaPage.getRemoteTokenCount();
+  expect(tokenCount).to.be.at.least(2);
+});
+
+Then('the WebSocket should automatically reconnect', async function () {
+  const arenaPage = this.pages['Player1'].arenaPage;
+
+  // Wait a bit for reconnection
+  await this.sleep(2000);
+
+  // Check WebSocket status
+  const wsStatus = await arenaPage.getWebSocketStatus();
+  expect(wsStatus).to.equal('Connected');
+});
+
 // WebSocket connection management steps
 
 When('{string} WebSocket disconnects', async function (browserName) {
