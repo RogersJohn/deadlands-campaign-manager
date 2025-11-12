@@ -1282,16 +1282,16 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
    */
   private createCoverObjects() {
     // Building 1 (northeast) - with door and window
-    this.addCoverArea(105, 95, 8, 6, Cover.TOTAL, true); // Solid walls
-    this.addCoverTile(107, 100, Cover.MEDIUM, false); // Door (medium cover)
-    this.addCoverTile(110, 97, Cover.HEAVY, false); // Window (heavy cover)
+    this.addCoverArea(105, 95, 8, 6, Cover.TOTAL, true, 'building1'); // Solid walls
+    this.addCoverTile(107, 100, Cover.MEDIUM, false, 'building1', false, true); // Door
+    this.addCoverTile(110, 97, Cover.HEAVY, false, 'building1', true, false); // Window
 
     // Building 2 (south) - with door
-    this.addCoverArea(108, 105, 6, 5, Cover.TOTAL, true); // Solid walls
-    this.addCoverTile(110, 109, Cover.MEDIUM, false); // Door (medium cover)
+    this.addCoverArea(108, 105, 6, 5, Cover.TOTAL, true, 'building2'); // Solid walls
+    this.addCoverTile(110, 109, Cover.MEDIUM, false, 'building2', false, true); // Door
 
     // Building 3 (west) - solid structure
-    this.addCoverArea(92, 98, 5, 4, Cover.TOTAL, true); // Solid walls
+    this.addCoverArea(92, 98, 5, 4, Cover.TOTAL, true, 'building3'); // Solid walls
 
     // Heavy cover - Thick walls, armored vehicles (-6)
     this.addCoverArea(110, 100, 3, 1, Cover.HEAVY, false); // Thick wall
@@ -1318,7 +1318,8 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     width: number,
     height: number,
     coverLevel: Cover,
-    blocksLOS: boolean
+    blocksLOS: boolean,
+    buildingId?: string
   ) {
     for (let x = startX; x < startX + width; x++) {
       for (let y = startY; y < startY + height; y++) {
@@ -1327,6 +1328,7 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
           gridY: y,
           coverLevel,
           blocksLOS,
+          buildingId,
         });
       }
     }
@@ -1335,7 +1337,15 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
   /**
    * Add a single cover tile (for doors, windows, etc.)
    */
-  private addCoverTile(gridX: number, gridY: number, coverLevel: Cover, blocksLOS: boolean) {
+  private addCoverTile(
+    gridX: number,
+    gridY: number,
+    coverLevel: Cover,
+    blocksLOS: boolean,
+    buildingId?: string,
+    isWindow?: boolean,
+    isDoor?: boolean
+  ) {
     // Remove any existing tile at this position
     this.coverTiles = this.coverTiles.filter((t) => !(t.gridX === gridX && t.gridY === gridY));
 
@@ -1345,6 +1355,9 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       gridY,
       coverLevel,
       blocksLOS,
+      buildingId,
+      isWindow,
+      isDoor,
     });
   }
 
@@ -1617,6 +1630,17 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
   }
 
   private checkLineOfSight(fromGridX: number, fromGridY: number, toGridX: number, toGridY: number): number {
+    // Check if shooter is inside a building
+    const shooterTile = this.coverTiles.find((c) => c.gridX === fromGridX && c.gridY === fromGridY);
+    const shooterBuildingId = shooterTile?.buildingId;
+
+    // Check if target is inside a building
+    const targetTile = this.coverTiles.find((c) => c.gridX === toGridX && c.gridY === toGridY);
+    const targetBuildingId = targetTile?.buildingId;
+
+    // If both are in the same building, allow interior LOS
+    const sameBuilding = shooterBuildingId && targetBuildingId && shooterBuildingId === targetBuildingId;
+
     // Use Bresenham's line algorithm to raycast through grid
     const tilesInLine = this.getGridLine(fromGridX, fromGridY, toGridX, toGridY);
 
@@ -1633,6 +1657,28 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       const coverTile = this.coverTiles.find((c) => c.gridX === x && c.gridY === y);
 
       if (coverTile) {
+        // If in same building, walls don't block LOS (interior building sight)
+        if (sameBuilding && coverTile.buildingId === shooterBuildingId) {
+          // Interior walls/cover within same building don't block LOS
+          // But still apply cover penalties for non-wall cover (furniture, etc.)
+          if (!coverTile.blocksLOS) {
+            const penalty = this.getCoverPenalty(coverTile.coverLevel);
+            if (penalty < bestCoverPenalty) {
+              bestCoverPenalty = penalty;
+            }
+          }
+          continue; // Don't block LOS for same building walls
+        }
+
+        // Check for windows or doors (allow LOS through them with penalties)
+        if (coverTile.isWindow || coverTile.isDoor) {
+          const penalty = this.getCoverPenalty(coverTile.coverLevel);
+          if (penalty < bestCoverPenalty) {
+            bestCoverPenalty = penalty;
+          }
+          continue; // Windows and doors don't completely block LOS
+        }
+
         // If cover blocks LOS completely, return total cover modifier
         if (coverTile.blocksLOS) {
           return -999; // Total cover - cannot target

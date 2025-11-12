@@ -166,6 +166,9 @@ export interface CoverTile {
   gridY: number;
   coverLevel: Cover;
   blocksLOS: boolean;  // Whether this tile completely blocks line of sight
+  buildingId?: string;  // ID of building this tile belongs to (for interior LOS)
+  isWindow?: boolean;   // Can see through from inside/outside
+  isDoor?: boolean;     // Can see through when open
 }
 
 export interface CombatAction {
