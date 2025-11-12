@@ -72,6 +72,7 @@ export class ArenaScene extends Phaser.Scene {
   // Cover system
   private coverTiles: CoverTile[] = [];
   private coverGraphics?: Phaser.GameObjects.Graphics;
+  private coverTooltip?: Phaser.GameObjects.Text;
 
   constructor() {
     super({ key: 'ArenaScene' });
@@ -180,6 +181,16 @@ export class ArenaScene extends Phaser.Scene {
     // Create cover objects on the battlefield
     this.createCoverObjects();
 
+    // Create cover tooltip (initially hidden)
+    this.coverTooltip = this.add.text(0, 0, '', {
+      fontSize: '11px',
+      color: '#ffffff',
+      backgroundColor: '#000000',
+      padding: { x: 6, y: 4 },
+    });
+    this.coverTooltip.setDepth(100);
+    this.coverTooltip.setVisible(false);
+
     // Create test enemies around the player
     this.createTestEnemy(115, 95); // Northeast
     this.createTestEnemy(105, 110); // South
@@ -217,6 +228,14 @@ export class ArenaScene extends Phaser.Scene {
       if (gridX >= 0 && gridX < this.GRID_WIDTH && gridY >= 0 && gridY < this.GRID_HEIGHT) {
         this.hoveredTile = { x: gridX, y: gridY };
         this.updateMovementRange();
+
+        // Update cover tooltip
+        this.updateCoverTooltip(gridX, gridY, pointer.x, pointer.y);
+      } else {
+        // Hide tooltip when outside grid
+        if (this.coverTooltip) {
+          this.coverTooltip.setVisible(false);
+        }
       }
     });
 
@@ -1320,68 +1339,72 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       }
     };
 
-    // Get cover label
-    const getCoverLabel = (coverLevel: Cover): string => {
-      switch (coverLevel) {
-        case Cover.TOTAL:
-          return 'WALL';
-        case Cover.HEAVY:
-          return '-6';
-        case Cover.MEDIUM:
-          return '-4';
-        case Cover.LIGHT:
-          return '-2';
-        default:
-          return '';
-      }
-    };
-
-    // Group cover tiles by type for drawing
-    const coverGroups = new Map<Cover, CoverTile[]>();
+    // Draw each cover tile
     this.coverTiles.forEach((tile) => {
-      if (!coverGroups.has(tile.coverLevel)) {
-        coverGroups.set(tile.coverLevel, []);
+      const { color, alpha } = getCoverColor(tile.coverLevel);
+      const pixelX = tile.gridX * this.TILE_SIZE;
+      const pixelY = tile.gridY * this.TILE_SIZE;
+
+      // Draw filled rectangle
+      this.coverGraphics!.fillStyle(color, alpha);
+      this.coverGraphics!.fillRect(pixelX, pixelY, this.TILE_SIZE, this.TILE_SIZE);
+
+      // Draw border - RED for impenetrable walls, BLACK for other cover
+      if (tile.blocksLOS) {
+        this.coverGraphics!.lineStyle(2, 0xff0000, 0.8); // Red border for walls
+      } else {
+        this.coverGraphics!.lineStyle(1, 0x000000, 0.4); // Black border for cover
       }
-      coverGroups.get(tile.coverLevel)!.push(tile);
+      this.coverGraphics!.strokeRect(pixelX, pixelY, this.TILE_SIZE, this.TILE_SIZE);
     });
+  }
 
-    // Draw each cover group
-    coverGroups.forEach((tiles, coverLevel) => {
-      const { color, alpha } = getCoverColor(coverLevel);
+  /**
+   * Update cover tooltip when hovering over tiles
+   */
+  private updateCoverTooltip(gridX: number, gridY: number, screenX: number, screenY: number) {
+    if (!this.coverTooltip) return;
 
-      tiles.forEach((tile) => {
-        const pixelX = tile.gridX * this.TILE_SIZE;
-        const pixelY = tile.gridY * this.TILE_SIZE;
+    // Check if this tile has cover
+    const coverTile = this.coverTiles.find((c) => c.gridX === gridX && c.gridY === gridY);
 
-        // Draw filled rectangle
-        this.coverGraphics!.fillStyle(color, alpha);
-        this.coverGraphics!.fillRect(pixelX, pixelY, this.TILE_SIZE, this.TILE_SIZE);
+    if (coverTile) {
+      // Build tooltip text
+      const coverName = this.getCoverName(coverTile.coverLevel);
+      const coverPenalty = this.getCoverPenalty(coverTile.coverLevel);
+      const blocksText = coverTile.blocksLOS ? 'Blocks Line of Sight' : 'Provides Cover';
 
-        // Draw border
-        this.coverGraphics!.lineStyle(1, 0x000000, 0.5);
-        this.coverGraphics!.strokeRect(pixelX, pixelY, this.TILE_SIZE, this.TILE_SIZE);
+      let tooltipText = `${coverName}\n`;
+      if (coverTile.blocksLOS) {
+        tooltipText += `${blocksText}\nCannot be targeted`;
+      } else {
+        tooltipText += `${blocksText}\nPenalty: ${coverPenalty}`;
+      }
 
-        // Add text label for center tiles of each cover area
-        const isEdgeTile = !tiles.some(
-          (t) => t.gridX === tile.gridX + 1 && t.gridY === tile.gridY + 1
-        );
-        if (isEdgeTile && coverLevel !== Cover.NONE) {
-          const label = this.add.text(
-            pixelX + this.TILE_SIZE / 2,
-            pixelY + this.TILE_SIZE / 2,
-            getCoverLabel(coverLevel),
-            {
-              fontSize: coverLevel === Cover.TOTAL ? '8px' : '10px',
-              color: '#ffffff',
-              backgroundColor: '#000000',
-              padding: { x: 2, y: 1 },
-            }
-          );
-          label.setOrigin(0.5);
-          label.setDepth(4);
-        }
-      });
-    });
+      this.coverTooltip.setText(tooltipText);
+      this.coverTooltip.setPosition(screenX + 15, screenY + 15);
+      this.coverTooltip.setVisible(true);
+    } else {
+      this.coverTooltip.setVisible(false);
+    }
+  }
+
+  /**
+   * Get cover type name for display
+   */
+  private getCoverName(coverLevel: Cover): string {
+    switch (coverLevel) {
+      case Cover.TOTAL:
+        return 'Solid Wall';
+      case Cover.HEAVY:
+        return 'Heavy Cover';
+      case Cover.MEDIUM:
+        return 'Medium Cover';
+      case Cover.LIGHT:
+        return 'Light Cover';
+      default:
+        return 'No Cover';
+    }
   }
 
   /**
