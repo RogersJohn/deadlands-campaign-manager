@@ -1271,10 +1271,17 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
    * Create cover objects on the battlefield
    */
   private createCoverObjects() {
-    // Total cover - Buildings (blocks LOS completely)
-    this.addCoverArea(105, 95, 8, 6, Cover.TOTAL, true); // Building near northeast enemy
-    this.addCoverArea(108, 105, 6, 5, Cover.TOTAL, true); // Building near south enemy
-    this.addCoverArea(92, 98, 5, 4, Cover.TOTAL, true); // Building near west enemy
+    // Building 1 (northeast) - with door and window
+    this.addCoverArea(105, 95, 8, 6, Cover.TOTAL, true); // Solid walls
+    this.addCoverTile(107, 100, Cover.MEDIUM, false); // Door (medium cover)
+    this.addCoverTile(110, 97, Cover.HEAVY, false); // Window (heavy cover)
+
+    // Building 2 (south) - with door
+    this.addCoverArea(108, 105, 6, 5, Cover.TOTAL, true); // Solid walls
+    this.addCoverTile(110, 109, Cover.MEDIUM, false); // Door (medium cover)
+
+    // Building 3 (west) - solid structure
+    this.addCoverArea(92, 98, 5, 4, Cover.TOTAL, true); // Solid walls
 
     // Heavy cover - Thick walls, armored vehicles (-6)
     this.addCoverArea(110, 100, 3, 1, Cover.HEAVY, false); // Thick wall
@@ -1316,7 +1323,24 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
   }
 
   /**
+   * Add a single cover tile (for doors, windows, etc.)
+   */
+  private addCoverTile(gridX: number, gridY: number, coverLevel: Cover, blocksLOS: boolean) {
+    // Remove any existing tile at this position
+    this.coverTiles = this.coverTiles.filter((t) => !(t.gridX === gridX && t.gridY === gridY));
+
+    // Add the new tile
+    this.coverTiles.push({
+      gridX,
+      gridY,
+      coverLevel,
+      blocksLOS,
+    });
+  }
+
+  /**
    * Draw visual representations of all cover tiles
+   * Only draws borders on the outside edges (perimeter) of each cover group
    */
   private drawCoverVisuals() {
     if (!this.coverGraphics) return;
@@ -1339,6 +1363,11 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       }
     };
 
+    // Helper to check if a tile exists at position
+    const hasCoverAt = (x: number, y: number): boolean => {
+      return this.coverTiles.some((t) => t.gridX === x && t.gridY === y);
+    };
+
     // Draw each cover tile
     this.coverTiles.forEach((tile) => {
       const { color, alpha } = getCoverColor(tile.coverLevel);
@@ -1349,13 +1378,50 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       this.coverGraphics!.fillStyle(color, alpha);
       this.coverGraphics!.fillRect(pixelX, pixelY, this.TILE_SIZE, this.TILE_SIZE);
 
-      // Draw border - RED for impenetrable walls, BLACK for other cover
-      if (tile.blocksLOS) {
-        this.coverGraphics!.lineStyle(2, 0xff0000, 0.8); // Red border for walls
-      } else {
-        this.coverGraphics!.lineStyle(1, 0x000000, 0.4); // Black border for cover
+      // Determine border color and width
+      const borderColor = tile.blocksLOS ? 0xff0000 : 0x000000;
+      const borderWidth = tile.blocksLOS ? 3 : 2;
+      const borderAlpha = tile.blocksLOS ? 0.9 : 0.5;
+
+      // Check each direction for edges (draw border only on perimeter)
+      const hasNorth = hasCoverAt(tile.gridX, tile.gridY - 1);
+      const hasSouth = hasCoverAt(tile.gridX, tile.gridY + 1);
+      const hasEast = hasCoverAt(tile.gridX + 1, tile.gridY);
+      const hasWest = hasCoverAt(tile.gridX - 1, tile.gridY);
+
+      this.coverGraphics!.lineStyle(borderWidth, borderColor, borderAlpha);
+
+      // Draw top edge if no neighbor above
+      if (!hasNorth) {
+        this.coverGraphics!.beginPath();
+        this.coverGraphics!.moveTo(pixelX, pixelY);
+        this.coverGraphics!.lineTo(pixelX + this.TILE_SIZE, pixelY);
+        this.coverGraphics!.strokePath();
       }
-      this.coverGraphics!.strokeRect(pixelX, pixelY, this.TILE_SIZE, this.TILE_SIZE);
+
+      // Draw bottom edge if no neighbor below
+      if (!hasSouth) {
+        this.coverGraphics!.beginPath();
+        this.coverGraphics!.moveTo(pixelX, pixelY + this.TILE_SIZE);
+        this.coverGraphics!.lineTo(pixelX + this.TILE_SIZE, pixelY + this.TILE_SIZE);
+        this.coverGraphics!.strokePath();
+      }
+
+      // Draw left edge if no neighbor to the left
+      if (!hasWest) {
+        this.coverGraphics!.beginPath();
+        this.coverGraphics!.moveTo(pixelX, pixelY);
+        this.coverGraphics!.lineTo(pixelX, pixelY + this.TILE_SIZE);
+        this.coverGraphics!.strokePath();
+      }
+
+      // Draw right edge if no neighbor to the right
+      if (!hasEast) {
+        this.coverGraphics!.beginPath();
+        this.coverGraphics!.moveTo(pixelX + this.TILE_SIZE, pixelY);
+        this.coverGraphics!.lineTo(pixelX + this.TILE_SIZE, pixelY + this.TILE_SIZE);
+        this.coverGraphics!.strokePath();
+      }
     });
   }
 
