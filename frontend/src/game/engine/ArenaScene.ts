@@ -706,8 +706,15 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
 
     // Check if tile is occupied by enemy
     const isOccupied = this.enemyData.some(enemy => enemy.gridX === gridX && enemy.gridY === gridY && enemy.health > 0);
+    if (isOccupied) return false;
 
-    return !isOccupied;
+    // Check if tile is blocked by solid cover (walls, buildings)
+    const coverTile = this.coverTiles.find((c) => c.gridX === gridX && c.gridY === gridY);
+    if (coverTile && coverTile.blocksLOS) {
+      return false; // Cannot move through walls
+    }
+
+    return true;
   }
 
   private isAdjacentToPlayer(gridX: number, gridY: number): boolean {
