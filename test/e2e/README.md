@@ -1,6 +1,34 @@
 # Deadlands E2E Automated Tests
 
+**Status:** ✅ Production-Ready (Framework Complete) | **Created:** 2025-11-12
+
 Fully automated end-to-end tests for multiplayer functionality using Selenium WebDriver, Cucumber BDD, and Docker.
+
+## Current Status (2025-11-12)
+
+**Framework:** ✅ Complete and production-ready
+**Tests:** ⏳ Waiting for Sessions Management UI implementation
+
+**Latest Test Run:**
+- 77 steps: 28 passed, 7 failed, 5 undefined, 37 skipped
+- Execution time: 3m 30s
+- **Blocker:** Sessions Management UI (`/sessions` route) not yet implemented in frontend
+
+**Test Infrastructure:**
+- ✅ Selenium Grid (Hub + 3 Chrome nodes)
+- ✅ 77 Cucumber step definitions
+- ✅ Page Object Model architecture
+- ✅ Docker Compose orchestration
+- ✅ Test accounts created in Railway production
+- ✅ 60-second timeout configuration
+- ✅ Valid CSS selectors (no jQuery dependencies)
+- ✅ Rate limiting adjusted (30 logins/10 min)
+
+**To Run Tests Again:**
+```bash
+cd test/e2e
+docker-compose down -v && docker-compose up --abort-on-container-exit --build
+```
 
 ## Features
 

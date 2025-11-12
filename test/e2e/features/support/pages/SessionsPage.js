@@ -6,15 +6,15 @@ class SessionsPage extends BasePage {
     super(driver);
 
     // Locators
-    this.createSessionButton = By.css('button:contains("Create Session"), button[aria-label="Create Session"]');
-    this.sessionNameInput = By.css('input[name="name"], input[placeholder*="Session Name"]');
-    this.sessionDescriptionInput = By.css('textarea[name="description"], textarea[placeholder*="Description"]');
-    this.maxPlayersInput = By.css('input[name="maxPlayers"], input[type="number"]');
+    this.createSessionButton = By.css('button[aria-label="Create Session"]');
+    this.sessionNameInput = By.css('input[name="name"]');
+    this.sessionDescriptionInput = By.css('textarea[name="description"]');
+    this.maxPlayersInput = By.css('input[name="maxPlayers"]');
     this.submitButton = By.css('button[type="submit"]');
-    this.sessionList = By.css('.session-list, [data-testid="session-list"]');
+    this.sessionList = By.css('.session-list');
     this.joinButton = (sessionName) => By.xpath(`//div[contains(text(),'${sessionName}')]//ancestor::*//button[contains(text(),'Join')]`);
-    this.characterSelect = By.css('select[name="character"], select[name="characterId"]');
-    this.confirmJoinButton = By.css('button:contains("Join"), button:contains("Confirm")');
+    this.characterSelect = By.css('select[name="character"]');
+    this.confirmJoinButton = By.xpath(`//button[contains(text(),'Join') or contains(text(),'Confirm')]`);
   }
 
   async navigate(baseUrl) {

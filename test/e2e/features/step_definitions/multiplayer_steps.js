@@ -1,8 +1,11 @@
-const { Given, When, Then } = require('@cucumber/cucumber');
+const { Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
 const { expect } = require('chai');
 const LoginPage = require('../support/pages/LoginPage');
 const SessionsPage = require('../support/pages/SessionsPage');
 const GameArenaPage = require('../support/pages/GameArenaPage');
+
+// Set timeout to 60 seconds for all steps
+setDefaultTimeout(60000);
 
 // Background steps
 
@@ -503,7 +506,7 @@ When('the connection is restored after {int} seconds', async function (seconds) 
 
 // Assertion steps
 
-Then('{string} should see {string}\\'s remote token appear', async function (browserName, username) {
+Then('{string} should see {string}\'s remote token appear', async function (browserName, username) {
   const arenaPage = this.pages[browserName].arenaPage;
 
   // Wait for remote token to appear

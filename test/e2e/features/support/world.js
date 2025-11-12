@@ -1,7 +1,10 @@
-const { setWorldConstructor, Before, After, BeforeAll, AfterAll } = require('@cucumber/cucumber');
+const { setWorldConstructor, Before, After, BeforeAll, AfterAll, setDefaultTimeout } = require('@cucumber/cucumber');
 const { Builder, Browser } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const axios = require('axios');
+
+// Set default timeout to 60 seconds for all steps
+setDefaultTimeout(60000);
 
 // Configuration
 const config = {

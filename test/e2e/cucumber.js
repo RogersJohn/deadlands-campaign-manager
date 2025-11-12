@@ -9,8 +9,7 @@ module.exports = {
     formatOptions: {
       snippetInterface: 'async-await',
     },
-    parallel: 2, // Run up to 2 scenarios in parallel (reduced from 3)
+    parallel: 1, // Disabled parallel mode to ensure timeout settings work
     publishQuiet: true,
-    timeout: 30000, // Increase timeout to 30 seconds
   },
 };
