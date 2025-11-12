@@ -1,5 +1,7 @@
 package com.deadlands.campaign.controller;
 
+import com.deadlands.campaign.dto.TokenMoveRequest;
+import com.deadlands.campaign.dto.TokenMovedEvent;
 import com.deadlands.campaign.model.*;
 import com.deadlands.campaign.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -254,6 +256,106 @@ public class GameSessionController {
         if (sessionPlayer != null) {
             sessionPlayer.setLastActivity(Instant.now());
             sessionPlayerRepository.save(sessionPlayer);
+        }
+    }
+
+    /**
+     * Move a token on the battlefield
+     * Server validates the move, updates state, and broadcasts to all players
+     */
+    @MessageMapping("/session/{sessionId}/move-token")
+    public void moveToken(@DestinationVariable Long sessionId,
+                          TokenMoveRequest request,
+                          Principal principal) {
+        User player = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Verify player is in this session
+        SessionPlayer sessionPlayer = sessionPlayerRepository
+                .findBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, player.getId())
+                .orElseThrow(() -> new RuntimeException("Not in this session"));
+
+        // Validate the move (basic validation for now)
+        if (!isValidMove(request)) {
+            // Silently reject invalid moves
+            return;
+        }
+
+        // For player tokens, verify ownership
+        if ("PLAYER".equals(request.getTokenType())) {
+            // Check if this player owns the character being moved
+            if (!canMoveToken(player, request.getTokenId())) {
+                return; // Reject silently
+            }
+        } else if ("ENEMY".equals(request.getTokenType())) {
+            // Only GM can move enemies
+            if (player.getRole() != User.Role.GAME_MASTER) {
+                return;
+            }
+        }
+
+        // Update last activity
+        sessionPlayer.setLastActivity(Instant.now());
+        sessionPlayerRepository.save(sessionPlayer);
+
+        // Broadcast the token movement to all players in session
+        TokenMovedEvent event = new TokenMovedEvent(
+                request.getTokenId(),
+                request.getTokenType(),
+                player.getUsername(),
+                request.getToX(),
+                request.getToY(),
+                System.currentTimeMillis()
+        );
+
+        messagingTemplate.convertAndSend(
+                "/topic/session/" + sessionId + "/token-moved",
+                event
+        );
+    }
+
+    /**
+     * Validate if a move is legal (basic validation)
+     */
+    private boolean isValidMove(TokenMoveRequest request) {
+        // Check required fields
+        if (request.getToX() == null || request.getToY() == null) {
+            return false;
+        }
+
+        // Check grid boundaries (assuming 200x200 grid)
+        if (request.getToX() < 0 || request.getToX() >= 200 ||
+            request.getToY() < 0 || request.getToY() >= 200) {
+            return false;
+        }
+
+        // TODO: Add more validation:
+        // - Check movement distance (pace-based)
+        // - Check for obstacles
+        // - Check for occupied tiles
+
+        return true;
+    }
+
+    /**
+     * Check if a player can move a specific token
+     */
+    private boolean canMoveToken(User player, String tokenId) {
+        // For player tokens, tokenId is the character ID
+        try {
+            Long characterId = Long.parseLong(tokenId);
+            Character character = characterRepository.findById(characterId).orElse(null);
+
+            if (character == null) {
+                return false;
+            }
+
+            // Player must own this character, or be a GM
+            return character.getPlayer().getId().equals(player.getId()) ||
+                   player.getRole() == User.Role.GAME_MASTER;
+        } catch (NumberFormatException e) {
+            // Invalid token ID
+            return false;
         }
     }
 

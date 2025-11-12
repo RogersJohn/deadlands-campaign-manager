@@ -64,3 +64,22 @@ export interface PlayerDisconnectedMessage {
   playerId: number;
   playerName: string;
 }
+
+// Token movement messages
+export interface TokenMoveRequest {
+  tokenId: string;
+  tokenType: 'PLAYER' | 'ENEMY';
+  fromX?: number;
+  fromY?: number;
+  toX: number;
+  toY: number;
+}
+
+export interface TokenMovedEvent {
+  tokenId: string;
+  tokenType: 'PLAYER' | 'ENEMY';
+  movedBy: string;
+  gridX: number;
+  gridY: number;
+  timestamp: number;
+}

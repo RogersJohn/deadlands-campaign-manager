@@ -5,6 +5,8 @@ import {
   PlayerLeftMessage,
   PlayerConnectedMessage,
   PlayerDisconnectedMessage,
+  TokenMoveRequest,
+  TokenMovedEvent,
 } from '../types/session';
 
 /**
@@ -152,6 +154,33 @@ class WebSocketService {
 
     return this.subscribe(
       `/topic/session/${this.sessionId}/player-disconnected`,
+      (message) => {
+        callback(JSON.parse(message.body));
+      }
+    );
+  }
+
+  /**
+   * Send a token move request to the server
+   */
+  moveToken(request: TokenMoveRequest): void {
+    if (!this.sessionId) {
+      throw new Error('Not connected to a session');
+    }
+
+    this.send(`/app/session/${this.sessionId}/move-token`, request);
+  }
+
+  /**
+   * Subscribe to token moved events
+   */
+  onTokenMoved(callback: (event: TokenMovedEvent) => void): () => void {
+    if (!this.sessionId) {
+      throw new Error('Not connected to a session');
+    }
+
+    return this.subscribe(
+      `/topic/session/${this.sessionId}/token-moved`,
       (message) => {
         callback(JSON.parse(message.body));
       }
