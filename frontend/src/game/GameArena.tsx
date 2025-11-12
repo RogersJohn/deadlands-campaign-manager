@@ -690,8 +690,19 @@ export function GameArena() {
             {/* Weapon Selection */}
             {selectedCharacter && (
               <Paper sx={{ p: 2, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
+                <Typography
+                  sx={{
+                    fontSize: '14px',
+                    fontWeight: 'bold',
+                    color: '#f5e6d3',
+                    mb: 1,
+                    fontFamily: 'Rye, serif',
+                  }}
+                >
+                  ⚔️ Weapons
+                </Typography>
                 <WeaponSelection
-                  character={selectedCharacter}
+                  weapons={selectedCharacter.equipment || []}
                   selectedWeapon={selectedWeapon}
                   onSelectWeapon={handleSelectWeapon}
                 />
