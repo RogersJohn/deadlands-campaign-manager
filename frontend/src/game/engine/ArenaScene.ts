@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { GameCharacter, GameEnemy, CombatLogEntry, Equipment } from '../types/GameTypes';
+import { GameCharacter, GameEnemy, CombatLogEntry, Equipment, CoverTile, Cover } from '../types/GameTypes';
 import { CombatManager, TurnPhase } from './CombatManager';
 import { TypedGameEvents, wrapSceneEvents } from '../events/GameEvents';
 
@@ -69,15 +69,9 @@ export class ArenaScene extends Phaser.Scene {
   private combatManager?: CombatManager;
   private selectedWeapon?: Equipment;
 
-  // Cover objects
-  private coverObjects: Array<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    type: 'full' | 'partial'; // full = -4, partial = -2
-    sprite?: Phaser.GameObjects.Rectangle;
-  }> = [];
+  // Cover system
+  private coverTiles: CoverTile[] = [];
+  private coverGraphics?: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: 'ArenaScene' });
@@ -115,6 +109,10 @@ export class ArenaScene extends Phaser.Scene {
     // Create attack range graphics layer (drawn under characters)
     this.attackRangeGraphics = this.add.graphics();
     this.attackRangeGraphics.setDepth(2);
+
+    // Create cover graphics layer (drawn above grid but under characters)
+    this.coverGraphics = this.add.graphics();
+    this.coverGraphics.setDepth(3);
 
     // Create line of sight graphics layer (drawn above most elements)
     this.lineOfSightGraphics = this.add.graphics();
@@ -984,8 +982,20 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     // Check line of sight and cover
     const coverPenalty = this.checkLineOfSight(this.playerGridX, this.playerGridY, enemy.gridX, enemy.gridY);
 
-    // Combine all penalties
-    const totalPenalty = rangePenalty + coverPenalty;
+    // Check if LOS is completely blocked
+    const losBlocked = coverPenalty <= -999;
+
+    // Check if weapon has indirect fire (can shoot over obstacles)
+    const hasIndirectFire = this.selectedWeapon?.indirectFire || false;
+
+    // Prevent attack if LOS is blocked and weapon doesn't have indirect fire
+    if (losBlocked && !hasIndirectFire) {
+      this.combatManager.addLog('Cannot target: Line of sight is blocked!', 'miss');
+      return;
+    }
+
+    // Combine all penalties (if indirect fire, ignore cover penalties)
+    const totalPenalty = hasIndirectFire ? rangePenalty : rangePenalty + coverPenalty;
 
     // Use combat manager to perform attack with selected weapon (or fists as fallback)
     const weapon = this.selectedWeapon
@@ -1242,62 +1252,135 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
    * Create cover objects on the battlefield
    */
   private createCoverObjects() {
-    // Buildings (full cover = -4 to hit)
-    this.addCover(105, 95, 8, 6, 'full', 0x8b4513); // Building near northeast enemy
-    this.addCover(108, 105, 6, 5, 'full', 0x8b4513); // Building near south enemy
-    this.addCover(92, 98, 5, 4, 'full', 0x8b4513); // Building near west enemy
+    // Total cover - Buildings (blocks LOS completely)
+    this.addCoverArea(105, 95, 8, 6, Cover.TOTAL, true); // Building near northeast enemy
+    this.addCoverArea(108, 105, 6, 5, Cover.TOTAL, true); // Building near south enemy
+    this.addCoverArea(92, 98, 5, 4, Cover.TOTAL, true); // Building near west enemy
 
-    // Walls (partial cover = -2 to hit)
-    this.addCover(110, 100, 3, 1, 'partial', 0x696969); // Wall
-    this.addCover(95, 95, 1, 5, 'partial', 0x696969); // Wall
-    this.addCover(103, 108, 5, 1, 'partial', 0x696969); // Wall
+    // Heavy cover - Thick walls, armored vehicles (-6)
+    this.addCoverArea(110, 100, 3, 1, Cover.HEAVY, false); // Thick wall
+    this.addCoverArea(95, 95, 1, 5, Cover.HEAVY, false); // Thick wall
+
+    // Medium cover - Barrels, thick trees (-4)
+    this.addCoverArea(103, 108, 4, 1, Cover.MEDIUM, false); // Barrels
+    this.addCoverArea(118, 102, 2, 2, Cover.MEDIUM, false); // Tree cluster
+
+    // Light cover - Furniture, low walls (-2)
+    this.addCoverArea(87, 95, 2, 1, Cover.LIGHT, false); // Low wall
+    this.addCoverArea(112, 108, 1, 3, Cover.LIGHT, false); // Fence
+
+    // Draw all cover visuals
+    this.drawCoverVisuals();
   }
 
   /**
-   * Add a cover object to the battlefield
+   * Add a rectangular area of cover tiles to the battlefield
    */
-  private addCover(gridX: number, gridY: number, width: number, height: number, type: 'full' | 'partial', color: number) {
-    const pixelX = gridX * this.TILE_SIZE;
-    const pixelY = gridY * this.TILE_SIZE;
-    const pixelWidth = width * this.TILE_SIZE;
-    const pixelHeight = height * this.TILE_SIZE;
-
-    // Create visual representation
-    const sprite = this.add.rectangle(
-      pixelX + pixelWidth / 2,
-      pixelY + pixelHeight / 2,
-      pixelWidth,
-      pixelHeight,
-      color,
-      type === 'full' ? 0.8 : 0.5
-    );
-    sprite.setStrokeStyle(2, 0x000000);
-    sprite.setDepth(5);
-
-    // Add label
-    const label = this.add.text(
-      pixelX + pixelWidth / 2,
-      pixelY + pixelHeight / 2,
-      type === 'full' ? 'Cover' : 'Light\nCover',
-      {
-        fontSize: '10px',
-        color: '#ffffff',
-        align: 'center',
-        backgroundColor: '#000000',
-        padding: { x: 2, y: 1 },
+  private addCoverArea(
+    startX: number,
+    startY: number,
+    width: number,
+    height: number,
+    coverLevel: Cover,
+    blocksLOS: boolean
+  ) {
+    for (let x = startX; x < startX + width; x++) {
+      for (let y = startY; y < startY + height; y++) {
+        this.coverTiles.push({
+          gridX: x,
+          gridY: y,
+          coverLevel,
+          blocksLOS,
+        });
       }
-    );
-    label.setOrigin(0.5);
-    label.setDepth(6);
+    }
+  }
 
-    // Store cover data
-    this.coverObjects.push({
-      x: pixelX,
-      y: pixelY,
-      width: pixelWidth,
-      height: pixelHeight,
-      type,
-      sprite,
+  /**
+   * Draw visual representations of all cover tiles
+   */
+  private drawCoverVisuals() {
+    if (!this.coverGraphics) return;
+
+    this.coverGraphics.clear();
+
+    // Get cover color and alpha based on type
+    const getCoverColor = (coverLevel: Cover): { color: number; alpha: number } => {
+      switch (coverLevel) {
+        case Cover.TOTAL:
+          return { color: 0x4a3728, alpha: 0.9 }; // Dark brown (buildings)
+        case Cover.HEAVY:
+          return { color: 0x696969, alpha: 0.75 }; // Dark gray (thick walls)
+        case Cover.MEDIUM:
+          return { color: 0x8b6f47, alpha: 0.6 }; // Brown (barrels/trees)
+        case Cover.LIGHT:
+          return { color: 0xa0826d, alpha: 0.4 }; // Light brown (furniture)
+        default:
+          return { color: 0xffffff, alpha: 0.0 };
+      }
+    };
+
+    // Get cover label
+    const getCoverLabel = (coverLevel: Cover): string => {
+      switch (coverLevel) {
+        case Cover.TOTAL:
+          return 'WALL';
+        case Cover.HEAVY:
+          return '-6';
+        case Cover.MEDIUM:
+          return '-4';
+        case Cover.LIGHT:
+          return '-2';
+        default:
+          return '';
+      }
+    };
+
+    // Group cover tiles by type for drawing
+    const coverGroups = new Map<Cover, CoverTile[]>();
+    this.coverTiles.forEach((tile) => {
+      if (!coverGroups.has(tile.coverLevel)) {
+        coverGroups.set(tile.coverLevel, []);
+      }
+      coverGroups.get(tile.coverLevel)!.push(tile);
+    });
+
+    // Draw each cover group
+    coverGroups.forEach((tiles, coverLevel) => {
+      const { color, alpha } = getCoverColor(coverLevel);
+
+      tiles.forEach((tile) => {
+        const pixelX = tile.gridX * this.TILE_SIZE;
+        const pixelY = tile.gridY * this.TILE_SIZE;
+
+        // Draw filled rectangle
+        this.coverGraphics!.fillStyle(color, alpha);
+        this.coverGraphics!.fillRect(pixelX, pixelY, this.TILE_SIZE, this.TILE_SIZE);
+
+        // Draw border
+        this.coverGraphics!.lineStyle(1, 0x000000, 0.5);
+        this.coverGraphics!.strokeRect(pixelX, pixelY, this.TILE_SIZE, this.TILE_SIZE);
+
+        // Add text label for center tiles of each cover area
+        const isEdgeTile = !tiles.some(
+          (t) => t.gridX === tile.gridX + 1 && t.gridY === tile.gridY + 1
+        );
+        if (isEdgeTile && coverLevel !== Cover.NONE) {
+          const label = this.add.text(
+            pixelX + this.TILE_SIZE / 2,
+            pixelY + this.TILE_SIZE / 2,
+            getCoverLabel(coverLevel),
+            {
+              fontSize: coverLevel === Cover.TOTAL ? '8px' : '10px',
+              color: '#ffffff',
+              backgroundColor: '#000000',
+              padding: { x: 2, y: 1 },
+            }
+          );
+          label.setOrigin(0.5);
+          label.setDepth(4);
+        }
+      });
     });
   }
 
@@ -1307,10 +1390,12 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
    */
   /**
    * Draw a line of sight from the player to a target
-   * Color-coded based on Savage Worlds LOS rules:
-   * - Green: Clear line of sight (no cover)
-   * - Yellow: Partial cover (-2 penalty)
-   * - Orange: Full cover (-4 penalty)
+   * Color-coded based on total penalties and LOS blocking:
+   * - Green: Good shot (0 to -2 total penalty)
+   * - Yellow: Medium penalties (-3 to -5)
+   * - Orange: Heavy penalties (-6 to -8)
+   * - Red: No line of sight (blocked by wall)
+   * Also displays all applicable modifiers on the line
    */
   private drawLineOfSight(targetGridX: number, targetGridY: number) {
     if (!this.lineOfSightGraphics) return;
@@ -1323,15 +1408,34 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       targetGridY
     );
 
-    // Determine line color based on cover
+    // Check if LOS is completely blocked
+    const losBlocked = coverPenalty <= -999;
+
+    // Calculate all modifiers
+    const distance = this.getGridDistance(this.playerGridX, this.playerGridY, targetGridX, targetGridY);
+    const rangePenalty = this.selectedWeapon ? this.getRangePenalty(this.selectedWeapon, distance) : 0;
+    const illuminationPenalty = this.combatManager?.getIlluminationPenalty() || 0;
+
+    // Check if target is running
+    const targetEnemy = this.enemyData.find((e) => e.gridX === targetGridX && e.gridY === targetGridY);
+    const runningPenalty = targetEnemy && targetEnemy.hasRun ? -2 : 0;
+
+    // Total penalty (excluding cover if LOS is blocked)
+    const totalPenalty = losBlocked
+      ? -999
+      : coverPenalty + rangePenalty + illuminationPenalty + runningPenalty;
+
+    // Determine line color based on total penalty
     let lineColor: number;
     let lineAlpha = 0.8;
-    if (coverPenalty === 0) {
-      lineColor = 0x44ff44; // Green for clear LOS
-    } else if (coverPenalty === -2) {
-      lineColor = 0xffff00; // Yellow for partial cover
+    if (losBlocked) {
+      lineColor = 0xff0000; // Red for blocked LOS
+    } else if (totalPenalty >= -2) {
+      lineColor = 0x44ff44; // Green for good shot
+    } else if (totalPenalty >= -5) {
+      lineColor = 0xffff00; // Yellow for medium penalties
     } else {
-      lineColor = 0xffaa44; // Orange for full cover
+      lineColor = 0xffaa44; // Orange for heavy penalties
     }
 
     // Calculate pixel positions (center of tiles)
@@ -1351,21 +1455,67 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     this.lineOfSightGraphics.fillStyle(lineColor, lineAlpha);
     this.lineOfSightGraphics.fillCircle(fromPixelX, fromPixelY, 4);
     this.lineOfSightGraphics.fillCircle(toPixelX, toPixelY, 4);
+
+    // Build modifier text
+    const modifiers: string[] = [];
+    if (losBlocked) {
+      modifiers.push('NO LOS');
+    } else {
+      if (rangePenalty !== 0) modifiers.push(`Range: ${rangePenalty}`);
+      if (coverPenalty !== 0) modifiers.push(`Cover: ${coverPenalty}`);
+      if (illuminationPenalty !== 0) modifiers.push(`Light: ${illuminationPenalty}`);
+      if (runningPenalty !== 0) modifiers.push(`Running: ${runningPenalty}`);
+      if (modifiers.length === 0) modifiers.push('No penalties');
+    }
+
+    // Draw modifier text at midpoint of line
+    const midX = (fromPixelX + toPixelX) / 2;
+    const midY = (fromPixelY + toPixelY) / 2;
+
+    const text = losBlocked
+      ? 'NO LINE OF SIGHT'
+      : `Total: ${totalPenalty}\n${modifiers.join(' | ')}`;
+
+    const modifierText = this.add.text(midX, midY - 20, text, {
+      fontSize: losBlocked ? '12px' : '11px',
+      color: '#ffffff',
+      backgroundColor: losBlocked ? '#cc0000' : '#000000',
+      padding: { x: 4, y: 2 },
+      align: 'center',
+    });
+    modifierText.setOrigin(0.5);
+    modifierText.setDepth(11);
+
+    // Auto-destroy text after a frame (will be redrawn next frame if still hovering)
+    this.time.delayedCall(100, () => {
+      modifierText.destroy();
+    });
   }
 
   private checkLineOfSight(fromGridX: number, fromGridY: number, toGridX: number, toGridY: number): number {
-    const fromPixelX = fromGridX * this.TILE_SIZE + this.TILE_SIZE / 2;
-    const fromPixelY = fromGridY * this.TILE_SIZE + this.TILE_SIZE / 2;
-    const toPixelX = toGridX * this.TILE_SIZE + this.TILE_SIZE / 2;
-    const toPixelY = toGridY * this.TILE_SIZE + this.TILE_SIZE / 2;
+    // Use Bresenham's line algorithm to raycast through grid
+    const tilesInLine = this.getGridLine(fromGridX, fromGridY, toGridX, toGridY);
 
     let bestCoverPenalty = 0;
 
-    // Check each cover object to see if it intersects the line of sight
-    for (const cover of this.coverObjects) {
-      if (this.lineIntersectsRect(fromPixelX, fromPixelY, toPixelX, toPixelY, cover)) {
-        // Apply the worst penalty (full cover overrides partial)
-        const penalty = cover.type === 'full' ? -4 : -2;
+    // Check each tile in the line for cover
+    for (const { x, y } of tilesInLine) {
+      // Skip the start and end tiles
+      if ((x === fromGridX && y === fromGridY) || (x === toGridX && y === toGridY)) {
+        continue;
+      }
+
+      // Find cover at this tile
+      const coverTile = this.coverTiles.find((c) => c.gridX === x && c.gridY === y);
+
+      if (coverTile) {
+        // If cover blocks LOS completely, return total cover modifier
+        if (coverTile.blocksLOS) {
+          return -999; // Total cover - cannot target
+        }
+
+        // Otherwise, track the best (worst) cover penalty
+        const penalty = this.getCoverPenalty(coverTile.coverLevel);
         if (penalty < bestCoverPenalty) {
           bestCoverPenalty = penalty;
         }
@@ -1373,6 +1523,58 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     }
 
     return bestCoverPenalty;
+  }
+
+  /**
+   * Get cover penalty for a cover level
+   */
+  private getCoverPenalty(coverLevel: Cover): number {
+    switch (coverLevel) {
+      case Cover.LIGHT:
+        return -2;
+      case Cover.MEDIUM:
+        return -4;
+      case Cover.HEAVY:
+        return -6;
+      case Cover.TOTAL:
+        return -999;
+      default:
+        return 0;
+    }
+  }
+
+  /**
+   * Get all grid tiles along a line using Bresenham's algorithm
+   */
+  private getGridLine(x0: number, y0: number, x1: number, y1: number): Array<{ x: number; y: number }> {
+    const tiles: Array<{ x: number; y: number }> = [];
+
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const sx = x0 < x1 ? 1 : -1;
+    const sy = y0 < y1 ? 1 : -1;
+    let err = dx - dy;
+
+    let x = x0;
+    let y = y0;
+
+    while (true) {
+      tiles.push({ x, y });
+
+      if (x === x1 && y === y1) break;
+
+      const e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y += sy;
+      }
+    }
+
+    return tiles;
   }
 
   /**

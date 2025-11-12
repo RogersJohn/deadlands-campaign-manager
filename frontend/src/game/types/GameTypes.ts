@@ -12,6 +12,7 @@ export interface Equipment {
   rof?: number; // Rate of Fire
   shots?: number; // Ammo capacity
   isEquipped: boolean;
+  indirectFire?: boolean; // Can fire over obstacles (bows, grenades, artillery)
 }
 
 export interface Skill {
@@ -141,6 +142,31 @@ export const ILLUMINATION_MODIFIERS: Record<Illumination, number> = {
   [Illumination.DARK]: -2,
   [Illumination.PITCH_BLACK]: -4,
 };
+
+// Cover levels (Savage Worlds core rule)
+export enum Cover {
+  NONE = 'none',           // No cover: 0 penalty to attacker
+  LIGHT = 'light',         // Light cover: -2 to ranged attacks (furniture, low walls)
+  MEDIUM = 'medium',       // Medium cover: -4 to ranged attacks (thick trees, barrels)
+  HEAVY = 'heavy',         // Heavy cover: -6 to ranged attacks (brick walls, armored vehicles)
+  TOTAL = 'total',         // Total cover: Cannot be targeted (behind solid wall)
+}
+
+export const COVER_MODIFIERS: Record<Cover, number> = {
+  [Cover.NONE]: 0,
+  [Cover.LIGHT]: -2,
+  [Cover.MEDIUM]: -4,
+  [Cover.HEAVY]: -6,
+  [Cover.TOTAL]: -999,  // Effectively blocks shot
+};
+
+// Cover tile on the battlefield grid
+export interface CoverTile {
+  gridX: number;
+  gridY: number;
+  coverLevel: Cover;
+  blocksLOS: boolean;  // Whether this tile completely blocks line of sight
+}
 
 export interface CombatAction {
   type: CombatActionType;
