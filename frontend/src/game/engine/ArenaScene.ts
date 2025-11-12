@@ -73,6 +73,8 @@ export class ArenaScene extends Phaser.Scene {
   private coverTiles: CoverTile[] = [];
   private coverGraphics?: Phaser.GameObjects.Graphics;
   private coverTooltip?: Phaser.GameObjects.Text;
+  private coverTooltipTimer?: Phaser.Time.TimerEvent;
+  private hoveredCoverTile?: { gridX: number; gridY: number };
 
   constructor() {
     super({ key: 'ArenaScene' });
@@ -1433,7 +1435,7 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
   }
 
   /**
-   * Update cover tooltip when hovering over tiles
+   * Update cover tooltip when hovering over tiles with 2-second delay
    */
   private updateCoverTooltip(gridX: number, gridY: number, screenX: number, screenY: number) {
     if (!this.coverTooltip) return;
@@ -1441,24 +1443,49 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     // Check if this tile has cover
     const coverTile = this.coverTiles.find((c) => c.gridX === gridX && c.gridY === gridY);
 
-    if (coverTile) {
-      // Build tooltip text
-      const coverName = this.getCoverName(coverTile.coverLevel);
-      const coverPenalty = this.getCoverPenalty(coverTile.coverLevel);
-      const blocksText = coverTile.blocksLOS ? 'Blocks Line of Sight' : 'Provides Cover';
-
-      let tooltipText = `${coverName}\n`;
-      if (coverTile.blocksLOS) {
-        tooltipText += `${blocksText}\nCannot be targeted`;
-      } else {
-        tooltipText += `${blocksText}\nPenalty: ${coverPenalty}`;
+    // If not hovering over cover, or if hovering over a different cover tile
+    if (!coverTile || this.hoveredCoverTile?.gridX !== gridX || this.hoveredCoverTile?.gridY !== gridY) {
+      // Cancel existing timer
+      if (this.coverTooltipTimer) {
+        this.coverTooltipTimer.remove();
+        this.coverTooltipTimer = undefined;
       }
 
-      this.coverTooltip.setText(tooltipText);
-      this.coverTooltip.setPosition(screenX + 15, screenY + 15);
-      this.coverTooltip.setVisible(true);
-    } else {
+      // Hide tooltip immediately
       this.coverTooltip.setVisible(false);
+
+      // If no cover tile, clear hover state and return
+      if (!coverTile) {
+        this.hoveredCoverTile = undefined;
+        return;
+      }
+
+      // Start hovering over new cover tile
+      this.hoveredCoverTile = { gridX, gridY };
+
+      // Start 2-second timer to show tooltip
+      this.coverTooltipTimer = this.time.delayedCall(2000, () => {
+        if (!this.coverTooltip) return;
+
+        // Build tooltip text
+        const coverName = this.getCoverName(coverTile.coverLevel);
+        const coverPenalty = this.getCoverPenalty(coverTile.coverLevel);
+        const blocksText = coverTile.blocksLOS ? 'Blocks Line of Sight' : 'Provides Cover';
+
+        let tooltipText = `${coverName}\n`;
+        if (coverTile.blocksLOS) {
+          tooltipText += `${blocksText}\nCannot be targeted`;
+        } else {
+          tooltipText += `${blocksText}\nPenalty: ${coverPenalty}`;
+        }
+
+        this.coverTooltip.setText(tooltipText);
+        this.coverTooltip.setPosition(screenX + 15, screenY + 15);
+        this.coverTooltip.setVisible(true);
+      });
+    } else if (this.coverTooltip.visible) {
+      // Update position if tooltip is already visible and we're still hovering over same tile
+      this.coverTooltip.setPosition(screenX + 15, screenY + 15);
     }
   }
 
