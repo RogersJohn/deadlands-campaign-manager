@@ -650,7 +650,7 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
         this.hoveredTile.y
       );
 
-      if (distance <= pace && distance > 0 && this.canMoveTo(this.hoveredTile.x, this.hoveredTile.y)) {
+      if (distance <= this.movementBudget && distance > 0 && this.canMoveTo(this.hoveredTile.x, this.hoveredTile.y)) {
         this.movementRangeGraphics.fillStyle(0xffff00, 0.3); // Yellow highlight
         this.movementRangeGraphics.fillRect(
           this.hoveredTile.x * this.TILE_SIZE + 2,
