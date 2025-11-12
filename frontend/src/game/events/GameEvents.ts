@@ -46,6 +46,27 @@ export interface IlluminationChangeEvent {
 }
 
 // =============================================================================
+// Multiplayer Events (Bidirectional)
+// =============================================================================
+
+export interface LocalTokenMovedEvent {
+  tokenId: string;
+  tokenType: 'PLAYER' | 'ENEMY';
+  fromX?: number;
+  fromY?: number;
+  toX: number;
+  toY: number;
+}
+
+export interface RemoteTokenMovedEvent {
+  tokenId: string;
+  tokenType: 'PLAYER' | 'ENEMY';
+  gridX: number;
+  gridY: number;
+  movedBy: string;
+}
+
+// =============================================================================
 // Phaser → React Events (Game state updates)
 // =============================================================================
 
@@ -94,6 +115,7 @@ export interface GameEventMap {
   'weaponRangesToggle': WeaponRangesToggleEvent;
   'movementRangesToggle': MovementRangesToggleEvent;
   'illuminationChange': IlluminationChangeEvent;
+  'remoteTokenMoved': RemoteTokenMovedEvent;
 
   // Phaser → React
   'combatLogUpdate': CombatLogUpdateEvent;
@@ -103,6 +125,7 @@ export interface GameEventMap {
   'phaseChange': PhaseChangeEvent;
   'diceRoll': DiceRollUpdateEvent;
   'movementBudgetUpdate': MovementBudgetUpdateEvent;
+  'localTokenMoved': LocalTokenMovedEvent;
 }
 
 // =============================================================================
