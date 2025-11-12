@@ -139,6 +139,10 @@ export class CombatManager {
     return this.illumination;
   }
 
+  public getIlluminationPenalty(): number {
+    return ILLUMINATION_MODIFIERS[this.illumination];
+  }
+
   // Critical Rules: Multi-action methods
   public getActionsThisTurn(): number {
     return this.actionsThisTurn;
