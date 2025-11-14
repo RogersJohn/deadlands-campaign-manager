@@ -7,7 +7,6 @@ import { WeaponSelection } from './components/WeaponSelection';
 import { ActionMenu } from './components/ActionMenu';
 import { StatusEffects } from './components/StatusEffects';
 import { CalledShotDialog } from './components/CalledShotDialog';
-import AIAssistantPanel from '../components/ai/AIAssistantPanel';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
@@ -54,7 +53,6 @@ export function GameArena() {
   const [showMovementRanges, setShowMovementRanges] = useState(true);
   const [movementBudget, setMovementBudget] = useState({ current: 0, max: 0 });
   const [illumination, setIllumination] = useState<Illumination>(Illumination.BRIGHT);
-  const [showAIPanel, setShowAIPanel] = useState(false);
 
   // PHASE 1: Called shot dialog state
   const [calledShotDialogOpen, setCalledShotDialogOpen] = useState(false);
@@ -888,19 +886,25 @@ export function GameArena() {
 
             {/* AI Assistant Toggle */}
             <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
-              <Tooltip title={showAIPanel ? "Hide AI Assistant" : "Show AI Assistant"}>
+              <Tooltip title="Open AI Assistant">
                 <Button
-                  variant={showAIPanel ? "contained" : "outlined"}
+                  variant="outlined"
                   fullWidth
                   size="small"
                   startIcon={<AIIcon />}
-                  onClick={() => setShowAIPanel(!showAIPanel)}
+                  onClick={() => {
+                    window.open(
+                      '/ai-assistant',
+                      'AI Gamemaster Assistant',
+                      'width=900,height=800,scrollbars=yes,resizable=yes'
+                    );
+                  }}
                   sx={{
-                    color: showAIPanel ? '#1a0f08' : '#f5deb3',
+                    color: '#f5deb3',
                     borderColor: '#8b4513',
-                    bgcolor: showAIPanel ? '#CD853F' : 'transparent',
+                    bgcolor: 'transparent',
                     '&:hover': {
-                      bgcolor: showAIPanel ? '#b8752f' : '#3c2415',
+                      bgcolor: '#3c2415',
                       borderColor: '#CD853F',
                     },
                   }}
@@ -910,13 +914,6 @@ export function GameArena() {
               </Tooltip>
             </Paper>
           </Box>
-
-          {/* AI Assistant Panel (Conditional) */}
-          {showAIPanel && (
-            <Box sx={{ width: 350, height: '85vh', flexShrink: 0 }}>
-              <AIAssistantPanel />
-            </Box>
-          )}
         </Box>
       )}
 

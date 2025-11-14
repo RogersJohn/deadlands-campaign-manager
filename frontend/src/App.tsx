@@ -11,6 +11,7 @@ import ChangePassword from './pages/ChangePassword'
 import Wiki from './pages/Wiki'
 import SessionLobby from './pages/SessionLobby'
 import SessionRoom from './pages/SessionRoom'
+import AIAssistantWindow from './pages/AIAssistantWindow'
 import Layout from './components/Layout'
 import { GameArena } from './game/GameArena'
 
@@ -37,6 +38,9 @@ function App() {
           <Route path="session/:sessionId/arena" element={<GameArena />} />
           <Route path="game/arena" element={<GameArena />} />
         </Route>
+
+        {/* AI Assistant Window - Opens in popup, no layout */}
+        <Route path="/ai-assistant" element={isAuthenticated ? <AIAssistantWindow /> : <Navigate to="/login" />} />
 
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
