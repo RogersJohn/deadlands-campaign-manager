@@ -28,6 +28,15 @@ spring:
       secret: ${JWT_SECRET:your-256-bit-secret-change-this-in-production}
       expiration: 86400000 # 24 hours in milliseconds
 
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:your-anthropic-api-key-here}
+      chat:
+        options:
+          model: claude-3-5-sonnet-20241022
+          temperature: 0.8
+          max-tokens: 1000
+
 server:
   port: 8080
   servlet:

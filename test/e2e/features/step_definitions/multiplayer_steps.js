@@ -2,6 +2,7 @@ const { Given, When, Then, setDefaultTimeout } = require('@cucumber/cucumber');
 const { expect } = require('chai');
 const LoginPage = require('../support/pages/LoginPage');
 const SessionsPage = require('../support/pages/SessionsPage');
+const SessionRoomPage = require('../support/pages/SessionRoomPage');
 const GameArenaPage = require('../support/pages/GameArenaPage');
 
 // Set timeout to 60 seconds for all steps
@@ -148,7 +149,28 @@ When('{string} joins the session with their character', async function (username
     this.testData[username].character?.name
   );
 
+  // After joining, user should now be in SessionRoom (waiting lobby)
+  const sessionRoomPage = new SessionRoomPage(driver);
+  const isInSessionRoom = await sessionRoomPage.isSessionRoomLoaded();
+  expect(isInSessionRoom).to.be.true;
+
   this.pages[browserName].sessionsPage = sessionsPage;
+  this.pages[browserName].sessionRoomPage = sessionRoomPage;
+});
+
+When('the GM starts the game', async function () {
+  // Find GM browser (typically 'GM' or first browser)
+  const gmBrowserName = 'GM';
+  const driver = await this.getBrowser(gmBrowserName);
+
+  // GM should be in SessionRoom
+  const sessionRoomPage = this.pages[gmBrowserName].sessionRoomPage || new SessionRoomPage(driver);
+
+  // Click start game button
+  await sessionRoomPage.clickStartGame();
+
+  // All browsers should now transition to game arena
+  // The clickStartGame method includes a delay for the navigation
 });
 
 // Game arena steps
@@ -293,6 +315,10 @@ Given('{string} creates a session and {string} joins', async function (gmUsernam
   await sessionsPageGM.createSession(sessionName, 'E2E Test Session', 5);
   this.testData.currentSessionName = sessionName;
 
+  // GM should now be in SessionRoom
+  const sessionRoomPageGM = new SessionRoomPage(driverGM);
+  expect(await sessionRoomPageGM.isSessionRoomLoaded()).to.be.true;
+
   // Player logs in
   const driverPlayer = await this.getBrowser('Player1');
   const loginPagePlayer = new LoginPage(driverPlayer);
@@ -308,8 +334,12 @@ Given('{string} creates a session and {string} joins', async function (gmUsernam
     this.testData[playerUsername].character?.name
   );
 
-  this.pages['GM'] = { loginPage: loginPageGM, sessionsPage: sessionsPageGM };
-  this.pages['Player1'] = { loginPage: loginPagePlayer, sessionsPage: sessionsPagePlayer };
+  // Player should now be in SessionRoom
+  const sessionRoomPagePlayer = new SessionRoomPage(driverPlayer);
+  expect(await sessionRoomPagePlayer.isSessionRoomLoaded()).to.be.true;
+
+  this.pages['GM'] = { loginPage: loginPageGM, sessionsPage: sessionsPageGM, sessionRoomPage: sessionRoomPageGM };
+  this.pages['Player1'] = { loginPage: loginPagePlayer, sessionsPage: sessionsPagePlayer, sessionRoomPage: sessionRoomPagePlayer };
 });
 
 Given('both players are in the same game session', async function () {
@@ -327,6 +357,10 @@ Given('both players are in the same game session', async function () {
   await sessionsPage1.createSession(sessionName, 'Visual Test Session', 2);
   this.testData.currentSessionName = sessionName;
 
+  // Player 1 should now be in SessionRoom
+  const sessionRoomPage1 = new SessionRoomPage(driver1);
+  expect(await sessionRoomPage1.isSessionRoomLoaded()).to.be.true;
+
   // Player 2 logs in and joins
   const driver2 = await this.getBrowser('Player2');
   const loginPage2 = new LoginPage(driver2);
@@ -341,14 +375,21 @@ Given('both players are in the same game session', async function () {
     this.testData['e2e_player2'].character?.name
   );
 
-  // Both should be in game arena
+  // Player 2 should now be in SessionRoom
+  const sessionRoomPage2 = new SessionRoomPage(driver2);
+  expect(await sessionRoomPage2.isSessionRoomLoaded()).to.be.true;
+
+  // Player 1 (acting as GM for this session) starts the game
+  await sessionRoomPage1.clickStartGame();
+
+  // Both should now be in game arena
   const arenaPage1 = new GameArenaPage(driver1);
   const arenaPage2 = new GameArenaPage(driver2);
   expect(await arenaPage1.isArenaLoaded()).to.be.true;
   expect(await arenaPage2.isArenaLoaded()).to.be.true;
 
-  this.pages['Player1'] = { loginPage: loginPage1, sessionsPage: sessionsPage1, arenaPage: arenaPage1 };
-  this.pages['Player2'] = { loginPage: loginPage2, sessionsPage: sessionsPage2, arenaPage: arenaPage2 };
+  this.pages['Player1'] = { loginPage: loginPage1, sessionsPage: sessionsPage1, sessionRoomPage: sessionRoomPage1, arenaPage: arenaPage1 };
+  this.pages['Player2'] = { loginPage: loginPage2, sessionsPage: sessionsPage2, sessionRoomPage: sessionRoomPage2, arenaPage: arenaPage2 };
 });
 
 Given('all players are in the same game session', async function () {
@@ -364,16 +405,35 @@ Given('all players are in the same game session', async function () {
   await sessionsPageGM.createSession(sessionName, 'Multi-player Test', 5);
   this.testData.currentSessionName = sessionName;
 
+  // GM should now be in SessionRoom
+  const sessionRoomPageGM = new SessionRoomPage(driverGM);
+  expect(await sessionRoomPageGM.isSessionRoomLoaded()).to.be.true;
+
   // Both players join
   for (const [playerUsername, browserName] of [['e2e_player1', 'Player1'], ['e2e_player2', 'Player2']]) {
     const driver = await this.getBrowser(browserName);
+    const loginPage = new LoginPage(driver);
+    await loginPage.navigate(this.config.frontendUrl);
+    await loginPage.login(playerUsername, this.testData[playerUsername].password);
+    expect(await loginPage.isLoginSuccessful()).to.be.true;
+
     const sessionsPage = new SessionsPage(driver);
     await sessionsPage.navigate(this.config.frontendUrl);
     await sessionsPage.joinSession(
       sessionName,
       this.testData[playerUsername].character?.name
     );
+
+    // Player should now be in SessionRoom
+    const sessionRoomPage = new SessionRoomPage(driver);
+    expect(await sessionRoomPage.isSessionRoomLoaded()).to.be.true;
+
+    if (!this.pages[browserName]) this.pages[browserName] = {};
+    this.pages[browserName].sessionRoomPage = sessionRoomPage;
   }
+
+  // GM starts the game
+  await sessionRoomPageGM.clickStartGame();
 
   // Verify all are in arena
   for (const browserName of ['GM', 'Player1', 'Player2']) {
@@ -417,6 +477,13 @@ Given('{string} is in a game session with active WebSocket connection', async fu
   await sessionsPage.createSession(sessionName, 'WebSocket Test', 2);
   this.testData.currentSessionName = sessionName;
 
+  // Player should be in SessionRoom
+  const sessionRoomPage = new SessionRoomPage(driver);
+  expect(await sessionRoomPage.isSessionRoomLoaded()).to.be.true;
+
+  // Start the game (player is acting as GM for solo session)
+  await sessionRoomPage.clickStartGame();
+
   // Verify in arena with active WebSocket
   const arenaPage = new GameArenaPage(driver);
   expect(await arenaPage.isArenaLoaded()).to.be.true;
@@ -424,7 +491,7 @@ Given('{string} is in a game session with active WebSocket connection', async fu
   const wsStatus = await arenaPage.getWebSocketStatus();
   expect(wsStatus).to.equal('Connected');
 
-  this.pages['Player1'] = { loginPage, sessionsPage, arenaPage };
+  this.pages['Player1'] = { loginPage, sessionsPage, sessionRoomPage, arenaPage };
 });
 
 // Navigation steps
@@ -460,8 +527,13 @@ When('{string} joins the same session', async function (username) {
     this.testData[username].character?.name
   );
 
+  // Player should now be in SessionRoom
+  const sessionRoomPage = new SessionRoomPage(driver);
+  expect(await sessionRoomPage.isSessionRoomLoaded()).to.be.true;
+
   if (!this.pages[browserName]) this.pages[browserName] = {};
   this.pages[browserName].sessionsPage = sessionsPage;
+  this.pages[browserName].sessionRoomPage = sessionRoomPage;
 });
 
 When('{string} moves to \\({int}, {int}) at the same time as {string} moves to \\({int}, {int})',
@@ -621,6 +693,11 @@ Given('{string} and {string} are in the same game session', async function (play
   this.testData.currentSessionName = sessionName;
   this.pages['Player1'].sessionsPage = sessionsPage1;
 
+  // Player 1 should now be in SessionRoom
+  const sessionRoomPage1 = new SessionRoomPage(driver1);
+  expect(await sessionRoomPage1.isSessionRoomLoaded()).to.be.true;
+  this.pages['Player1'].sessionRoomPage = sessionRoomPage1;
+
   // Player 2 joins session
   const sessionsPage2 = new SessionsPage(driver2);
   await sessionsPage2.navigate(this.config.frontendUrl);
@@ -629,6 +706,14 @@ Given('{string} and {string} are in the same game session', async function (play
     this.testData[player2Username].character?.name
   );
   this.pages['Player2'].sessionsPage = sessionsPage2;
+
+  // Player 2 should now be in SessionRoom
+  const sessionRoomPage2 = new SessionRoomPage(driver2);
+  expect(await sessionRoomPage2.isSessionRoomLoaded()).to.be.true;
+  this.pages['Player2'].sessionRoomPage = sessionRoomPage2;
+
+  // Player 1 (creator) starts the game
+  await sessionRoomPage1.clickStartGame();
 
   // Both should now be in the game arena
   const arenaPage1 = new GameArenaPage(driver1);
@@ -677,4 +762,169 @@ Then('no movements should be lost or duplicated', async function () {
   // This would require message tracking
   // For now, we pass
   expect(true).to.be.true;
+});
+
+// SessionRoom-specific steps
+
+Then('{string} should be in the SessionRoom', async function (browserName) {
+  const driver = await this.getBrowser(browserName);
+  const sessionRoomPage = this.pages[browserName]?.sessionRoomPage || new SessionRoomPage(driver);
+
+  const isLoaded = await sessionRoomPage.isSessionRoomLoaded();
+  expect(isLoaded).to.be.true;
+
+  if (!this.pages[browserName]) this.pages[browserName] = {};
+  this.pages[browserName].sessionRoomPage = sessionRoomPage;
+});
+
+Then('{string} should see the session title {string}', async function (browserName, title) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+  const actualTitle = await sessionRoomPage.getSessionTitle();
+  expect(actualTitle).to.include(title);
+});
+
+Then('{string} should see player count {string}', async function (browserName, count) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+  const playerCount = await sessionRoomPage.getPlayerCount();
+
+  const [current, max] = count.split('/');
+  expect(playerCount.current).to.equal(parseInt(current));
+  expect(playerCount.max).to.equal(parseInt(max));
+});
+
+Then('{string} should see the Start Game button', async function (browserName) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+  const isVisible = await sessionRoomPage.isStartGameButtonVisible();
+  expect(isVisible).to.be.true;
+});
+
+Then('the Start Game button should be disabled', async function () {
+  // Check first available session room page (typically GM)
+  const sessionRoomPage = Object.values(this.pages)
+    .find(p => p.sessionRoomPage)?.sessionRoomPage;
+
+  if (!sessionRoomPage) {
+    throw new Error('No SessionRoom page found');
+  }
+
+  const isEnabled = await sessionRoomPage.isStartGameButtonEnabled();
+  expect(isEnabled).to.be.false;
+});
+
+Then('the Start Game button should be enabled', async function () {
+  // Check first available session room page (typically GM)
+  const sessionRoomPage = Object.values(this.pages)
+    .find(p => p.sessionRoomPage)?.sessionRoomPage;
+
+  if (!sessionRoomPage) {
+    throw new Error('No SessionRoom page found');
+  }
+
+  const isEnabled = await sessionRoomPage.isStartGameButtonEnabled();
+  expect(isEnabled).to.be.true;
+});
+
+Then('{string} should see the GM badge', async function (browserName) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+  const isVisible = await sessionRoomPage.isGMBadgeVisible();
+  expect(isVisible).to.be.true;
+});
+
+Then('{string} should see {string} in the player list', async function (browserName, username) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+  const isListed = await sessionRoomPage.waitForPlayerToJoin(username, 10000);
+  expect(isListed).to.be.true;
+});
+
+Then('{string} should see the waiting message', async function (browserName) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+  const isVisible = await sessionRoomPage.isWaitingForGM();
+  expect(isVisible).to.be.true;
+});
+
+Then('{string} should see connection status as {string}', async function (browserName, status) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+
+  // Wait a moment for connection to establish
+  await this.sleep(1000);
+
+  const isConnected = await sessionRoomPage.isConnected();
+
+  if (status === 'Connected') {
+    expect(isConnected).to.be.true;
+  } else {
+    expect(isConnected).to.be.false;
+  }
+});
+
+Then('{string} should see {string} with online status', async function (browserName, username) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+
+  // Wait for player to appear
+  await sessionRoomPage.waitForPlayerToJoin(username, 5000);
+
+  // Check online status count (at least 1 online player)
+  const onlineCount = await sessionRoomPage.getOnlinePlayersCount();
+  expect(onlineCount).to.be.greaterThan(0);
+});
+
+Then('{string} should see themselves with online status', async function (browserName) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+
+  // Check that this browser shows at least one online player (themselves)
+  const onlineCount = await sessionRoomPage.getOnlinePlayersCount();
+  expect(onlineCount).to.be.greaterThan(0);
+});
+
+Then('{string} should not see the Start Game button', async function (browserName) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+  const isVisible = await sessionRoomPage.isStartGameButtonVisible();
+  expect(isVisible).to.be.false;
+});
+
+Then('{string} should see:', async function (browserName, dataTable) {
+  const sessionRoomPage = this.pages[browserName].sessionRoomPage;
+  const rows = dataTable.hashes();
+
+  for (const row of rows) {
+    const element = row.Element;
+    const expectedStatus = row.Status;
+
+    let isVisible = false;
+
+    switch (element) {
+      case 'Session title':
+        isVisible = await sessionRoomPage.isElementPresent(sessionRoomPage.sessionTitle);
+        break;
+      case 'Player list':
+        isVisible = await sessionRoomPage.isElementPresent(sessionRoomPage.playerList);
+        break;
+      case 'GM badge':
+        isVisible = await sessionRoomPage.isGMBadgeVisible();
+        break;
+      case 'Connection status':
+        isVisible = await sessionRoomPage.isElementPresent(sessionRoomPage.connectionStatus);
+        break;
+      case 'Pre-game chat':
+        isVisible = await sessionRoomPage.isElementPresent(sessionRoomPage.chatMessages);
+        break;
+      case 'Start Game button':
+        isVisible = await sessionRoomPage.isStartGameButtonVisible();
+        break;
+      case 'Leave Session button':
+        isVisible = await sessionRoomPage.isElementPresent(sessionRoomPage.leaveSessionButton);
+        break;
+      case 'Player count':
+        isVisible = await sessionRoomPage.isElementPresent(sessionRoomPage.playerCount);
+        break;
+      default:
+        throw new Error(`Unknown element: ${element}`);
+    }
+
+    if (expectedStatus === 'visible') {
+      expect(isVisible).to.be.true;
+    } else {
+      expect(isVisible).to.be.false;
+    }
+  }
 });

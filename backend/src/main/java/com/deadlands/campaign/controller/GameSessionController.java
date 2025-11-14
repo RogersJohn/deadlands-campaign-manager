@@ -194,6 +194,35 @@ public class GameSessionController {
         return ResponseEntity.ok(players);
     }
 
+    /**
+     * Start the game (GM only)
+     */
+    @PostMapping("/sessions/{sessionId}/start")
+    @PreAuthorize("hasAuthority('GAME_MASTER')")
+    @ResponseBody
+    public ResponseEntity<GameSession> startGame(@PathVariable Long sessionId, Authentication authentication) {
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        // Verify user is the GM of this session
+        if (!session.getGameMaster().getId().equals(user.getId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        // Activate the session
+        session.setActive(true);
+        sessionRepository.save(session);
+
+        // Broadcast game started event to all players
+        messagingTemplate.convertAndSend("/topic/session/" + sessionId + "/game-started",
+                Map.of("sessionId", sessionId, "startedBy", user.getUsername()));
+
+        return ResponseEntity.ok(session);
+    }
+
     // ============ WEBSOCKET MESSAGE HANDLERS ============
 
     /**

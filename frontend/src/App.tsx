@@ -10,6 +10,7 @@ import CharacterEdit from './pages/CharacterEdit'
 import ChangePassword from './pages/ChangePassword'
 import Wiki from './pages/Wiki'
 import SessionLobby from './pages/SessionLobby'
+import SessionRoom from './pages/SessionRoom'
 import Layout from './components/Layout'
 import { GameArena } from './game/GameArena'
 
@@ -32,7 +33,8 @@ function App() {
           <Route path="wiki" element={<Wiki />} />
           <Route path="wiki/:slug" element={<Wiki />} />
           <Route path="sessions" element={<SessionLobby />} />
-          <Route path="session/:sessionId" element={<GameArena />} />
+          <Route path="session/:sessionId" element={<SessionRoom />} />
+          <Route path="session/:sessionId/arena" element={<GameArena />} />
           <Route path="game/arena" element={<GameArena />} />
         </Route>
 

@@ -56,6 +56,14 @@ const sessionService = {
     const response = await api.get(`/sessions/${sessionId}/players`);
     return response.data;
   },
+
+  /**
+   * Start the game (GM only)
+   */
+  startGame: async (sessionId: number): Promise<GameSession> => {
+    const response = await api.post(`/sessions/${sessionId}/start`);
+    return response.data;
+  },
 };
 
 export default sessionService;

@@ -65,6 +65,11 @@ export interface PlayerDisconnectedMessage {
   playerName: string;
 }
 
+export interface GameStartedMessage {
+  sessionId: number;
+  startedBy: string;
+}
+
 // Token movement messages
 export interface TokenMoveRequest {
   tokenId: string;

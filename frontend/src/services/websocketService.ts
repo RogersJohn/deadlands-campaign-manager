@@ -5,6 +5,7 @@ import {
   PlayerLeftMessage,
   PlayerConnectedMessage,
   PlayerDisconnectedMessage,
+  GameStartedMessage,
   TokenMoveRequest,
   TokenMovedEvent,
 } from '../types/session';
@@ -154,6 +155,22 @@ class WebSocketService {
 
     return this.subscribe(
       `/topic/session/${this.sessionId}/player-disconnected`,
+      (message) => {
+        callback(JSON.parse(message.body));
+      }
+    );
+  }
+
+  /**
+   * Subscribe to game started events
+   */
+  onGameStarted(callback: (message: GameStartedMessage) => void): () => void {
+    if (!this.sessionId) {
+      throw new Error('Not connected to a session');
+    }
+
+    return this.subscribe(
+      `/topic/session/${this.sessionId}/game-started`,
       (message) => {
         callback(JSON.parse(message.body));
       }

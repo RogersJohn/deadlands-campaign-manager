@@ -233,6 +233,7 @@ export default function SessionLobby() {
             onClick={handleCreateSession}
             variant="contained"
             disabled={!newSessionName || createSessionMutation.isPending}
+            aria-label="Submit Create Session"
           >
             {createSessionMutation.isPending ? 'Creating...' : 'Create'}
           </Button>
