@@ -13,7 +13,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  MenuItem,
   Alert,
   Chip,
   Grid,
@@ -125,6 +124,7 @@ export default function SessionLobby() {
             variant="contained"
             startIcon={<AddIcon />}
             onClick={() => setCreateDialogOpen(true)}
+            aria-label="Create Session"
           >
             Create Session
           </Button>
@@ -205,6 +205,7 @@ export default function SessionLobby() {
               onChange={(e) => setNewSessionName(e.target.value)}
               fullWidth
               required
+              inputProps={{ name: 'name' }}
             />
             <TextField
               label="Description"
@@ -213,6 +214,7 @@ export default function SessionLobby() {
               multiline
               rows={3}
               fullWidth
+              inputProps={{ name: 'description' }}
             />
             <TextField
               label="Max Players (optional)"
@@ -220,13 +222,14 @@ export default function SessionLobby() {
               value={newSessionMaxPlayers}
               onChange={(e) => setNewSessionMaxPlayers(e.target.value ? Number(e.target.value) : '')}
               fullWidth
-              inputProps={{ min: 1, max: 20 }}
+              inputProps={{ min: 1, max: 20, name: 'maxPlayers' }}
             />
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
           <Button
+            type="submit"
             onClick={handleCreateSession}
             variant="contained"
             disabled={!newSessionName || createSessionMutation.isPending}
@@ -251,11 +254,14 @@ export default function SessionLobby() {
               onChange={(e) => setSelectedCharacterId(Number(e.target.value))}
               fullWidth
               required
+              SelectProps={{ native: true }}
+              inputProps={{ name: 'character' }}
             >
+              <option value="" disabled>Select a character</option>
               {characters?.map((char) => (
-                <MenuItem key={char.id} value={char.id}>
+                <option key={char.id} value={char.id}>
                   {char.name} - {char.occupation || 'No occupation'}
-                </MenuItem>
+                </option>
               ))}
             </TextField>
           </Box>

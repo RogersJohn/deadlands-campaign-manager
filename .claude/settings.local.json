@@ -3,7 +3,25 @@
     "allow": [
       "Bash(git restore:*)",
       "Bash(railway up:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(./mvnw test:*)",
+      "Bash(mvnw.cmd test:*)",
+      "Bash(mvn test:*)",
+      "Bash(node setup-test-accounts.js:*)",
+      "Bash(java:*)",
+      "Bash(API_URL=https://deadlands-campaign-manager-production-053e.up.railway.app/api node setup-test-accounts.js:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker-compose down:*)",
+      "Bash(node generate-test-account-sql.js:*)",
+      "Bash(e2e-test-accounts.sql)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:MIYRwGqttlrIeJSvgYWstxkmvxRXtMBt@centerbeam.proxy.rlwy.net:31016/railway\" node:*)",
+      "Bash(DATABASE_URL=\"postgresql://postgres:wCwfSYwLvDslGeepWAiPYvxbEmEtzIhN@switchyard.proxy.rlwy.net:15935/railway\" node:*)",
+      "Bash(mvn clean package:*)",
+      "Bash(./mvnw clean package:*)",
+      "Bash(./mvnw.cmd clean package:*)",
+      "Bash(timeout 10 railway logs:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

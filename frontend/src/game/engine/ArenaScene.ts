@@ -19,6 +19,9 @@ export class ArenaScene extends Phaser.Scene {
   private enemySprites: Phaser.GameObjects.Rectangle[] = [];
   private enemyData: GameEnemy[] = [];
 
+  // Multiplayer - remote player tokens
+  private remotePlayerSprites: Map<string, Phaser.GameObjects.Rectangle> = new Map();
+
   // Grid visuals
   private gridGraphics?: Phaser.GameObjects.Graphics;
   private movementRangeGraphics?: Phaser.GameObjects.Graphics;
@@ -384,6 +387,12 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       if (this.combatManager) {
         this.combatManager.setIllumination(payload.level);
       }
+    });
+
+    // MULTIPLAYER: Listen for remote player token movements (TYPE-SAFE)
+    this.gameEvents.on('remoteTokenMoved', (event) => {
+      console.log('[ArenaScene] Remote token moved:', event.movedBy, 'to', event.gridX, event.gridY);
+      this.handleRemoteTokenMoved(event);
     });
 
     // Set up camera zoom controls
@@ -872,6 +881,10 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
   private movePlayerTo(gridX: number, gridY: number) {
     if (!this.player) return;
 
+    // Store old position for multiplayer event
+    const oldGridX = this.playerGridX;
+    const oldGridY = this.playerGridY;
+
     // Calculate distance moved
     const distanceMoved = this.getGridDistance(this.playerGridX, this.playerGridY, gridX, gridY);
 
@@ -901,6 +914,18 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     // Update grid position
     this.playerGridX = gridX;
     this.playerGridY = gridY;
+
+    // MULTIPLAYER: Emit local token movement for WebSocket sync
+    if (this.character) {
+      this.game.events.emit('localTokenMoved', {
+        tokenId: String(this.character.id),
+        tokenType: 'PLAYER' as const,
+        fromX: oldGridX,
+        fromY: oldGridY,
+        toX: gridX,
+        toY: gridY,
+      });
+    }
 
     // Update pixel position
     const pixelX = gridX * this.TILE_SIZE + this.TILE_SIZE / 2;
@@ -1275,6 +1300,83 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
         this.updateMovementRange();
       }
     });
+  }
+
+  /**
+   * MULTIPLAYER: Handle remote player token movement
+   * Creates or updates sprites for other players in the session
+   */
+  private handleRemoteTokenMoved(event: { tokenId: string; tokenType: string; gridX: number; gridY: number; movedBy: string }) {
+    // Only handle player tokens (not enemies)
+    if (event.tokenType !== 'PLAYER') return;
+
+    // Don't render our own character (it's already rendered as this.player)
+    if (this.character && String(this.character.id) === event.tokenId) {
+      return;
+    }
+
+    const pixelX = event.gridX * this.TILE_SIZE + this.TILE_SIZE / 2;
+    const pixelY = event.gridY * this.TILE_SIZE + this.TILE_SIZE / 2;
+
+    // Check if we already have a sprite for this remote player
+    let remoteSprite = this.remotePlayerSprites.get(event.tokenId);
+
+    if (!remoteSprite) {
+      // Create new sprite for this remote player
+      remoteSprite = this.add.rectangle(
+        pixelX,
+        pixelY,
+        this.TILE_SIZE - 4,
+        this.TILE_SIZE - 4,
+        0x00bfff // Light blue for remote players (distinct from local player)
+      );
+      remoteSprite.setStrokeStyle(2, 0xffffff);
+      remoteSprite.setDepth(10);
+      remoteSprite.setAlpha(0.7); // Slightly transparent
+
+      // Add player name label
+      const nameText = this.add.text(
+        pixelX,
+        pixelY - this.TILE_SIZE / 2 - 10,
+        event.movedBy,
+        {
+          fontSize: '10px',
+          color: '#ffffff',
+          backgroundColor: '#0066cc',
+          padding: { x: 3, y: 1 },
+        }
+      );
+      nameText.setOrigin(0.5);
+      nameText.setDepth(11);
+      nameText.setAlpha(0.7);
+      remoteSprite.setData('nameText', nameText);
+
+      // Store the sprite
+      this.remotePlayerSprites.set(event.tokenId, remoteSprite);
+
+      console.log(`[ArenaScene] Created remote player sprite for ${event.movedBy} (token ${event.tokenId})`);
+    } else {
+      // Update existing sprite position with smooth tween
+      this.tweens.add({
+        targets: remoteSprite,
+        x: pixelX,
+        y: pixelY,
+        duration: 200,
+        ease: 'Power2',
+      });
+
+      // Update name label position
+      const nameText = remoteSprite.getData('nameText') as Phaser.GameObjects.Text;
+      if (nameText) {
+        this.tweens.add({
+          targets: nameText,
+          x: pixelX,
+          y: pixelY - this.TILE_SIZE / 2 - 10,
+          duration: 200,
+          ease: 'Power2',
+        });
+      }
+    }
   }
 
   /**
