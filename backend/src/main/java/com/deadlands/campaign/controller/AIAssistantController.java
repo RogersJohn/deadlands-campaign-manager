@@ -108,9 +108,9 @@ public class AIAssistantController {
 
     /**
      * Health check endpoint to verify AI service is configured
+     * Public endpoint - no authentication required
      */
     @GetMapping("/health")
-    @PreAuthorize("hasAnyRole('PLAYER', 'GAME_MASTER')")
     public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("AI Assistant service is available");
     }

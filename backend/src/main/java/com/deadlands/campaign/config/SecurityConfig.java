@@ -70,6 +70,7 @@ public class SecurityConfig {
                         .requestMatchers("/auth/login", "/auth/register").permitAll()
                         .requestMatchers("/reference/**").permitAll()
                         .requestMatchers("/portraits/**").permitAll()
+                        .requestMatchers("/ai-gm/health").permitAll()
                         // Authenticated endpoints
                         .requestMatchers("/auth/change-password").authenticated()
                         .requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
