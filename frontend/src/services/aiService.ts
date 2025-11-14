@@ -6,6 +6,7 @@ import {
   LocationRequest,
   AIResponse,
 } from '../types/ai';
+import { MapGenerationRequest, GeneratedMap } from '../types/map';
 
 /**
  * Service for AI Game Master Assistant API
@@ -51,6 +52,16 @@ const aiService = {
       headers: { 'Content-Type': 'text/plain' },
     });
     return response.data;
+  },
+
+  /**
+   * Generate tactical battle map (GM only)
+   */
+  generateMap: async (request: MapGenerationRequest): Promise<GeneratedMap> => {
+    const response = await api.post('/ai-gm/generate-map', request);
+    // Parse the JSON response from AIResponse wrapper
+    const mapData = JSON.parse(response.data.content);
+    return mapData;
   },
 
   /**

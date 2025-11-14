@@ -152,6 +152,157 @@ public class AIGameMasterService {
     }
 
     /**
+     * Generate a tactical battle map with terrain, buildings, and NPCs
+     *
+     * @param locationType Type of location (wilderness, town, interior, mine, fort)
+     * @param size Map size (small, medium, large)
+     * @param theme Battle theme (combat, chase, ambush, siege)
+     * @param features List of features to include (water, buildings, cover, elevation)
+     * @param description Optional additional details
+     * @return JSON string with map data
+     */
+    public String generateBattleMap(String locationType, String size, String theme,
+                                   java.util.List<String> features, String description) {
+        log.info("Generating {} {} battle map with theme: {}", size, locationType, theme);
+
+        // Determine grid size based on size parameter
+        String gridSize = switch (size.toLowerCase()) {
+            case "small" -> "15x10 tiles";
+            case "large" -> "50x30 tiles";
+            default -> "30x20 tiles"; // medium
+        };
+
+        int gridWidth = switch (size.toLowerCase()) {
+            case "small" -> 15;
+            case "large" -> 50;
+            default -> 30;
+        };
+
+        int gridHeight = switch (size.toLowerCase()) {
+            case "small" -> 10;
+            case "large" -> 30;
+            default -> 20;
+        };
+
+        String featuresStr = features != null && !features.isEmpty()
+            ? String.join(", ", features)
+            : "standard terrain";
+
+        String additionalDetails = description != null && !description.isEmpty()
+            ? "\n\nAdditional GM requirements: " + description
+            : "";
+
+        String prompt = String.format("""
+            Generate a tactical battle map for Deadlands Reloaded (Weird West tabletop RPG).
+
+            **Location Type:** %s
+            **Grid Size:** %s (%dx%d tiles)
+            **Battle Theme:** %s
+            **Features to Include:** %s%s
+
+            Return ONLY valid JSON (no markdown, no code blocks, no explanations) with this exact structure:
+
+            {
+              "name": "Evocative map name",
+              "description": "2-3 sentence tactical description highlighting chokepoints, cover, and key features",
+              "size": {
+                "width": %d,
+                "height": %d
+              },
+              "terrain": [
+                {
+                  "type": "dirt",
+                  "coords": [[0,0], [1,0], [2,0]]
+                },
+                {
+                  "type": "rocks",
+                  "coords": [[5,3], [6,3]]
+                }
+              ],
+              "buildings": [
+                {
+                  "name": "Building name",
+                  "type": "saloon",
+                  "position": {"x": 10, "y": 5},
+                  "size": {"width": 6, "height": 4},
+                  "wallTerrain": "wood_wall",
+                  "floorTerrain": "wood_floor",
+                  "entrances": [
+                    {"x": 13, "y": 5, "direction": "north"}
+                  ]
+                }
+              ],
+              "npcs": [
+                {
+                  "name": "NPC name and role",
+                  "position": {"x": 12, "y": 7},
+                  "personality": "Brief personality description"
+                }
+              ],
+              "cover": [
+                {
+                  "type": "barrel",
+                  "position": {"x": 8, "y": 10},
+                  "coverBonus": 2,
+                  "size": "small"
+                }
+              ]
+            }
+
+            **TERRAIN TYPES:** dirt, rocks, water, grass, sand, wood_floor, stone_floor, wood_wall, stone_wall
+            **BUILDING TYPES:** saloon, house, barn, mine, fort, church, store, hotel, bank
+            **COVER TYPES:** barrel, crate, wagon, fence, water_trough, stack_of_hay
+            **COVER BONUSES:** Light cover = 2, Medium cover = 4, Heavy cover = 6
+
+            **REQUIREMENTS:**
+            - Create a tactically interesting map with varied terrain
+            - Include chokepoints, flanking routes, and defensive positions
+            - Place cover strategically for dynamic combat
+            - Ensure buildings have proper entrances
+            - Make it thematic to Deadlands Weird West (1870s horror western)
+            - Fill most of the grid with appropriate terrain (don't leave empty)
+            - For town maps: include multiple buildings
+            - For wilderness: varied terrain with natural cover
+            - For combat theme: lots of cover and tactical positions
+            - For chase theme: open spaces with obstacles
+            - For ambush theme: asymmetric layout with hiding spots
+
+            Generate the JSON now. Return ONLY the JSON object, no other text.
+            """,
+            locationType,
+            gridSize,
+            gridWidth,
+            gridHeight,
+            theme,
+            featuresStr,
+            additionalDetails,
+            gridWidth,
+            gridHeight
+        );
+
+        return callClaude(prompt);
+    }
+
+    /**
+     * Generate an image prompt for Stable Diffusion based on map data
+     *
+     * @param mapName Name of the map
+     * @param locationType Type of location
+     * @param description Map description
+     * @return Optimized prompt for image generation
+     */
+    public String generateImagePrompt(String mapName, String locationType, String description) {
+        return String.format(
+            "%s: %s, %s location, top-down view, battle map, Old West 1870s, " +
+            "dusty terrain, wooden buildings, rocky outcrops, Western frontier town, " +
+            "Deadlands RPG style, clear details, high contrast",
+            mapName,
+            description,
+            locationType
+        );
+    }
+
+    /**
      * Call Claude AI with a prompt and return the response
      *
      * @param promptText The full prompt to send to Claude

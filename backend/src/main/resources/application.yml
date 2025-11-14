@@ -37,6 +37,12 @@ spring:
           temperature: 0.8
           max-tokens: 1000
 
+# Replicate.com API for Stable Diffusion image generation (optional)
+# Sign up at https://replicate.com/ to get an API key
+# Cost: ~$0.002-0.01 per image
+replicate:
+  api-key: ${REPLICATE_API_KEY:}
+
 server:
   port: 8080
   servlet:

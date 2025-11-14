@@ -13,6 +13,7 @@ import {
   Psychology as RulesIcon,
   Dangerous as EncounterIcon,
   Place as LocationIcon,
+  Map as MapIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '../../store/authStore';
 import { AIMode, ChatMessage } from '../../types/ai';
@@ -21,6 +22,7 @@ import NPCDialogueTab from './NPCDialogueTab';
 import RulesLookupTab from './RulesLookupTab';
 import EncounterGeneratorTab from './EncounterGeneratorTab';
 import LocationGeneratorTab from './LocationGeneratorTab';
+import MapGeneratorTab from './MapGeneratorTab';
 
 /**
  * AI Game Master Assistant Panel
@@ -30,7 +32,7 @@ export default function AIAssistantPanel() {
   const { user } = useAuthStore();
   const isGM = user?.role === 'GAME_MASTER';
 
-  const [mode, setMode] = useState<AIMode>('npc');
+  const [mode, setMode] = useState<'npc' | 'rules' | 'encounter' | 'location' | 'mapgen'>('npc');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,9 +97,10 @@ export default function AIAssistantPanel() {
         <Tabs
           value={mode}
           onChange={(_, newValue) => setMode(newValue)}
-          variant="fullWidth"
+          variant="scrollable"
+          scrollButtons="auto"
           sx={{
-            '& .MuiTab-root': { color: '#f5deb3' },
+            '& .MuiTab-root': { color: '#f5deb3', minWidth: 'auto' },
             '& .Mui-selected': { color: '#FFD700' },
           }}
         >
@@ -105,6 +108,7 @@ export default function AIAssistantPanel() {
           <Tab icon={<RulesIcon />} label="Rules" value="rules" />
           {isGM && <Tab icon={<EncounterIcon />} label="Encounter" value="encounter" />}
           {isGM && <Tab icon={<LocationIcon />} label="Location" value="location" />}
+          {isGM && <Tab icon={<MapIcon />} label="Map Gen" value="mapgen" />}
         </Tabs>
       </Box>
 
@@ -141,6 +145,12 @@ export default function AIAssistantPanel() {
             messages={messages}
             onAddMessage={addMessage}
             onClear={clearMessages}
+            isLoading={isLoading}
+            setIsLoading={setIsLoading}
+          />
+        )}
+        {mode === 'mapgen' && isGM && (
+          <MapGeneratorTab
             isLoading={isLoading}
             setIsLoading={setIsLoading}
           />

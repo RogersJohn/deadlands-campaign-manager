@@ -47,6 +47,10 @@ spring:
           temperature: 0.8
           max-tokens: 1500
 
+# Replicate.com API for Stable Diffusion image generation (optional)
+replicate:
+  api-key: ${REPLICATE_API_KEY:}
+
 server:
   port: ${SERVER_PORT:8080}
   servlet:
