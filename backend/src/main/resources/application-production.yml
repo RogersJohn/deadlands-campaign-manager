@@ -45,7 +45,7 @@ spring:
         options:
           model: claude-sonnet-4-5-20250929
           temperature: 0.8
-          max-tokens: 1500
+          max-tokens: 2500
 
 # Replicate.com API for Stable Diffusion image generation (optional)
 replicate:

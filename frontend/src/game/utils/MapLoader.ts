@@ -85,12 +85,17 @@ export class MapLoader {
     this.terrainLayer = this.scene.add.group();
 
     terrainGroups.forEach((group) => {
-      group.coords.forEach(([x, y]) => {
-        const sprite = this.createTerrainTile(group.type, x, y);
-        if (sprite) {
-          this.terrainLayer?.add(sprite);
+      // Render rectangular area
+      const { x1, y1, x2, y2 } = group.area;
+
+      for (let y = y1; y <= y2; y++) {
+        for (let x = x1; x <= x2; x++) {
+          const sprite = this.createTerrainTile(group.type, x, y);
+          if (sprite) {
+            this.terrainLayer?.add(sprite);
+          }
         }
-      });
+      }
     });
   }
 

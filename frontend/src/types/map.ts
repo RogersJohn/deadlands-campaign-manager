@@ -30,7 +30,14 @@ export interface MapSize {
 
 export interface TerrainGroup {
   type: string; // "dirt", "rocks", "water", "grass", "wood_floor", etc.
-  coords: number[][]; // [[x, y], [x, y], ...]
+  area: TerrainArea; // Rectangular area
+}
+
+export interface TerrainArea {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
 }
 
 export interface Building {

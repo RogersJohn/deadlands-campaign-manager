@@ -212,11 +212,11 @@ public class AIGameMasterService {
               "terrain": [
                 {
                   "type": "dirt",
-                  "coords": [[0,0], [1,0], [2,0]]
+                  "area": {"x1": 0, "y1": 0, "x2": 29, "y2": 19}
                 },
                 {
                   "type": "rocks",
-                  "coords": [[5,3], [6,3]]
+                  "area": {"x1": 5, "y1": 3, "x2": 10, "y2": 7}
                 }
               ],
               "buildings": [
@@ -254,18 +254,26 @@ public class AIGameMasterService {
             **COVER TYPES:** barrel, crate, wagon, fence, water_trough, stack_of_hay
             **COVER BONUSES:** Light cover = 2, Medium cover = 4, Heavy cover = 6
 
+            **IMPORTANT - TERRAIN FORMAT:**
+            Use rectangular "area" objects (x1,y1,x2,y2) NOT coordinate arrays!
+            Example: {"type": "dirt", "area": {"x1": 0, "y1": 0, "x2": 29, "y2": 19}}
+            This defines a filled rectangle from (0,0) to (29,19).
+            Use overlapping areas to create varied terrain (later areas override earlier ones).
+
             **REQUIREMENTS:**
             - Create a tactically interesting map with varied terrain
             - Include chokepoints, flanking routes, and defensive positions
-            - Place cover strategically for dynamic combat
+            - Place cover strategically for dynamic combat (max 10-15 cover objects)
             - Ensure buildings have proper entrances
             - Make it thematic to Deadlands Weird West (1870s horror western)
-            - Fill most of the grid with appropriate terrain (don't leave empty)
-            - For town maps: include multiple buildings
-            - For wilderness: varied terrain with natural cover
+            - For town maps: include 3-6 buildings
+            - For wilderness: 3-5 varied terrain regions
             - For combat theme: lots of cover and tactical positions
             - For chase theme: open spaces with obstacles
             - For ambush theme: asymmetric layout with hiding spots
+            - Keep terrain areas to 5-8 regions maximum for efficiency
+            - Limit NPCs to 3-5 characters
+            - Limit buildings to 3-6 structures
 
             Generate the JSON now. Return ONLY the JSON object, no other text.
             """,

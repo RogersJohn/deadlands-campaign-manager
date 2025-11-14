@@ -38,7 +38,17 @@ public class MapGenerationResponse {
     @AllArgsConstructor
     public static class TerrainGroup {
         private String type; // "dirt", "rocks", "water", "grass", "wood_floor", etc.
-        private List<int[]> coords; // [[x, y], [x, y], ...]
+        private TerrainArea area; // Rectangular area {x1, y1, x2, y2}
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TerrainArea {
+        private int x1;
+        private int y1;
+        private int x2;
+        private int y2;
     }
 
     @Data
