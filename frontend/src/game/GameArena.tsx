@@ -25,8 +25,9 @@ interface CombatState {
 
 export function GameArena() {
   const { sessionId } = useParams<{ sessionId?: string }>();
-  const { token } = useAuthStore();
+  const { token, user } = useAuthStore();
   const isMultiplayer = Boolean(sessionId);
+  const isGameMaster = user?.role === 'GAME_MASTER';
 
   const [selectedCharacter, setSelectedCharacter] = useState<GameCharacter | undefined>();
   const [gameStarted, setGameStarted] = useState(false);
@@ -884,35 +885,37 @@ export function GameArena() {
               </Box>
             </Paper>
 
-            {/* AI Assistant Toggle */}
-            <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
-              <Tooltip title="Open AI Assistant">
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  size="small"
-                  startIcon={<AIIcon />}
-                  onClick={() => {
-                    window.open(
-                      '/ai-assistant',
-                      'AI Gamemaster Assistant',
-                      'width=900,height=800,scrollbars=yes,resizable=yes'
-                    );
-                  }}
-                  sx={{
-                    color: '#f5deb3',
-                    borderColor: '#8b4513',
-                    bgcolor: 'transparent',
-                    '&:hover': {
-                      bgcolor: '#3c2415',
-                      borderColor: '#CD853F',
-                    },
-                  }}
-                >
-                  AI GM
-                </Button>
-              </Tooltip>
-            </Paper>
+            {/* AI Assistant Toggle - GM Only */}
+            {isGameMaster && (
+              <Paper sx={{ p: 1, backgroundColor: '#2d1b0e', border: '2px solid #8b4513' }}>
+                <Tooltip title="Open AI Gamemaster Assistant (GM Only)">
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    size="small"
+                    startIcon={<AIIcon />}
+                    onClick={() => {
+                      window.open(
+                        '/ai-assistant',
+                        'AI Gamemaster Assistant',
+                        'width=900,height=800,scrollbars=yes,resizable=yes'
+                      );
+                    }}
+                    sx={{
+                      color: '#f5deb3',
+                      borderColor: '#8b4513',
+                      bgcolor: 'transparent',
+                      '&:hover': {
+                        bgcolor: '#3c2415',
+                        borderColor: '#CD853F',
+                      },
+                    }}
+                  >
+                    AI GM
+                  </Button>
+                </Tooltip>
+              </Paper>
+            )}
           </Box>
         </Box>
       )}

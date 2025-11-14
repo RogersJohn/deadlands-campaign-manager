@@ -26,10 +26,10 @@ public class AIAssistantController {
 
     /**
      * Generate NPC dialogue
-     * Available to both players and GMs
+     * GM ONLY - Players cannot access AI Assistant
      */
     @PostMapping("/npc-dialogue")
-    @PreAuthorize("hasAnyRole('PLAYER', 'GAME_MASTER')")
+    @PreAuthorize("hasRole('GAME_MASTER')")
     public ResponseEntity<AIResponse> generateNPCDialogue(@Valid @RequestBody NPCDialogueRequest request) {
         log.info("NPC dialogue request for: {}", request.getNpcName());
 
@@ -63,10 +63,10 @@ public class AIAssistantController {
 
     /**
      * Look up game rules
-     * Available to both players and GMs
+     * GM ONLY - Players cannot access AI Assistant
      */
     @PostMapping("/rule-lookup")
-    @PreAuthorize("hasAnyRole('PLAYER', 'GAME_MASTER')")
+    @PreAuthorize("hasRole('GAME_MASTER')")
     public ResponseEntity<AIResponse> lookupRule(@Valid @RequestBody RuleLookupRequest request) {
         log.info("Rule lookup request: {}", request.getRuleQuestion());
 
