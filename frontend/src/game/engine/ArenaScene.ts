@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GameCharacter, GameEnemy, CombatLogEntry, Equipment, CoverTile, Cover } from '../types/GameTypes';
 import { CombatManager, TurnPhase } from './CombatManager';
 import { TypedGameEvents, wrapSceneEvents } from '../events/GameEvents';
+import { initializeMapLoaderListener } from '../utils/MapLoader';
 
 export class ArenaScene extends Phaser.Scene {
   // Type-safe event bus (wraps game.events, not scene.events)
@@ -90,6 +91,9 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   create() {
+    // Initialize MapLoader listener for AI-generated maps
+    initializeMapLoaderListener(this);
+
     const arenaWidth = this.GRID_WIDTH * this.TILE_SIZE;
     const arenaHeight = this.GRID_HEIGHT * this.TILE_SIZE;
 
