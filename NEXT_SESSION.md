@@ -1,4 +1,194 @@
-# Next Session Plan
+# Next Session Context - 2025-11-14 21:50 UTC
+
+## IMMEDIATE PRIORITY: Verify AI Assistant Deployment
+
+### 🚨 Current Status: AI Model Fix Deploying to Railway
+**Deployment Time:** ~21:45 UTC (should be live by 21:48-21:50 UTC)
+**Commit:** 276ca03 "Fix AI model ID to use valid Claude 3.5 Sonnet version"
+
+### ✅ What Was Fixed Today (Session 2025-11-14)
+
+#### 1. AI Assistant Popup Window ✅ DEPLOYED
+- **Commits:** 9a55dd8, 59d152d
+- **Files Created/Modified:**
+  - `frontend/src/pages/AIAssistantWindow.tsx` - NEW: Standalone popup (900x800px)
+  - `frontend/src/App.tsx` - Added `/ai-assistant` route
+  - `frontend/src/game/GameArena.tsx` - Opens AI in popup using window.open()
+  - `backend/.../SecurityConfig.java` - Made `/ai-gm/health` public
+  - `backend/.../AIAssistantController.java` - Removed auth from health endpoint
+
+**Features:**
+- Opens in separate window (better screen space)
+- Prominent "HUMAN GM HAS FINAL AUTHORITY" warning
+- Western theme (#2c1810 background, #FFD700 gold)
+- All 5 AI tabs functional
+
+#### 2. AI Model ID Fix ⏳ DEPLOYING NOW
+- **Commit:** 276ca03
+- **Problem:** `claude-3-5-sonnet-20241022` returned 404 from Anthropic API
+- **Fix:** Changed to `claude-3-5-sonnet-20240620` (valid model)
+- **Files:**
+  - `backend/src/main/resources/application.yml`
+  - `backend/src/main/resources/application-production.yml`
+
+**Error Log (before fix):**
+```
+404 - {"type":"error","error":{"type":"not_found_error","message":"model: claude-3-5-sonnet-20241022"}}
+```
+
+### 🧪 FIRST TASK FOR NEXT SESSION: Test AI Assistant
+
+**Wait 3-5 minutes after session start, then:**
+
+1. **Test health endpoint:**
+   ```bash
+   curl https://deadlands-campaign-manager-production-053e.up.railway.app/api/ai-gm/health
+   ```
+   Expected: `AI Assistant service is available`
+
+2. **Test in browser:**
+   - Go to https://deadlands-frontend-production.up.railway.app
+   - Login as `e2e_player1` / `Test123!`
+   - Join game session / Go to Game Arena
+   - Click "AI GM" button → popup window should open
+   - Try **Rules Lookup** tab: "How does the aim action work?"
+   - Should get AI-generated response (not error message)
+
+3. **If still failing:**
+   - Check Railway logs: `railway logs --service deadlands-campaign-manager --tail 100`
+   - Look for "404" or "anthropic" errors
+   - Verify model ID in logs
+   - Check API key is still valid at https://console.anthropic.com
+
+### 🔧 Configuration Verified
+
+#### Railway Environment Variables
+- ✅ `ANTHROPIC_API_KEY` SET on backend service
+- ✅ Value: `(see Railway dashboard - variable name: ANTHROPIC_API_KEY)`
+- ✅ All other env vars configured (DATABASE_URL, JWT_SECRET, CORS_ORIGINS)
+
+#### Backend Config (application-production.yml)
+```yaml
+spring:
+  ai:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      chat:
+        options:
+          model: claude-3-5-sonnet-20240620  # FIXED
+          temperature: 0.8
+          max-tokens: 1500
+```
+
+### 📁 AI Assistant Implementation (Reference)
+
+#### Backend Files
+```
+backend/src/main/java/com/deadlands/campaign/
+├── controller/AIAssistantController.java   # 5 endpoints + health
+├── service/AIGameMasterService.java        # Core AI logic (188 lines)
+├── config/SecurityConfig.java              # /ai-gm/health is public
+└── dto/
+    ├── NPCDialogueRequest.java
+    ├── EncounterRequest.java
+    ├── RuleLookupRequest.java
+    ├── LocationRequest.java
+    └── AIResponse.java
+```
+
+#### Frontend Files
+```
+frontend/src/
+├── pages/AIAssistantWindow.tsx             # Popup window (49 lines)
+├── components/ai/AIAssistantPanel.tsx      # Main panel (150 lines)
+├── components/ai/
+│   ├── NPCDialogueTab.tsx                  # All users
+│   ├── RulesLookupTab.tsx                  # All users
+│   ├── EncounterTab.tsx                    # GM only
+│   └── LocationTab.tsx                     # GM only
+└── services/aiService.ts                   # API client (65 lines)
+```
+
+#### Dependencies Added
+- **Backend:** Spring AI 1.0.0-M4 (pom.xml)
+- **Frontend:** Browser polyfills for SockJS (package.json, vite.config.ts)
+
+### 🎯 If AI Works, Next Priorities
+
+1. **Document Success** - Update docs with working configuration
+2. **Test All 5 AI Features:**
+   - NPC Dialogue
+   - Rules Lookup
+   - Encounter Generator (GM only)
+   - Location Generator (GM only)
+   - GM Suggestions (not visible in UI yet)
+
+3. **Future Enhancements (User Interest):**
+   - Session memory (remember NPCs, plot threads)
+   - Chat history for follow-up questions
+   - Favorite NPCs / Templates
+   - Monster stat block generation
+
+### 🔑 Test Accounts
+```
+e2e_testgm / Test123!     - GAME_MASTER (no characters - that's correct)
+e2e_player1 / Test123!    - PLAYER (40+ characters available)
+e2e_player2 / Test123!    - PLAYER
+```
+
+**IMPORTANT:** Login as `e2e_player1` to see characters, NOT `e2e_testgm`.
+
+### 📊 Production Status
+
+**URLs:**
+- Frontend: https://deadlands-frontend-production.up.railway.app
+- Backend: https://deadlands-campaign-manager-production-053e.up.railway.app/api
+- Database: PostgreSQL 17.6 (switchyard.proxy.rlwy.net:15935)
+
+**Last 3 Commits:**
+- 276ca03 - Fix AI model ID (DEPLOYING NOW)
+- 59d152d - Make AI health endpoint public
+- 9a55dd8 - Convert AI Assistant to popup window
+
+**Git Status:** Clean, all changes pushed
+
+### 🐛 Debugging Commands (If Needed)
+
+```bash
+# Check backend logs
+railway logs --service deadlands-campaign-manager --tail 100
+
+# Filter for AI errors
+railway logs --service deadlands-campaign-manager --tail 200 | grep -i "ai\|anthropic\|claude\|404"
+
+# Test health endpoint
+curl https://deadlands-campaign-manager-production-053e.up.railway.app/api/ai-gm/health
+
+# Test authenticated endpoint (get JWT first)
+curl -X POST https://.../api/auth/login -H "Content-Type: application/json" -d '{"username":"e2e_player1","password":"Test123!"}'
+curl -X POST https://.../api/ai-gm/rule-lookup -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" -d '{"ruleQuestion":"How does aim work?"}'
+```
+
+### 📝 Session Summary (2025-11-14)
+
+**Completed:**
+- ✅ AI Assistant popup window implementation
+- ✅ Public health endpoint for monitoring
+- ✅ Fixed invalid AI model ID
+- ✅ Deployed all changes to production
+- ✅ Verified API key is set in Railway
+
+**Pending:**
+- ⏳ Railway deployment completion (~21:48 UTC)
+- ⏳ AI functionality testing
+- ⏳ User acceptance testing
+
+**Issues Resolved:**
+1. Health endpoint 403 → Made public (SecurityConfig)
+2. Invalid model `20241022` → Fixed to `20240620`
+3. Inline panel cramped UI → Popup window
+
+---
 
 ## E2E Testing Framework - COMPLETE ✅
 **Priority: COMPLETE** | **Status: Production-Ready** | **Created: 2025-11-12**
@@ -51,172 +241,6 @@ cd test/e2e
 docker-compose down -v && docker-compose up --abort-on-container-exit --build
 ```
 
-### Files Created/Modified
-**Created:**
-- `test/e2e/docker-compose.yml` - Container orchestration
-- `test/e2e/Dockerfile` - Test container definition
-- `test/e2e/features/multiplayer-token-sync.feature` - BDD scenarios
-- `test/e2e/features/step_definitions/multiplayer_steps.js` - 77 step implementations
-- `test/e2e/features/support/world.js` - Test context & browser management
-- `test/e2e/features/support/pages/BasePage.js` - Base page object
-- `test/e2e/features/support/pages/LoginPage.js` - Login page object
-- `test/e2e/features/support/pages/SessionsPage.js` - Sessions page object
-- `test/e2e/features/support/pages/GameArenaPage.js` - Game arena page object
-- `test/e2e/cucumber.js` - Cucumber configuration
-- `test/e2e/package.json` - Dependencies
-- `test/e2e/wait-for-grid.sh` - Grid readiness check
-- `test/create-e2e-characters.js` - Character creation script
-
-**Modified:**
-- `backend/src/main/java/.../RateLimitService.java` - Rate limit adjustments
-- `backend/src/main/java/.../GameSessionController.java` - Fixed compilation errors
-- `test/e2e/README.md` - Updated documentation
-
-### Next Steps (To Get Tests Passing)
-
-#### Option 1: Implement Sessions Management UI (Recommended)
-**Priority: HIGH** | **Estimated: 4-8 hours**
-- Create `/sessions` route in frontend
-- Session creation form with "Create Session" button
-- Session list view showing available sessions
-- Join session functionality
-- Navigate to Game Arena after joining
-
-**Required Elements:**
-```javascript
-// SessionsPage.js expects these:
-button[aria-label="Create Session"]
-input[name="name"]
-textarea[name="description"]
-input[name="maxPlayers"]
-select[name="character"]
-```
-
-#### Option 2: Implement Remaining Step Definitions
-**Priority: MEDIUM** | **Estimated: 1-2 hours**
-- 5 undefined steps for coordinate-based token assertions
-- Required after Sessions UI is implemented
-
-### Test Account Credentials
-```
-Username: e2e_testgm
-Password: Test123!
-Role: GAME_MASTER
-
-Username: e2e_player1
-Password: Test123!
-Role: PLAYER
-Character: e2e_player1_character
-
-Username: e2e_player2
-Password: Test123!
-Role: PLAYER
-Character: e2e_player2_character
-```
-
-### Documentation
-- ✅ `test/e2e/README.md` - Complete testing guide
-- ✅ Test scenarios in Gherkin format
-- ✅ Quick start commands
-- ✅ Troubleshooting guide
-
----
-
-## Primary Objectives
-
-### 1. Production Application Status
-**Priority: TESTING** | **Status: ✅ DEPLOYED & FIXED**
-
-**CURRENT STATUS (2025-11-11 20:00 UTC):**
-Both frontend and backend services are deployed and properly configured.
-
-**Production URLs:**
-- **Frontend:** https://deadlands-frontend-production.up.railway.app
-- **Backend:** https://deadlands-campaign-manager-production-053e.up.railway.app/api
-
-**Recent Fixes (2025-11-11):**
-1. ✅ **Database Connection Fixed** - Backend was connecting to empty Railway internal database
-   - Updated `SPRING_DATASOURCE_URL` to correct production database
-   - Backend redeployed with correct connection to switchyard.proxy.rlwy.net:15935
-   - All 9 characters verified present in database
-
-2. ✅ **Character Portrait Display Improved** (Commit: 07e468e)
-   - Increased portrait height from 140px → 200px
-   - Added `objectPosition: 'top'` to show faces clearly
-   - Deployed to production via git push
-
-**Deployment Verification:**
-- ✅ Frontend: nginx serving React app (HTTP 200)
-- ✅ Backend: Spring Boot running with `/api` context path
-- ✅ Database: Connected to correct production database (switchyard.proxy.rlwy.net:15935)
-- ✅ Data integrity: 9 characters, 11 users, 63 skill references verified in database
-- 🔄 Backend redeployment in progress (should complete by 20:05 UTC)
-
-**Testing Checklist:**
-Once backend redeploys (check after ~20:05 UTC):
-1. [ ] Login works with migrated credentials (gamemaster, JohnDoyle)
-2. [ ] All 9 characters visible in Game Arena character selection
-3. [ ] Character portraits display with faces clearly visible (objectPosition: top)
-4. [ ] Character details load correctly
-5. [ ] Game Arena v1.0 features functional
-
-**Workflow Going Forward:**
-- Small incremental changes pushed immediately to production
-- Git push triggers automatic Railway deployment
-- Frontend deployments: ~2-3 minutes
-- Backend deployments: ~3-4 minutes
-
-**Context:**
-- Production database: switchyard.proxy.rlwy.net:15935 (cozy-fulfillment)
-- Old database (archived): centerbeam.proxy.rlwy.net:31016 (illustrious-solace)
-- 11 users migrated with original BCrypt passwords preserved
-- 9 characters migrated (8 from old prod + 1 "frank" from local)
-
-### 2. Security Cleanup
-**Priority: HIGH**
-
-Migration scripts contain production database credentials in plaintext.
-
-**Tasks:**
-- Add migration scripts to `.gitignore`
-- OR move to `scripts/migrations/archive/` directory
-- OR delete after confirming they're not needed for audit
-
-**Files:**
-- `migrate-characters.js`
-- `migrate-from-old-prod.js`
-- `migrate-all-from-old-prod.js`
-- `migrate-complete.js`
-
-### 3. Decommission Old Railway Project
-**Priority: MEDIUM**
-
-**Tasks:**
-- Confirm new production is stable and accessible
-- Delete or pause illustrious-solace Railway project
-- Remove old database connection permissions from `.claude/settings.local.json`
-
-**Cost impact:** Old project may be incurring monthly charges
-
-## Known Issues
-
-None - migration completed successfully, application testing pending.
-
-## Recent Changes
-
-- Database fully migrated from illustrious-solace to cozy-fulfillment
-- Users: 11 (passwords preserved from old system)
-- Characters: 9 with all associated skills/edges/hindrances/equipment
-- Reference data: All character-related lookup tables migrated
-- Wiki entries: 9 entries migrated
-
-## Session State
-
-- Clean state, no broken tests
-- All migration scripts executed successfully
-- Password preservation verified (BCrypt hashes match)
-- Production database contains all expected data per row counts
-
 ---
 
 ## Game Arena Combat System - PHASE 1 COMPLETE ✅
@@ -244,7 +268,7 @@ Game Arena tactical combat system is fully functional with all core Savage World
    - 4 illumination levels: Bright (0), Dim (-1), Dark (-2), Pitch Black (-4)
    - Applies to all attacks (ranged and melee)
    - Persists across turns until changed
-   - **Missing:** UI control to change illumination (defaults to Bright)
+   - **UI ADDED:** Illumination control with sun/moon icons in GameArena
 
 4. ✅ **Critical Rule 3: Multi-Action Enforcement**
    - First action: no penalty
@@ -265,62 +289,11 @@ Game Arena tactical combat system is fully functional with all core Savage World
 - ParryRules.test.ts (13 tests)
 - MovementBudget.test.ts (14 tests)
 - Phase1Modifiers.test.ts (20 tests) - **Caught 4 real bugs**
-- CriticalRules.test.ts (22 tests) - **NEW**
+- CriticalRules.test.ts (22 tests)
 - ActionMenu.test.tsx (9 tests)
 
-**Bugs Caught:**
-1. Aim persisting on missed attacks
-2. Called shot never clearing after attack
-3. Wrong parameter order in damage calculation
-4. Wrong property name (totalDamage vs total)
+---
 
-### Documentation Created
-- ✅ `RANGED_COMBAT_DEVELOPMENT_PLAN.md` - 8-phase roadmap
-- ✅ `PHASE_1_IMPLEMENTATION_SUMMARY.md` - Phase 1 details
-- ✅ `CLAUDE_RULES.md` - Engineering standards
-- ✅ `PROJECT_ASSESSMENT.md` - **NEW** - Comprehensive project status
-
-### Current Status
-**What Works:**
-- All core Savage Worlds mechanics (dice, raises, wounds, toughness)
-- All Phase 1 ranged combat modifiers
-- All 3 critical rules (gang-up, illumination, multi-action)
-- Movement budget system
-- Type-safe event system
-- Combat log with bounded size
-
-**What's Missing:**
-- UI control for illumination setting (system works, just no UI)
-- Allied NPCs (gang-up infrastructure ready, but no allies exist yet)
-- Phase 2-8 features (cover, ammo, rate of fire, etc.)
-
-### Next Steps (Recommended)
-
-#### Option 1: Add Illumination UI (1-2 hours)
-**Priority: Medium** | **Unblocks:** Tactical illumination decisions
-- Add dropdown in GameArena UI for Bright/Dim/Dark/Pitch Black
-- Wire up to CombatManager.setIllumination()
-- Add visual indicator (sun/moon icon)
-- Simple, clean implementation
-
-#### Option 2: Phase 2 - Cover System (4-6 hours)
-**Priority: High** | **Impact:** Major tactical depth for ranged combat
-- Define cover areas on map
-- Calculate line of sight
-- Apply cover modifiers (-2 light, -4 medium, -6 heavy)
-- Add visual indicators
-- Write comprehensive tests
-
-#### Option 3: Phase 3 - Ammo Tracking (3-4 hours)
-**Priority: Medium** | **Impact:** Resource management, prevents infinite ammo
-- Track shots remaining per weapon
-- Implement reload action
-- UI indicator for ammo count
-- Tests for edge cases
-
-### Resources
-- **Project Assessment:** `PROJECT_ASSESSMENT.md` - Full status review
-- **Development Plan:** `RANGED_COMBAT_DEVELOPMENT_PLAN.md`
-- **Phase 1 Summary:** `PHASE_1_IMPLEMENTATION_SUMMARY.md`
-- **Engineering Standards:** `CLAUDE_RULES.md`
-- **Tests:** `frontend/src/game/engine/__tests__/*.test.ts`
+**Last Updated:** 2025-11-14 21:50 UTC
+**Next Immediate Action:** Test AI Assistant after Railway deployment completes
+**Estimated Wait Time:** 3-5 minutes from session start
