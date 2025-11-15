@@ -75,7 +75,9 @@ public class SecurityConfig {
                         // WebSocket endpoints
                         .requestMatchers("/ws/**").permitAll()
                         // Session endpoints FIRST - allow authenticated users
-                        .requestMatchers("/sessions/**").authenticated()
+                        .requestMatchers("/sessions", "/sessions/**").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/sessions/{id}").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/sessions/{id}/players").authenticated()
                         // Authenticated endpoints
                         .requestMatchers("/auth/change-password").authenticated()
                         .requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
