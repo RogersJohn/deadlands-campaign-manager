@@ -71,6 +71,8 @@ public class SecurityConfig {
                         .requestMatchers("/reference/**").permitAll()
                         .requestMatchers("/portraits/**").permitAll()
                         .requestMatchers("/ai-gm/health").permitAll()
+                        // WebSocket endpoints
+                        .requestMatchers("/ws/**").permitAll()
                         // Authenticated endpoints
                         .requestMatchers("/auth/change-password").authenticated()
                         .requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
