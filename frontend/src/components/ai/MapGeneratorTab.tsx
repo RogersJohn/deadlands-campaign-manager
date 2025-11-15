@@ -91,12 +91,19 @@ export default function MapGeneratorTab({ isLoading, setIsLoading }: MapGenerato
   const handleLoadInGame = () => {
     if (!generatedMap) return;
 
-    // Emit event to Phaser to load the map
-    window.dispatchEvent(new CustomEvent('loadGeneratedMap', {
-      detail: generatedMap
-    }));
-
-    alert(`Map "${generatedMap.name}" loaded! Close this window and check the game.`);
+    // Emit event to parent window (where Phaser game is running)
+    if (window.opener) {
+      window.opener.dispatchEvent(new CustomEvent('loadGeneratedMap', {
+        detail: generatedMap
+      }));
+      alert(`Map "${generatedMap.name}" loaded! Close this window and check the game.`);
+    } else {
+      // Fallback: dispatch to current window (if not in popup)
+      window.dispatchEvent(new CustomEvent('loadGeneratedMap', {
+        detail: generatedMap
+      }));
+      alert(`Map "${generatedMap.name}" loaded!`);
+    }
   };
 
   return (
