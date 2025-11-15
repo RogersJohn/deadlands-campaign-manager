@@ -85,7 +85,7 @@ public class GameSessionController {
      * Create a new game session (GM only)
      */
     @PostMapping("/sessions")
-    @PreAuthorize("hasAuthority('GAME_MASTER')")
+    @PreAuthorize("hasRole('GAME_MASTER')")
     @ResponseBody
     public ResponseEntity<GameSession> createSession(@RequestBody CreateSessionRequest request,
                                                        Authentication authentication) {
@@ -198,7 +198,7 @@ public class GameSessionController {
      * Start the game (GM only)
      */
     @PostMapping("/sessions/{sessionId}/start")
-    @PreAuthorize("hasAuthority('GAME_MASTER')")
+    @PreAuthorize("hasRole('GAME_MASTER')")
     @ResponseBody
     public ResponseEntity<GameSession> startGame(@PathVariable Long sessionId, Authentication authentication) {
         User user = userRepository.findByUsername(authentication.getName())
