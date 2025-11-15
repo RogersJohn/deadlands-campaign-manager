@@ -33,7 +33,22 @@ class WebSocketService {
     this.sessionId = sessionId;
 
     // Determine WebSocket URL based on environment
-    const wsUrl = import.meta.env.VITE_WS_URL || 'http://localhost:8080/ws';
+    let wsUrl = import.meta.env.VITE_WS_URL;
+
+    if (!wsUrl) {
+      // Auto-detect: use wss:// for HTTPS pages, ws:// for HTTP
+      const apiUrl = import.meta.env.VITE_API_URL || '/api';
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+
+      // If VITE_API_URL is set (production), derive WebSocket URL from it
+      if (import.meta.env.VITE_API_URL) {
+        const apiHost = new URL(import.meta.env.VITE_API_URL).host;
+        wsUrl = `${protocol}//${apiHost}/ws`;
+      } else {
+        // Local development
+        wsUrl = 'http://localhost:8080/ws';
+      }
+    }
 
     return new Promise((resolve, reject) => {
       this.client = new Client({
