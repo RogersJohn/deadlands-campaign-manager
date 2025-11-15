@@ -78,6 +78,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers(HttpMethod.DELETE, "/characters/**").hasRole("GAME_MASTER")
                         .requestMatchers("/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        // Session endpoints
+                        .requestMatchers(HttpMethod.GET, "/sessions", "/sessions/**").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.POST, "/sessions").hasRole("GAME_MASTER")
+                        .requestMatchers(HttpMethod.POST, "/sessions/*/join", "/sessions/*/leave").hasAnyRole("PLAYER", "GAME_MASTER")
+                        .requestMatchers(HttpMethod.POST, "/sessions/*/start").hasRole("GAME_MASTER")
                         // Admin endpoints
                         .requestMatchers("/admin/**").hasRole("GAME_MASTER")
                         // All other requests require authentication
