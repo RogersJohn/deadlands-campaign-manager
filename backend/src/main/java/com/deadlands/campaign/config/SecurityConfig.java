@@ -59,6 +59,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        System.out.println("=== SecurityConfig loaded: /sessions/** requires .authenticated() ===");
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
@@ -73,6 +74,8 @@ public class SecurityConfig {
                         .requestMatchers("/ai-gm/health").permitAll()
                         // WebSocket endpoints
                         .requestMatchers("/ws/**").permitAll()
+                        // Session endpoints FIRST - allow authenticated users
+                        .requestMatchers("/sessions/**").authenticated()
                         // Authenticated endpoints
                         .requestMatchers("/auth/change-password").authenticated()
                         .requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
@@ -80,8 +83,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers(HttpMethod.DELETE, "/characters/**").hasRole("GAME_MASTER")
                         .requestMatchers("/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
-                        // Session endpoints - allow authenticated users, controller handles authorization
-                        .requestMatchers("/sessions/**").authenticated()
                         // Admin endpoints
                         .requestMatchers("/admin/**").hasRole("GAME_MASTER")
                         // All other requests require authentication
