@@ -80,12 +80,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers(HttpMethod.DELETE, "/characters/**").hasRole("GAME_MASTER")
                         .requestMatchers("/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
-                        // Session endpoints - GET allowed for all authenticated users with PLAYER or GM role
-                        .requestMatchers(HttpMethod.GET, "/sessions", "/sessions/*", "/sessions/*/players").hasAnyRole("PLAYER", "GAME_MASTER")
-                        // POST to create session - GM only
-                        .requestMatchers(HttpMethod.POST, "/sessions").hasRole("GAME_MASTER")
-                        // POST to join/leave/start - needs appropriate role (checked in controller)
-                        .requestMatchers(HttpMethod.POST, "/sessions/*/join", "/sessions/*/leave", "/sessions/*/start").hasAnyRole("PLAYER", "GAME_MASTER")
+                        // Session endpoints - allow authenticated users, controller handles authorization
+                        .requestMatchers("/sessions/**").authenticated()
                         // Admin endpoints
                         .requestMatchers("/admin/**").hasRole("GAME_MASTER")
                         // All other requests require authentication
