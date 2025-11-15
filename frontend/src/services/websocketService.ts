@@ -41,11 +41,11 @@ class WebSocketService {
       if (import.meta.env.VITE_API_URL) {
         // Production: derive from API URL
         const apiUrl = import.meta.env.VITE_API_URL;
-        // Replace /api with /ws
-        wsUrl = apiUrl.replace('/api', '/ws');
+        // Append /ws to API URL (e.g., https://backend/api -> https://backend/api/ws)
+        wsUrl = apiUrl + '/ws';
       } else {
-        // Local development
-        wsUrl = 'http://localhost:8080/ws';
+        // Local development (Spring Boot context-path is /api)
+        wsUrl = 'http://localhost:8080/api/ws';
       }
     }
 
