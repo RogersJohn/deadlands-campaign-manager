@@ -59,7 +59,10 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("=== SecurityConfig loaded: /sessions/** requires .authenticated() ===");
+        System.out.println("===========================================");
+        System.out.println("🚀 DEPLOYMENT VERIFICATION - Commit 368ad2b");
+        System.out.println("📝 SecurityConfig: /sessions/** → permitAll()");
+        System.out.println("===========================================");
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
