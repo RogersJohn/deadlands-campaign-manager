@@ -142,54 +142,6 @@ export function GameArena() {
     loadCharacters();
   }, []);
 
-  // Connect to WebSocket for multiplayer sessions
-  useEffect(() => {
-    if (!isMultiplayer || !sessionId || !token) {
-      console.log('Not connecting to WebSocket: multiplayer=', isMultiplayer, 'sessionId=', sessionId, 'token=', !!token);
-      return;
-    }
-
-    const connectWebSocket = async () => {
-      try {
-        console.log('Connecting to WebSocket for session:', sessionId);
-        await websocketService.connect(Number(sessionId), token);
-        setWsConnected(true);
-        console.log('WebSocket connected!');
-
-        // Subscribe to token moved events
-        const unsubscribeTokenMoved = websocketService.onTokenMoved((event: TokenMovedEvent) => {
-          console.log('Token moved event received:', event);
-          // Emit to Phaser to update token position
-          if (gameEvents) {
-            gameEvents.emit('remoteTokenMoved', {
-              tokenId: event.tokenId,
-              tokenType: event.tokenType,
-              gridX: event.gridX,
-              gridY: event.gridY,
-              movedBy: event.movedBy,
-            });
-          }
-        });
-
-        return () => {
-          unsubscribeTokenMoved();
-        };
-      } catch (err) {
-        console.error('Failed to connect to WebSocket:', err);
-        setError('Failed to connect to multiplayer session');
-      }
-    };
-
-    const cleanup = connectWebSocket();
-
-    // Cleanup on unmount
-    return () => {
-      cleanup?.then(unsubscribe => unsubscribe?.());
-      websocketService.disconnect();
-      setWsConnected(false);
-    };
-  }, [isMultiplayer, sessionId, token, gameEvents]);
-
   const handleSelectCharacter = (character: GameCharacter) => {
     setSelectedCharacter(character);
     setGameStarted(true);
