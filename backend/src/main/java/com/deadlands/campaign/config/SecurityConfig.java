@@ -60,8 +60,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         System.out.println("===========================================");
-        System.out.println("🚀 DEPLOYMENT VERIFICATION - Commit 368ad2b");
-        System.out.println("📝 SecurityConfig: /sessions/** → permitAll()");
+        System.out.println("🚀 SESSION FIX - Corrected Pattern Matching");
+        System.out.println("📝 SecurityConfig: /sessions + /sessions/** → authenticated");
         System.out.println("===========================================");
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -77,8 +77,9 @@ public class SecurityConfig {
                         .requestMatchers("/ai-gm/health").permitAll()
                         // WebSocket endpoints
                         .requestMatchers("/ws/**").permitAll()
-                        // Session endpoints - TEMPORARILY PUBLIC FOR DEBUG
-                        .requestMatchers("/sessions/**").permitAll()
+                        // Session endpoints - require authentication
+                        // FIXED: Must match both /sessions and /sessions/** explicitly
+                        .requestMatchers("/sessions", "/sessions/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         // Authenticated endpoints
                         .requestMatchers("/auth/change-password").authenticated()
                         .requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")

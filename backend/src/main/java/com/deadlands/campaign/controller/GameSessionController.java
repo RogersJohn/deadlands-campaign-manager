@@ -12,8 +12,8 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -26,7 +26,8 @@ import java.util.Map;
  *
  * Handles both REST endpoints (session CRUD) and WebSocket messages (real-time updates).
  */
-@Controller
+@RestController
+@RequestMapping("/sessions")
 public class GameSessionController {
 
     @Autowired
@@ -49,10 +50,15 @@ public class GameSessionController {
     /**
      * Get all active sessions
      */
-    @GetMapping("/sessions")
-    @ResponseBody
-    public ResponseEntity<List<GameSession>> getAllSessions(Authentication authentication) {
-        User user = userRepository.findByUsername(authentication.getName())
+    @GetMapping
+    public ResponseEntity<List<GameSession>> getAllSessions(
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         List<GameSession> sessions;
@@ -70,9 +76,15 @@ public class GameSessionController {
     /**
      * Get a specific session by ID
      */
-    @GetMapping("/sessions/{id}")
-    @ResponseBody
-    public ResponseEntity<GameSession> getSession(@PathVariable Long id, Authentication authentication) {
+    @GetMapping("/{id}")
+    public ResponseEntity<GameSession> getSession(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new RuntimeException("Session not found"));
 
@@ -84,12 +96,17 @@ public class GameSessionController {
     /**
      * Create a new game session (GM only)
      */
-    @PostMapping("/sessions")
+    @PostMapping
     @PreAuthorize("hasRole('GAME_MASTER')")
-    @ResponseBody
-    public ResponseEntity<GameSession> createSession(@RequestBody CreateSessionRequest request,
-                                                       Authentication authentication) {
-        User gameMaster = userRepository.findByUsername(authentication.getName())
+    public ResponseEntity<GameSession> createSession(
+            @RequestBody CreateSessionRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User gameMaster = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         GameSession session = GameSession.builder()
@@ -108,12 +125,17 @@ public class GameSessionController {
     /**
      * Join a session with a character
      */
-    @PostMapping("/sessions/{sessionId}/join")
-    @ResponseBody
-    public ResponseEntity<SessionPlayer> joinSession(@PathVariable Long sessionId,
-                                                       @RequestBody JoinSessionRequest request,
-                                                       Authentication authentication) {
-        User player = userRepository.findByUsername(authentication.getName())
+    @PostMapping("/{sessionId}/join")
+    public ResponseEntity<SessionPlayer> joinSession(
+            @PathVariable Long sessionId,
+            @RequestBody JoinSessionRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User player = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(sessionId)
@@ -161,10 +183,16 @@ public class GameSessionController {
     /**
      * Leave a session
      */
-    @PostMapping("/sessions/{sessionId}/leave")
-    @ResponseBody
-    public ResponseEntity<Void> leaveSession(@PathVariable Long sessionId, Authentication authentication) {
-        User player = userRepository.findByUsername(authentication.getName())
+    @PostMapping("/{sessionId}/leave")
+    public ResponseEntity<Void> leaveSession(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User player = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         SessionPlayer sessionPlayer = sessionPlayerRepository
@@ -187,8 +215,7 @@ public class GameSessionController {
     /**
      * Get all players in a session
      */
-    @GetMapping("/sessions/{sessionId}/players")
-    @ResponseBody
+    @GetMapping("/{sessionId}/players")
     public ResponseEntity<List<SessionPlayer>> getSessionPlayers(@PathVariable Long sessionId) {
         List<SessionPlayer> players = sessionPlayerRepository.findBySessionIdAndLeftAtIsNull(sessionId);
         return ResponseEntity.ok(players);
@@ -197,11 +224,17 @@ public class GameSessionController {
     /**
      * Start the game (GM only)
      */
-    @PostMapping("/sessions/{sessionId}/start")
+    @PostMapping("/{sessionId}/start")
     @PreAuthorize("hasRole('GAME_MASTER')")
-    @ResponseBody
-    public ResponseEntity<GameSession> startGame(@PathVariable Long sessionId, Authentication authentication) {
-        User user = userRepository.findByUsername(authentication.getName())
+    public ResponseEntity<GameSession> startGame(
+            @PathVariable Long sessionId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (userDetails == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(sessionId)

@@ -28,21 +28,66 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+
+        String requestURI = request.getRequestURI();
+
+        // Only log for session endpoints to reduce noise
+        boolean isSessionEndpoint = requestURI.contains("/sessions");
+
+        if (isSessionEndpoint) {
+            System.out.println("========== JWT FILTER DEBUG ==========");
+            System.out.println("Request URI: " + requestURI);
+            System.out.println("Method: " + request.getMethod());
+        }
+
         try {
             String jwt = getJwtFromRequest(request);
+
+            if (isSessionEndpoint) {
+                System.out.println("Authorization Header: " + (jwt != null ? "Present" : "MISSING"));
+            }
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromToken(jwt);
 
+                if (isSessionEndpoint) {
+                    System.out.println("JWT Valid - Username: " + username);
+                }
+
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+
+                if (isSessionEndpoint) {
+                    System.out.println("UserDetails loaded: " + userDetails.getUsername());
+                    System.out.println("Authorities: " + userDetails.getAuthorities());
+                }
+
                 UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                if (isSessionEndpoint) {
+                    System.out.println("✓ Authentication SET in SecurityContext");
+                }
+            } else if (isSessionEndpoint && StringUtils.hasText(jwt)) {
+                System.out.println("✗ JWT validation FAILED");
             }
         } catch (Exception ex) {
             logger.error("Could not set user authentication in security context", ex);
+            if (isSessionEndpoint) {
+                System.out.println("✗ Exception: " + ex.getMessage());
+                ex.printStackTrace();
+            }
+        }
+
+        if (isSessionEndpoint) {
+            System.out.println("Final Authentication: " +
+                (SecurityContextHolder.getContext().getAuthentication() != null ?
+                    SecurityContextHolder.getContext().getAuthentication().getName() + " [" +
+                    SecurityContextHolder.getContext().getAuthentication().getAuthorities() + "]" :
+                    "NULL"));
+            System.out.println("======================================");
         }
 
         filterChain.doFilter(request, response);
