@@ -192,11 +192,22 @@ public class GameSessionController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        User player = userRepository.findByUsername(userDetails.getUsername())
+        User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(sessionId)
+                .orElseThrow(() -> new RuntimeException("Session not found"));
+
+        // Check if user is the Game Master (session owner)
+        if (session.getGameMaster().getId().equals(user.getId())) {
+            // GM cannot "leave" their own session - they should delete/end it instead
+            // For now, just return success without doing anything
+            return ResponseEntity.noContent().build();
+        }
+
+        // User is a player - find their SessionPlayer record
         SessionPlayer sessionPlayer = sessionPlayerRepository
-                .findBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, player.getId())
+                .findBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, user.getId())
                 .orElseThrow(() -> new RuntimeException("Not in this session"));
 
         sessionPlayer.setLeftAt(Instant.now());
@@ -206,7 +217,7 @@ public class GameSessionController {
         // Notify other players
         messagingTemplate.convertAndSend(
                 "/topic/session/" + sessionId + "/player-left",
-                Map.of("playerId", player.getId(), "playerName", player.getUsername())
+                Map.of("playerId", user.getId(), "playerName", user.getUsername())
         );
 
         return ResponseEntity.noContent().build();
