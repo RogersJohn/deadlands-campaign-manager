@@ -12,6 +12,8 @@ const config = {
   frontendUrl: process.env.FRONTEND_URL || 'https://deadlands-frontend-production.up.railway.app',
   apiUrl: process.env.API_URL || 'https://deadlands-campaign-manager-production-053e.up.railway.app/api',
   headless: process.env.HEADLESS === 'true',
+  devtools: process.env.DEVTOOLS === 'true',
+  slowMo: parseInt(process.env.SLOW_MO || '0'),
 };
 
 class CustomWorld {
@@ -38,6 +40,12 @@ class CustomWorld {
       '--disable-gpu',
       '--window-size=1920,1080'
     );
+
+    // Enable DevTools if requested
+    if (this.config.devtools) {
+      chromeOptions.addArguments('--auto-open-devtools-for-tabs');
+      console.log(`⚙️  DevTools will auto-open for browser '${browserName}'`);
+    }
 
     // Enable browser console logs (using modern API)
     chromeOptions.setLoggingPrefs({

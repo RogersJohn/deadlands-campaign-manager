@@ -7,7 +7,11 @@
     "test:parallel": "cucumber-js --parallel 3",
     "test:headless": "HEADLESS=true cucumber-js",
     "test:docker": "docker-compose up --abort-on-container-exit",
-    "test:clean": "docker-compose down -v"
+    "test:clean": "docker-compose down -v",
+    "test:api": "node run-with-devtools.js --tags @api",
+    "test:api:slow": "node run-with-devtools.js --tags @api --slow",
+    "test:sessions": "node run-with-devtools.js --tags @session-endpoints",
+    "test:debug": "node run-with-devtools.js --tags @critical --slow"
   },
   "dependencies": {
     "@cucumber/cucumber": "^10.3.1",
