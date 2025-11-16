@@ -32,22 +32,25 @@ public class SessionPlayer {
     /**
      * The game session this player is part of
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "session_id", nullable = false)
+    @JsonIgnoreProperties({"gameMaster", "deletedBy", "gameState"})
     private GameSession session;
 
     /**
      * The player (user) participating in this session
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "player_id", nullable = false)
+    @JsonIgnoreProperties({"password", "characters", "createdAt", "updatedAt"})
     private User player;
 
     /**
      * The character this player is using in the session
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "character_id", nullable = false)
+    @JsonIgnoreProperties({"player"})
     private Character character;
 
     /**

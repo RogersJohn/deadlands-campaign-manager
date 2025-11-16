@@ -36,8 +36,9 @@ public class GameSession {
     /**
      * The Game Master who created and controls this session
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "game_master_id", nullable = false)
+    @JsonIgnoreProperties({"password", "characters", "createdAt", "updatedAt"})
     private User gameMaster;
 
     /**
@@ -86,7 +87,8 @@ public class GameSession {
     @Column
     private Instant deletedAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "deleted_by")
+    @JsonIgnoreProperties({"password", "characters", "createdAt", "updatedAt"})
     private User deletedBy;
 }
