@@ -37,9 +37,7 @@ const Layout = () => {
   const pageTitle = useMemo(() => {
     const path = location.pathname
     if (path === '/dashboard') return 'My Characters'
-    if (path === '/sessions') return 'Game Sessions'
-    if (path.startsWith('/session/')) return 'Session Room'
-    if (path.startsWith('/game/arena')) return 'Combat Arena'
+    if (path === '/arena') return 'Combat Arena'
     if (path.startsWith('/wiki')) return 'Campaign Wiki'
     if (path.startsWith('/character/new')) return 'Create Character'
     if (path.includes('/edit')) return 'Edit Character'
@@ -56,8 +54,7 @@ const Layout = () => {
   const menuItems = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'My Characters', icon: <PersonIcon />, path: '/dashboard' },
-    { text: 'Sessions', icon: <GroupIcon />, path: '/sessions' },
-    { text: 'Game', icon: <GameIcon />, path: '/game/arena' },
+    { text: 'Game Arena', icon: <GameIcon />, path: '/arena' },
     { text: 'Wiki', icon: <WikiIcon />, path: '/wiki' },
     { text: 'Change Password', icon: <LockIcon />, path: '/change-password' },
   ]

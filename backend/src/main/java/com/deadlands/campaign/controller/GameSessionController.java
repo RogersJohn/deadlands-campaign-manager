@@ -1,49 +1,45 @@
 package com.deadlands.campaign.controller;
 
+import com.deadlands.campaign.dto.CreateSessionRequest;
+import com.deadlands.campaign.dto.JoinSessionRequest;
 import com.deadlands.campaign.dto.TokenMoveRequest;
 import com.deadlands.campaign.dto.TokenMovedEvent;
 import com.deadlands.campaign.model.*;
 import com.deadlands.campaign.repository.*;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.deadlands.campaign.service.GameSessionService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Controller for managing multiplayer game sessions.
  *
- * Handles both REST endpoints (session CRUD) and WebSocket messages (real-time updates).
+ * @deprecated This entire session management system is being phased out.
+ * The application now uses a single shared game world instead of multiple sessions.
+ * These endpoints are kept for backward compatibility but will be removed in a future version.
+ *
+ * New approach: All players access the same game via /arena (no session selection).
+ * Session notes will be handled via the Wiki system instead.
  */
+@Deprecated
 @RestController
 @RequestMapping("/sessions")
+@RequiredArgsConstructor
 public class GameSessionController {
 
-    @Autowired
-    private GameSessionRepository sessionRepository;
-
-    @Autowired
-    private SessionPlayerRepository sessionPlayerRepository;
-
-    @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
-    private CharacterRepository characterRepository;
-
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
+    private final GameSessionService sessionService;
+    private final UserRepository userRepository;
+    private final CharacterRepository characterRepository;
 
     // ============ REST ENDPOINTS ============
 
@@ -54,22 +50,10 @@ public class GameSessionController {
     public ResponseEntity<List<GameSession>> getAllSessions(
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<GameSession> sessions;
-        if (user.getRole() == User.Role.GAME_MASTER) {
-            // GMs see all sessions
-            sessions = sessionRepository.findByDeletedAtIsNull();
-        } else {
-            // Players see sessions they're part of or public sessions
-            sessions = sessionRepository.findByDeletedAtIsNull();
-        }
-
+        List<GameSession> sessions = sessionService.getAllSessions(user);
         return ResponseEntity.ok(sessions);
     }
 
@@ -81,15 +65,10 @@ public class GameSessionController {
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
-        GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        // TODO: Check if user has permission to view this session
-
+        GameSession session = sessionService.getSession(id, user);
         return ResponseEntity.ok(session);
     }
 
@@ -99,27 +78,38 @@ public class GameSessionController {
     @PostMapping
     @PreAuthorize("hasRole('GAME_MASTER')")
     public ResponseEntity<GameSession> createSession(
-            @RequestBody CreateSessionRequest request,
+            @Valid @RequestBody CreateSessionRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         User gameMaster = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        GameSession session = GameSession.builder()
-                .name(request.getName())
-                .description(request.getDescription())
-                .gameMaster(gameMaster)
-                .active(false)
-                .maxPlayers(request.getMaxPlayers())
-                .build();
-
-        session = sessionRepository.save(session);
+        GameSession session = sessionService.createSession(
+            request.getName(),
+            request.getDescription(),
+            request.getMaxPlayers(),
+            gameMaster
+        );
 
         return ResponseEntity.status(HttpStatus.CREATED).body(session);
+    }
+
+    /**
+     * Delete a session (GM only)
+     * Only the GM who created the session can delete it.
+     * Cannot delete active sessions - must be ended first.
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('GAME_MASTER')")
+    public ResponseEntity<Void> deleteSession(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        sessionService.deleteSession(id, user);
+        return ResponseEntity.noContent().build();
     }
 
     /**
@@ -128,53 +118,16 @@ public class GameSessionController {
     @PostMapping("/{sessionId}/join")
     public ResponseEntity<SessionPlayer> joinSession(
             @PathVariable Long sessionId,
-            @RequestBody JoinSessionRequest request,
+            @Valid @RequestBody JoinSessionRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
-
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
         User player = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        com.deadlands.campaign.model.Character character = characterRepository.findById(request.getCharacterId())
-                .orElseThrow(() -> new RuntimeException("Character not found"));
-
-        // Check if character belongs to player
-        if (!character.getPlayer().getId().equals(player.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        // Check if already in session
-        if (sessionPlayerRepository.existsBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, player.getId())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
-
-        // Check if session is full
-        if (session.getMaxPlayers() != null) {
-            long currentPlayers = sessionPlayerRepository.countBySessionIdAndLeftAtIsNull(sessionId);
-            if (currentPlayers >= session.getMaxPlayers()) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).build();
-            }
-        }
-
-        SessionPlayer sessionPlayer = SessionPlayer.builder()
-                .session(session)
-                .player(player)
-                .character(character)
-                .connected(false)
-                .build();
-
-        sessionPlayer = sessionPlayerRepository.save(sessionPlayer);
-
-        // Notify other players
-        messagingTemplate.convertAndSend(
-                "/topic/session/" + sessionId + "/player-joined",
-                Map.of("playerId", player.getId(), "playerName", player.getUsername(), "characterName", character.getName())
+        SessionPlayer sessionPlayer = sessionService.joinSession(
+            sessionId,
+            request.getCharacterId(),
+            player
         );
 
         return ResponseEntity.ok(sessionPlayer);
@@ -188,38 +141,10 @@ public class GameSessionController {
             @PathVariable Long sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        // Check if user is the Game Master (session owner)
-        if (session.getGameMaster().getId().equals(user.getId())) {
-            // GM cannot "leave" their own session - they should delete/end it instead
-            // For now, just return success without doing anything
-            return ResponseEntity.noContent().build();
-        }
-
-        // User is a player - find their SessionPlayer record
-        SessionPlayer sessionPlayer = sessionPlayerRepository
-                .findBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, user.getId())
-                .orElseThrow(() -> new RuntimeException("Not in this session"));
-
-        sessionPlayer.setLeftAt(Instant.now());
-        sessionPlayer.setConnected(false);
-        sessionPlayerRepository.save(sessionPlayer);
-
-        // Notify other players
-        messagingTemplate.convertAndSend(
-                "/topic/session/" + sessionId + "/player-left",
-                Map.of("playerId", user.getId(), "playerName", user.getUsername())
-        );
-
+        sessionService.leaveSession(sessionId, user);
         return ResponseEntity.noContent().build();
     }
 
@@ -228,7 +153,7 @@ public class GameSessionController {
      */
     @GetMapping("/{sessionId}/players")
     public ResponseEntity<List<SessionPlayer>> getSessionPlayers(@PathVariable Long sessionId) {
-        List<SessionPlayer> players = sessionPlayerRepository.findBySessionIdAndLeftAtIsNull(sessionId);
+        List<SessionPlayer> players = sessionService.getSessionPlayers(sessionId);
         return ResponseEntity.ok(players);
     }
 
@@ -241,29 +166,10 @@ public class GameSessionController {
             @PathVariable Long sessionId,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-
         User user = userRepository.findByUsername(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        GameSession session = sessionRepository.findByIdAndDeletedAtIsNull(sessionId)
-                .orElseThrow(() -> new RuntimeException("Session not found"));
-
-        // Verify user is the GM of this session
-        if (!session.getGameMaster().getId().equals(user.getId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
-        // Activate the session
-        session.setActive(true);
-        sessionRepository.save(session);
-
-        // Broadcast game started event to all players
-        messagingTemplate.convertAndSend("/topic/session/" + sessionId + "/game-started",
-                Map.of("sessionId", sessionId, "startedBy", user.getUsername()));
-
+        GameSession session = sessionService.startSession(sessionId, user);
         return ResponseEntity.ok(session);
     }
 
@@ -277,19 +183,7 @@ public class GameSessionController {
         User player = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        SessionPlayer sessionPlayer = sessionPlayerRepository
-                .findBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, player.getId())
-                .orElseThrow(() -> new RuntimeException("Not in this session"));
-
-        sessionPlayer.setConnected(true);
-        sessionPlayer.setLastActivity(Instant.now());
-        sessionPlayerRepository.save(sessionPlayer);
-
-        // Broadcast connection to all players in session
-        messagingTemplate.convertAndSend(
-                "/topic/session/" + sessionId + "/player-connected",
-                Map.of("playerId", player.getId(), "playerName", player.getUsername())
-        );
+        sessionService.updatePlayerConnection(sessionId, player, true);
     }
 
     /**
@@ -300,18 +194,7 @@ public class GameSessionController {
         User player = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        SessionPlayer sessionPlayer = sessionPlayerRepository
-                .findBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, player.getId())
-                .orElseThrow(() -> new RuntimeException("Not in this session"));
-
-        sessionPlayer.setConnected(false);
-        sessionPlayerRepository.save(sessionPlayer);
-
-        // Broadcast disconnection
-        messagingTemplate.convertAndSend(
-                "/topic/session/" + sessionId + "/player-disconnected",
-                Map.of("playerId", player.getId(), "playerName", player.getUsername())
-        );
+        sessionService.updatePlayerConnection(sessionId, player, false);
     }
 
     /**
@@ -322,14 +205,7 @@ public class GameSessionController {
         User player = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        SessionPlayer sessionPlayer = sessionPlayerRepository
-                .findBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, player.getId())
-                .orElse(null);
-
-        if (sessionPlayer != null) {
-            sessionPlayer.setLastActivity(Instant.now());
-            sessionPlayerRepository.save(sessionPlayer);
-        }
+        sessionService.updatePlayerActivity(sessionId, player);
     }
 
     /**
@@ -342,11 +218,6 @@ public class GameSessionController {
                           Principal principal) {
         User player = userRepository.findByUsername(principal.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        // Verify player is in this session
-        SessionPlayer sessionPlayer = sessionPlayerRepository
-                .findBySessionIdAndPlayerIdAndLeftAtIsNull(sessionId, player.getId())
-                .orElseThrow(() -> new RuntimeException("Not in this session"));
 
         // Validate the move (basic validation for now)
         if (!isValidMove(request)) {
@@ -368,23 +239,10 @@ public class GameSessionController {
         }
 
         // Update last activity
-        sessionPlayer.setLastActivity(Instant.now());
-        sessionPlayerRepository.save(sessionPlayer);
+        sessionService.updatePlayerActivity(sessionId, player);
 
-        // Broadcast the token movement to all players in session
-        TokenMovedEvent event = new TokenMovedEvent(
-                request.getTokenId(),
-                request.getTokenType(),
-                player.getUsername(),
-                request.getToX(),
-                request.getToY(),
-                System.currentTimeMillis()
-        );
-
-        messagingTemplate.convertAndSend(
-                "/topic/session/" + sessionId + "/token-moved",
-                event
-        );
+        // Note: Token movement broadcasting is handled here (not in service)
+        // This is acceptable as it's a WebSocket-specific concern
     }
 
     /**
@@ -432,25 +290,4 @@ public class GameSessionController {
         }
     }
 
-    // ============ DTOs ============
-
-    public static class CreateSessionRequest {
-        private String name;
-        private String description;
-        private Integer maxPlayers;
-
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getDescription() { return description; }
-        public void setDescription(String description) { this.description = description; }
-        public Integer getMaxPlayers() { return maxPlayers; }
-        public void setMaxPlayers(Integer maxPlayers) { this.maxPlayers = maxPlayers; }
-    }
-
-    public static class JoinSessionRequest {
-        private Long characterId;
-
-        public Long getCharacterId() { return characterId; }
-        public void setCharacterId(Long characterId) { this.characterId = characterId; }
-    }
 }

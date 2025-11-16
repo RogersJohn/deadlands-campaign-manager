@@ -9,8 +9,6 @@ import CharacterCreate from './pages/CharacterCreate'
 import CharacterEdit from './pages/CharacterEdit'
 import ChangePassword from './pages/ChangePassword'
 import Wiki from './pages/Wiki'
-import SessionLobby from './pages/SessionLobby'
-import SessionRoom from './pages/SessionRoom'
 import AIAssistantWindow from './pages/AIAssistantWindow'
 import Layout from './components/Layout'
 import { GameArena } from './game/GameArena'
@@ -33,10 +31,7 @@ function App() {
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="wiki" element={<Wiki />} />
           <Route path="wiki/:slug" element={<Wiki />} />
-          <Route path="sessions" element={<SessionLobby />} />
-          <Route path="session/:sessionId" element={<SessionRoom />} />
-          <Route path="session/:sessionId/arena" element={<GameArena />} />
-          <Route path="game/arena" element={<GameArena />} />
+          <Route path="arena" element={<GameArena />} />
         </Route>
 
         {/* AI Assistant Window - Opens in popup, no layout */}

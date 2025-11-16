@@ -18,7 +18,7 @@ import {
   Grid,
   CircularProgress,
 } from '@mui/material';
-import { Add as AddIcon, PlayArrow as PlayIcon, People as PeopleIcon } from '@mui/icons-material';
+import { Add as AddIcon, PlayArrow as PlayIcon, People as PeopleIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import sessionService from '../services/sessionService';
 import characterService from '../services/characterService';
 import { useAuthStore } from '../store/authStore';
@@ -32,6 +32,7 @@ export default function SessionLobby() {
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<GameSession | null>(null);
   const [selectedCharacterId, setSelectedCharacterId] = useState<number | null>(null);
 
@@ -79,6 +80,16 @@ export default function SessionLobby() {
     },
   });
 
+  // Delete session mutation
+  const deleteSessionMutation = useMutation({
+    mutationFn: (sessionId: number) => sessionService.deleteSession(sessionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sessions'] });
+      setDeleteDialogOpen(false);
+      setSelectedSession(null);
+    },
+  });
+
   const handleCreateSession = () => {
     if (!newSessionName) {
       return;
@@ -105,6 +116,19 @@ export default function SessionLobby() {
       sessionId: selectedSession.id,
       characterId: selectedCharacterId,
     });
+  };
+
+  const handleDeleteSession = (session: GameSession) => {
+    setSelectedSession(session);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedSession) {
+      return;
+    }
+
+    deleteSessionMutation.mutate(selectedSession.id);
   };
 
   if (sessionsLoading) {
@@ -174,15 +198,27 @@ export default function SessionLobby() {
                 </Typography>
               </CardContent>
 
-              <CardActions>
+              <CardActions sx={{ justifyContent: 'space-between' }}>
                 {isGM && session.gameMaster.id === user?.id ? (
-                  <Button
-                    size="small"
-                    startIcon={<PlayIcon />}
-                    onClick={() => navigate(`/session/${session.id}`)}
-                  >
-                    Manage Session
-                  </Button>
+                  <>
+                    <Button
+                      size="small"
+                      startIcon={<PlayIcon />}
+                      onClick={() => navigate(`/session/${session.id}`)}
+                    >
+                      Manage Session
+                    </Button>
+                    <Button
+                      size="small"
+                      color="error"
+                      startIcon={<DeleteIcon />}
+                      onClick={() => handleDeleteSession(session)}
+                      disabled={session.active}
+                      aria-label={`Delete ${session.name}`}
+                    >
+                      Delete
+                    </Button>
+                  </>
                 ) : (
                   <Button size="small" onClick={() => handleJoinSession(session)}>
                     Join Session
@@ -275,6 +311,36 @@ export default function SessionLobby() {
             disabled={!selectedCharacterId || joinSessionMutation.isPending}
           >
             {joinSessionMutation.isPending ? 'Joining...' : 'Join'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Delete Session Dialog */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Delete Session</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            This action cannot be undone. The session will be permanently deleted.
+          </Alert>
+          <Typography>
+            Are you sure you want to delete <strong>{selectedSession?.name}</strong>?
+          </Typography>
+          {selectedSession?.active && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              This session is currently active. You must end it before deleting.
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+          <Button
+            onClick={handleConfirmDelete}
+            variant="contained"
+            color="error"
+            disabled={selectedSession?.active || deleteSessionMutation.isPending}
+            aria-label="Confirm Delete Session"
+          >
+            {deleteSessionMutation.isPending ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -9,8 +9,9 @@ import {
   CardActions,
   Button,
   CircularProgress,
+  Paper,
 } from '@mui/material'
-import { Add as AddIcon, Person as PersonIcon } from '@mui/icons-material'
+import { Add as AddIcon, Person as PersonIcon, SportsEsports as GameIcon } from '@mui/icons-material'
 import characterService from '../services/characterService'
 import { useAuthStore } from '../store/authStore'
 
@@ -33,11 +34,37 @@ const Dashboard = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 4 }}>
-        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/character/new')}>
-          New Character
-        </Button>
-      </Box>
+      {/* Quick Actions */}
+      <Paper sx={{ p: 3, mb: 4, bgcolor: 'primary.dark' }}>
+        <Typography variant="h5" gutterBottom color="primary.contrastText">
+          Welcome back, {user?.username}!
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
+          <Button
+            variant="contained"
+            size="large"
+            color="success"
+            startIcon={<GameIcon />}
+            onClick={() => navigate('/arena')}
+          >
+            Play Game
+          </Button>
+          <Button
+            variant="outlined"
+            size="large"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/character/new')}
+            sx={{ color: 'primary.contrastText', borderColor: 'primary.contrastText' }}
+          >
+            New Character
+          </Button>
+        </Box>
+      </Paper>
+
+      {/* Characters Section */}
+      <Typography variant="h5" gutterBottom>
+        Your Characters
+      </Typography>
 
       <Grid container spacing={3}>
         {characters?.map((character) => (

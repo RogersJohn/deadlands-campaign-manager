@@ -40,9 +40,16 @@ A comprehensive web-based campaign management system for Deadlands Reloaded tabl
 
 - **Campaign Wiki** ✅
   - Permission-based content unlocking (public/private wiki entries)
-  - Campaign lore and session notes in Markdown format
+  - Campaign lore and world information in Markdown format
   - Player-specific and GM-only content
   - Character backstories and campaign information
+  - Session notes (planned) - Historical record of play sessions
+
+- **Single Shared Game World** ✨ NEW!
+  - Simple "Login → Play Game" flow (no session management complexity)
+  - One shared campaign that all players access
+  - Game Master has full control, Players have character-specific abilities
+  - Combat arena with tactical battlefield
 
 - **Generators** (Coming Soon)
   - NPC generator with full stats

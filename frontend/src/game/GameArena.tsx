@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import { Container, Typography, Paper, Box, Button, CircularProgress, Alert, Grid, Card, CardContent, CardMedia, CardActionArea, Radio, RadioGroup, FormControlLabel, IconButton, Tooltip } from '@mui/material';
 import { WbSunny as SunIcon, WbTwilight as TwilightIcon, Brightness3 as MoonIcon, Brightness1 as DarkIcon, Psychology as AIIcon } from '@mui/icons-material';
 import { GameCanvas } from './components/GameCanvas';
@@ -11,9 +10,7 @@ import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, 
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
 import { wrapGameEvents, TypedGameEvents } from './events/GameEvents';
-import { websocketService } from '../services/websocketService';
 import { useAuthStore } from '../store/authStore';
-import { TokenMovedEvent } from '../types/session';
 
 interface CombatState {
   playerHealth: number;
@@ -24,9 +21,7 @@ interface CombatState {
 }
 
 export function GameArena() {
-  const { sessionId } = useParams<{ sessionId?: string }>();
   const { token, user } = useAuthStore();
-  const isMultiplayer = Boolean(sessionId);
   const isGameMaster = user?.role === 'GAME_MASTER';
 
   const [selectedCharacter, setSelectedCharacter] = useState<GameCharacter | undefined>();
@@ -34,7 +29,6 @@ export function GameArena() {
   const [characters, setCharacters] = useState<GameCharacter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [wsConnected, setWsConnected] = useState(false);
   const [combatState, setCombatState] = useState<CombatState>({
     playerHealth: 0,
     playerMaxHealth: 0,
@@ -126,30 +120,8 @@ export function GameArena() {
     }
   }, [gameEvents, illumination]);
 
-  // Listen for local token movements from Phaser and send to WebSocket (TYPE-SAFE)
-  useEffect(() => {
-    if (!gameEvents || !isMultiplayer || !wsConnected) {
-      return;
-    }
-
-    const handleLocalTokenMoved = (event: any) => {
-      console.log('Local token moved, sending to WebSocket:', event);
-      websocketService.moveToken({
-        tokenId: event.tokenId,
-        tokenType: event.tokenType,
-        fromX: event.fromX,
-        fromY: event.fromY,
-        toX: event.toX,
-        toY: event.toY,
-      });
-    };
-
-    gameEvents.on('localTokenMoved', handleLocalTokenMoved);
-
-    return () => {
-      gameEvents.off('localTokenMoved', handleLocalTokenMoved);
-    };
-  }, [gameEvents, isMultiplayer, wsConnected]);
+  // WebSocket logic removed - single player game for now
+  // Can be re-added later for real-time GM/player synchronization
 
   // Fetch characters on component mount
   useEffect(() => {

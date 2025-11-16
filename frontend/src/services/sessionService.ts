@@ -64,6 +64,15 @@ const sessionService = {
     const response = await api.post(`/sessions/${sessionId}/start`);
     return response.data;
   },
+
+  /**
+   * Delete a session (GM only)
+   * Only the GM who created the session can delete it.
+   * Cannot delete active sessions.
+   */
+  deleteSession: async (sessionId: number): Promise<void> => {
+    await api.delete(`/sessions/${sessionId}`);
+  },
 };
 
 export default sessionService;
