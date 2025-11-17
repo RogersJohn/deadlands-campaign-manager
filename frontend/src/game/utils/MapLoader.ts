@@ -454,8 +454,9 @@ export class MapLoader {
 /**
  * Initialize map loader event listener
  * Call this in your Phaser scene's create() method
+ * Returns the MapLoader instance so you can access toggle methods
  */
-export function initializeMapLoaderListener(scene: Phaser.Scene): void {
+export function initializeMapLoaderListener(scene: Phaser.Scene): MapLoader {
   const mapLoader = new MapLoader(scene);
 
   window.addEventListener('loadGeneratedMap', ((event: CustomEvent) => {
@@ -464,4 +465,6 @@ export function initializeMapLoaderListener(scene: Phaser.Scene): void {
   }) as EventListener);
 
   console.log('Map loader listener initialized');
+
+  return mapLoader;
 }

@@ -85,7 +85,8 @@ public class BattleMap {
     private String tags; // Comma-separated: "town,combat,outdoor,medium"
 
     @Enumerated(EnumType.STRING)
-    private MapType type; // TOWN_STREET, WILDERNESS, INTERIOR, MINE, FORT
+    @Column(nullable = false)
+    private MapType type; // TOWN_STREET, WILDERNESS, INTERIOR, MINE, FORT, CUSTOM
 
     @Enumerated(EnumType.STRING)
     private BattleTheme theme; // COMBAT, CHASE, AMBUSH, SIEGE, EXPLORATION

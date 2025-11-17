@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { GameCharacter, GameEnemy, CombatLogEntry, Equipment, CoverTile, Cover } from '../types/GameTypes';
 import { CombatManager, TurnPhase } from './CombatManager';
 import { TypedGameEvents, wrapSceneEvents } from '../events/GameEvents';
-import { initializeMapLoaderListener } from '../utils/MapLoader';
+import { initializeMapLoaderListener, MapLoader } from '../utils/MapLoader';
 
 export class ArenaScene extends Phaser.Scene {
   // Type-safe event bus (wraps game.events, not scene.events)
@@ -80,6 +80,9 @@ export class ArenaScene extends Phaser.Scene {
   private coverTooltipTimer?: Phaser.Time.TimerEvent;
   private hoveredCoverTile?: { gridX: number; gridY: number };
 
+  // Map loader for tactical overlays
+  private mapLoader?: MapLoader;
+
   constructor() {
     super({ key: 'ArenaScene' });
   }
@@ -91,8 +94,8 @@ export class ArenaScene extends Phaser.Scene {
   }
 
   create() {
-    // Initialize MapLoader listener for AI-generated maps
-    initializeMapLoaderListener(this);
+    // Initialize MapLoader listener for AI-generated maps and store instance
+    this.mapLoader = initializeMapLoaderListener(this);
 
     const arenaWidth = this.GRID_WIDTH * this.TILE_SIZE;
     const arenaHeight = this.GRID_HEIGHT * this.TILE_SIZE;
@@ -390,6 +393,30 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
       console.log('[ArenaScene] Illumination changed:', payload.level);
       if (this.combatManager) {
         this.combatManager.setIllumination(payload.level);
+      }
+    });
+
+    // Listen for map grid toggle from React (TYPE-SAFE)
+    this.gameEvents.on('mapGridToggle', (payload) => {
+      console.log('[ArenaScene] Map grid toggle:', payload.enabled);
+      if (this.mapLoader) {
+        this.mapLoader.toggleGrid(payload.enabled);
+      }
+    });
+
+    // Listen for map walls toggle from React (TYPE-SAFE)
+    this.gameEvents.on('mapWallsToggle', (payload) => {
+      console.log('[ArenaScene] Map walls toggle:', payload.enabled);
+      if (this.mapLoader) {
+        this.mapLoader.toggleWalls(payload.enabled);
+      }
+    });
+
+    // Listen for map cover toggle from React (TYPE-SAFE)
+    this.gameEvents.on('mapCoverToggle', (payload) => {
+      console.log('[ArenaScene] Map cover toggle:', payload.enabled);
+      if (this.mapLoader) {
+        this.mapLoader.toggleCover(payload.enabled);
       }
     });
 
