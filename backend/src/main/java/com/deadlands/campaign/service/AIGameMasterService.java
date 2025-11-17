@@ -232,13 +232,7 @@ public class AIGameMasterService {
                   ]
                 }
               ],
-              "npcs": [
-                {
-                  "name": "NPC name and role",
-                  "position": {"x": 12, "y": 7},
-                  "personality": "Brief personality description"
-                }
-              ],
+              "npcs": [],
               "cover": [
                 {
                   "type": "barrel",
@@ -272,7 +266,7 @@ public class AIGameMasterService {
             - For chase theme: open spaces with obstacles
             - For ambush theme: asymmetric layout with hiding spots
             - Keep terrain areas to 5-8 regions maximum for efficiency
-            - Limit NPCs to 3-5 characters
+            - DO NOT generate NPCs - leave the "npcs" array EMPTY []
             - Limit buildings to 3-6 structures
 
             Generate the JSON now. Return ONLY the JSON object, no other text.

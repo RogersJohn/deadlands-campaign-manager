@@ -66,15 +66,10 @@ export class MapLoader {
       this.addBuildingLabels(mapData.buildings);
     }
 
-    // Step 8: Add NPC markers (optional)
-    if (mapData.npcs && mapData.npcs.length > 0) {
-      this.addNPCMarkers(mapData.npcs);
-    }
-
-    // Step 9: Move player to spawn point (center of map by default)
+    // Step 8: Move player to spawn point (center of map by default)
     this.movePlayerToSpawn(mapData.size.width, mapData.size.height);
 
-    // Step 10: Center camera on map
+    // Step 9: Center camera on map
     this.centerCameraOnMap(mapData.size.width, mapData.size.height);
 
     console.log(`Arena replaced with procedural map: ${mapWidth}x${mapHeight} pixels`);
