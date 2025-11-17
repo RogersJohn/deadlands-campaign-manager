@@ -1,14 +1,24 @@
 package com.deadlands.campaign.controller;
 
 import com.deadlands.campaign.dto.*;
+import com.deadlands.campaign.model.*;
+import com.deadlands.campaign.repository.BattleMapRepository;
+import com.deadlands.campaign.repository.UserRepository;
 import com.deadlands.campaign.service.AIGameMasterService;
 import com.deadlands.campaign.service.ImageGenerationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * REST Controller for AI-powered Game Master Assistant
@@ -23,13 +33,19 @@ public class AIAssistantController {
     private final AIGameMasterService aiGameMasterService;
     private final ImageGenerationService imageGenerationService;
     private final ObjectMapper objectMapper;
+    private final BattleMapRepository battleMapRepository;
+    private final UserRepository userRepository;
 
     public AIAssistantController(AIGameMasterService aiGameMasterService,
                                 ImageGenerationService imageGenerationService,
-                                ObjectMapper objectMapper) {
+                                ObjectMapper objectMapper,
+                                BattleMapRepository battleMapRepository,
+                                UserRepository userRepository) {
         this.aiGameMasterService = aiGameMasterService;
         this.imageGenerationService = imageGenerationService;
         this.objectMapper = objectMapper;
+        this.battleMapRepository = battleMapRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -190,6 +206,231 @@ public class AIAssistantController {
                 ". Please check your request and try again."
             ));
         }
+    }
+
+    /**
+     * Save generated map to database
+     * GM ONLY - Players cannot save maps
+     */
+    @PostMapping("/maps/save")
+    @PreAuthorize("hasRole('GAME_MASTER')")
+    public ResponseEntity<BattleMapDetailDTO> saveMap(@Valid @RequestBody SaveMapRequest request, Principal principal) {
+        log.info("Saving battle map: {}", request.getName());
+
+        try {
+            // Get current user
+            User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            // Create BattleMap entity
+            BattleMap map = BattleMap.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .widthTiles(request.getWidthTiles())
+                .heightTiles(request.getHeightTiles())
+                .imageData(request.getImageData())
+                .imageUrl(request.getImageUrl())
+                .generationPrompt(request.getGenerationPrompt())
+                .mapData(request.getMapData())
+                .wallsData(request.getWallsData())
+                .coverData(request.getCoverData())
+                .spawnPointsData(request.getSpawnPointsData())
+                .visibility(MapVisibility.valueOf(request.getVisibility()))
+                .tags(request.getTags())
+                .type(MapType.valueOf(request.getType()))
+                .theme(request.getTheme() != null ? BattleTheme.valueOf(request.getTheme()) : null)
+                .createdBy(user)
+                .build();
+
+            // Save to database
+            BattleMap saved = battleMapRepository.save(map);
+
+            // Convert to DTO
+            BattleMapDetailDTO dto = mapToDetailDTO(saved);
+
+            log.info("Map saved successfully with ID: {}", saved.getId());
+            return ResponseEntity.ok(dto);
+
+        } catch (Exception e) {
+            log.error("Error saving map: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get user's saved maps
+     * GM ONLY
+     */
+    @GetMapping("/maps/my-maps")
+    @PreAuthorize("hasRole('GAME_MASTER')")
+    public ResponseEntity<List<BattleMapDTO>> getMyMaps(Principal principal) {
+        log.info("Fetching maps for user: {}", principal.getName());
+
+        try {
+            User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            List<BattleMap> maps = battleMapRepository.findByCreatedByOrderByCreatedAtDesc(user);
+            List<BattleMapDTO> dtos = maps.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+            log.info("Found {} maps for user", dtos.size());
+            return ResponseEntity.ok(dtos);
+
+        } catch (Exception e) {
+            log.error("Error fetching user maps: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get public map library
+     * GM ONLY
+     */
+    @GetMapping("/maps/library")
+    @PreAuthorize("hasRole('GAME_MASTER')")
+    public ResponseEntity<List<BattleMapDTO>> getMapLibrary(@RequestParam(required = false) String tag) {
+        log.info("Fetching public map library, tag filter: {}", tag);
+
+        try {
+            List<BattleMap> maps;
+
+            if (tag != null && !tag.isEmpty()) {
+                maps = battleMapRepository.findByTagsContainingAndVisibilityIn(
+                    tag,
+                    Arrays.asList(MapVisibility.PUBLIC)
+                );
+            } else {
+                maps = battleMapRepository.findByVisibilityOrderByCreatedAtDesc(MapVisibility.PUBLIC);
+            }
+
+            List<BattleMapDTO> dtos = maps.stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+
+            log.info("Found {} public maps", dtos.size());
+            return ResponseEntity.ok(dtos);
+
+        } catch (Exception e) {
+            log.error("Error fetching map library: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Get specific map with full data
+     * GM ONLY
+     */
+    @GetMapping("/maps/{id}")
+    @PreAuthorize("hasRole('GAME_MASTER')")
+    public ResponseEntity<BattleMapDetailDTO> getMap(@PathVariable Long id, Principal principal) {
+        log.info("Fetching map with ID: {}", id);
+
+        try {
+            User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            BattleMap map = battleMapRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Map not found"));
+
+            // Check visibility permissions
+            if (map.getVisibility() == MapVisibility.PRIVATE &&
+                !map.getCreatedBy().getId().equals(user.getId())) {
+                log.warn("User {} attempted to access private map {} owned by {}",
+                    user.getUsername(), id, map.getCreatedBy().getUsername());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            BattleMapDetailDTO dto = mapToDetailDTO(map);
+            return ResponseEntity.ok(dto);
+
+        } catch (Exception e) {
+            log.error("Error fetching map: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
+
+    /**
+     * Delete map
+     * GM ONLY - Can only delete own maps
+     */
+    @DeleteMapping("/maps/{id}")
+    @PreAuthorize("hasRole('GAME_MASTER')")
+    public ResponseEntity<Void> deleteMap(@PathVariable Long id, Principal principal) {
+        log.info("Deleting map with ID: {}", id);
+
+        try {
+            User user = userRepository.findByUsername(principal.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+            BattleMap map = battleMapRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Map not found"));
+
+            // Check ownership
+            if (!map.getCreatedBy().getId().equals(user.getId())) {
+                log.warn("User {} attempted to delete map {} owned by {}",
+                    user.getUsername(), id, map.getCreatedBy().getUsername());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+
+            battleMapRepository.deleteById(id);
+            log.info("Map {} deleted successfully", id);
+            return ResponseEntity.noContent().build();
+
+        } catch (Exception e) {
+            log.error("Error deleting map: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
+     * Helper: Convert BattleMap to lightweight DTO
+     */
+    private BattleMapDTO mapToDTO(BattleMap map) {
+        return BattleMapDTO.builder()
+            .id(map.getId())
+            .name(map.getName())
+            .description(map.getDescription())
+            .widthTiles(map.getWidthTiles())
+            .heightTiles(map.getHeightTiles())
+            .thumbnailUrl(map.getImageUrl()) // Use imageUrl as thumbnail
+            .visibility(map.getVisibility().toString())
+            .tags(map.getTags())
+            .type(map.getType() != null ? map.getType().toString() : null)
+            .theme(map.getTheme() != null ? map.getTheme().toString() : null)
+            .createdByUsername(map.getCreatedBy() != null ? map.getCreatedBy().getUsername() : null)
+            .createdAt(map.getCreatedAt())
+            .updatedAt(map.getUpdatedAt())
+            .build();
+    }
+
+    /**
+     * Helper: Convert BattleMap to full detail DTO
+     */
+    private BattleMapDetailDTO mapToDetailDTO(BattleMap map) {
+        return BattleMapDetailDTO.builder()
+            .id(map.getId())
+            .name(map.getName())
+            .description(map.getDescription())
+            .widthTiles(map.getWidthTiles())
+            .heightTiles(map.getHeightTiles())
+            .imageData(map.getImageData())
+            .imageUrl(map.getImageUrl())
+            .generationPrompt(map.getGenerationPrompt())
+            .mapData(map.getMapData())
+            .wallsData(map.getWallsData())
+            .coverData(map.getCoverData())
+            .spawnPointsData(map.getSpawnPointsData())
+            .visibility(map.getVisibility().toString())
+            .tags(map.getTags())
+            .type(map.getType() != null ? map.getType().toString() : null)
+            .theme(map.getTheme() != null ? map.getTheme().toString() : null)
+            .createdByUsername(map.getCreatedBy() != null ? map.getCreatedBy().getUsername() : null)
+            .createdByUserId(map.getCreatedBy() != null ? map.getCreatedBy().getId() : null)
+            .createdAt(map.getCreatedAt())
+            .updatedAt(map.getUpdatedAt())
+            .build();
     }
 
     /**
