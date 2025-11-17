@@ -57,6 +57,11 @@ export function GameArena() {
   const [movementBudget, setMovementBudget] = useState({ current: 0, max: 0 });
   const [illumination, setIllumination] = useState<Illumination>(Illumination.BRIGHT);
 
+  // Map overlay settings
+  const [showMapGrid, setShowMapGrid] = useState(true);
+  const [showMapWalls, setShowMapWalls] = useState(true);
+  const [showMapCover, setShowMapCover] = useState(true);
+
   // PHASE 1: Called shot dialog state
   const [calledShotDialogOpen, setCalledShotDialogOpen] = useState(false);
 
@@ -131,6 +136,30 @@ export function GameArena() {
       gameEvents.emit('illuminationChange', { level: illumination });
     }
   }, [gameEvents, illumination]);
+
+  // Emit map grid toggle to Phaser (TYPE-SAFE)
+  useEffect(() => {
+    if (gameEvents) {
+      console.log('Emitting map grid toggle to Phaser:', showMapGrid);
+      gameEvents.emit('mapGridToggle', { enabled: showMapGrid });
+    }
+  }, [gameEvents, showMapGrid]);
+
+  // Emit map walls toggle to Phaser (TYPE-SAFE)
+  useEffect(() => {
+    if (gameEvents) {
+      console.log('Emitting map walls toggle to Phaser:', showMapWalls);
+      gameEvents.emit('mapWallsToggle', { enabled: showMapWalls });
+    }
+  }, [gameEvents, showMapWalls]);
+
+  // Emit map cover toggle to Phaser (TYPE-SAFE)
+  useEffect(() => {
+    if (gameEvents) {
+      console.log('Emitting map cover toggle to Phaser:', showMapCover);
+      gameEvents.emit('mapCoverToggle', { enabled: showMapCover });
+    }
+  }, [gameEvents, showMapCover]);
 
   // Listen for AI-generated map loading
   useEffect(() => {
@@ -411,6 +440,12 @@ export function GameArena() {
               setShowMovementRanges={setShowMovementRanges}
               illumination={illumination}
               setIllumination={setIllumination}
+              showMapGrid={showMapGrid}
+              setShowMapGrid={setShowMapGrid}
+              showMapWalls={showMapWalls}
+              setShowMapWalls={setShowMapWalls}
+              showMapCover={showMapCover}
+              setShowMapCover={setShowMapCover}
               onOpenAIAssistant={() => setAiAssistantOpen(true)}
               isGM={isGameMaster}
             />

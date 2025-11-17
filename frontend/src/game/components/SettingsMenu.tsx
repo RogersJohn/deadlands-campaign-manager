@@ -29,6 +29,12 @@ interface SettingsMenuProps {
   setShowMovementRanges: (show: boolean) => void;
   illumination: Illumination;
   setIllumination: (level: Illumination) => void;
+  showMapGrid?: boolean;
+  setShowMapGrid?: (show: boolean) => void;
+  showMapWalls?: boolean;
+  setShowMapWalls?: (show: boolean) => void;
+  showMapCover?: boolean;
+  setShowMapCover?: (show: boolean) => void;
 }
 
 export function SettingsMenu({
@@ -40,6 +46,12 @@ export function SettingsMenu({
   setShowMovementRanges,
   illumination,
   setIllumination,
+  showMapGrid = true,
+  setShowMapGrid,
+  showMapWalls = true,
+  setShowMapWalls,
+  showMapCover = true,
+  setShowMapCover,
 }: SettingsMenuProps) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
@@ -277,6 +289,117 @@ export function SettingsMenu({
               }
             />
           </RadioGroup>
+        </Box>
+
+        <Divider sx={{ borderColor: '#8b4513' }} />
+
+        {/* Map Overlays */}
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography sx={{ fontSize: '12px', color: '#d4b896', fontWeight: 'bold', mb: 1 }}>
+            Map Overlays
+          </Typography>
+
+          {/* Tactical Grid */}
+          {setShowMapGrid && (
+            <Box sx={{ mb: 1 }}>
+              <Typography sx={{ fontSize: '11px', color: '#f5e6d3', mb: 0.5 }}>Tactical Grid</Typography>
+              <RadioGroup
+                row
+                value={showMapGrid ? 'show' : 'hide'}
+                onChange={(e) => setShowMapGrid(e.target.value === 'show')}
+                sx={{ gap: 2 }}
+              >
+                <FormControlLabel
+                  value="show"
+                  control={
+                    <Radio
+                      size="small"
+                      sx={{ color: '#8b4513', '&.Mui-checked': { color: '#ffffff' } }}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '12px', color: '#f5e6d3' }}>Show</Typography>}
+                />
+                <FormControlLabel
+                  value="hide"
+                  control={
+                    <Radio
+                      size="small"
+                      sx={{ color: '#8b4513', '&.Mui-checked': { color: '#ff4444' } }}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '12px', color: '#f5e6d3' }}>Hide</Typography>}
+                />
+              </RadioGroup>
+            </Box>
+          )}
+
+          {/* Wall Highlights */}
+          {setShowMapWalls && (
+            <Box sx={{ mb: 1 }}>
+              <Typography sx={{ fontSize: '11px', color: '#f5e6d3', mb: 0.5 }}>Wall Highlights</Typography>
+              <RadioGroup
+                row
+                value={showMapWalls ? 'show' : 'hide'}
+                onChange={(e) => setShowMapWalls(e.target.value === 'show')}
+                sx={{ gap: 2 }}
+              >
+                <FormControlLabel
+                  value="show"
+                  control={
+                    <Radio
+                      size="small"
+                      sx={{ color: '#8b4513', '&.Mui-checked': { color: '#ff0000' } }}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '12px', color: '#f5e6d3' }}>Show</Typography>}
+                />
+                <FormControlLabel
+                  value="hide"
+                  control={
+                    <Radio
+                      size="small"
+                      sx={{ color: '#8b4513', '&.Mui-checked': { color: '#ff4444' } }}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '12px', color: '#f5e6d3' }}>Hide</Typography>}
+                />
+              </RadioGroup>
+            </Box>
+          )}
+
+          {/* Cover Markers */}
+          {setShowMapCover && (
+            <Box sx={{ mb: 0 }}>
+              <Typography sx={{ fontSize: '11px', color: '#f5e6d3', mb: 0.5 }}>Cover Markers</Typography>
+              <RadioGroup
+                row
+                value={showMapCover ? 'show' : 'hide'}
+                onChange={(e) => setShowMapCover(e.target.value === 'show')}
+                sx={{ gap: 2 }}
+              >
+                <FormControlLabel
+                  value="show"
+                  control={
+                    <Radio
+                      size="small"
+                      sx={{ color: '#8b4513', '&.Mui-checked': { color: '#00ff00' } }}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '12px', color: '#f5e6d3' }}>Show</Typography>}
+                />
+                <FormControlLabel
+                  value="hide"
+                  control={
+                    <Radio
+                      size="small"
+                      sx={{ color: '#8b4513', '&.Mui-checked': { color: '#ff4444' } }}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '12px', color: '#f5e6d3' }}>Hide</Typography>}
+                />
+              </RadioGroup>
+            </Box>
+          )}
         </Box>
       </Menu>
     </>

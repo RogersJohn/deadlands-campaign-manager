@@ -24,6 +24,12 @@ interface ActionBarProps {
   setShowMovementRanges: (show: boolean) => void;
   illumination: Illumination;
   setIllumination: (level: Illumination) => void;
+  showMapGrid?: boolean;
+  setShowMapGrid?: (show: boolean) => void;
+  showMapWalls?: boolean;
+  setShowMapWalls?: (show: boolean) => void;
+  showMapCover?: boolean;
+  setShowMapCover?: (show: boolean) => void;
   onOpenAIAssistant?: () => void;
   isGM?: boolean;
 }
@@ -47,6 +53,12 @@ export function ActionBar({
   setShowMovementRanges,
   illumination,
   setIllumination,
+  showMapGrid,
+  setShowMapGrid,
+  showMapWalls,
+  setShowMapWalls,
+  showMapCover,
+  setShowMapCover,
   onOpenAIAssistant,
   isGM = false,
 }: ActionBarProps) {
@@ -311,6 +323,12 @@ export function ActionBar({
           setShowMovementRanges={setShowMovementRanges}
           illumination={illumination}
           setIllumination={setIllumination}
+          showMapGrid={showMapGrid}
+          setShowMapGrid={setShowMapGrid}
+          showMapWalls={showMapWalls}
+          setShowMapWalls={setShowMapWalls}
+          showMapCover={showMapCover}
+          setShowMapCover={setShowMapCover}
         />
       </Box>
     </Box>
