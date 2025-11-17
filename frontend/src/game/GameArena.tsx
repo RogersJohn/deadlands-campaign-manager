@@ -9,6 +9,8 @@ import { CalledShotDialog } from './components/CalledShotDialog';
 import { SettingsMenu } from './components/SettingsMenu';
 import { ActionBar } from './components/ActionBar';
 import InitiativeTracker from './components/InitiativeTracker';
+import { CombatLog } from './components/CombatLog';
+import { DiceRollPopup } from './components/DiceRollPopup';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
@@ -40,6 +42,7 @@ export function GameArena() {
     combatLog: [],
   });
   const [diceRolls, setDiceRolls] = useState<DiceRollEvent[]>([]);
+  const [currentDiceRoll, setCurrentDiceRoll] = useState<DiceRollEvent | null>(null);
   const [playerWounds, setPlayerWounds] = useState(0);
   const [playerShaken, setPlayerShaken] = useState(false);
   const [selectedWeapon, setSelectedWeapon] = useState<Equipment | undefined>();
@@ -62,6 +65,7 @@ export function GameArena() {
 
   const handleDiceRoll = useCallback((roll: DiceRollEvent) => {
     setDiceRolls(prev => [...prev, roll]);
+    setCurrentDiceRoll(roll); // Show animated popup
   }, []);
 
   const handleWoundsUpdate = useCallback((wounds: number, maxWounds: number) => {
@@ -306,17 +310,17 @@ export function GameArena() {
           )}
         </Paper>
       ) : (
-        /* ARENA LAYOUT WITH INITIATIVE TRACKER */
+        /* ARENA LAYOUT: 15% Initiative | 65% Map | 15% Combat Log | 5% Spacing */
         <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
-          {/* Main Content Area - Initiative Tracker + Map */}
-          <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
-            {/* Left: Initiative Tracker (20% of screen width) */}
-            <Box sx={{ width: '20%', minWidth: 180, p: 2 }}>
+          {/* Main Content Area - Initiative Tracker + Map + Combat Log */}
+          <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden', gap: '2.5%' }}>
+            {/* Left: Initiative Tracker (15% of screen width) */}
+            <Box sx={{ width: '15%', minWidth: 150, p: 2 }}>
               <InitiativeTracker />
             </Box>
 
-            {/* Right: Game Canvas (80% of screen width) */}
-            <Box sx={{ width: '80%', position: 'relative', overflow: 'hidden', p: 2 }}>
+            {/* Center: Game Canvas (65% of screen width) */}
+            <Box sx={{ width: '65%', position: 'relative', overflow: 'hidden', p: 1 }}>
               <GameCanvas
                 character={selectedCharacter}
                 selectedWeapon={selectedWeapon}
@@ -327,6 +331,16 @@ export function GameArena() {
                 onMovementBudgetUpdate={handleMovementBudgetUpdate}
                 onPhaserGameReady={handlePhaserGameReady}
               />
+              {/* Dice Roll Popup - Positioned absolutely over the canvas */}
+              <DiceRollPopup
+                roll={currentDiceRoll}
+                onComplete={() => setCurrentDiceRoll(null)}
+              />
+            </Box>
+
+            {/* Right: Combat Log (15% of screen width) */}
+            <Box sx={{ width: '15%', minWidth: 150, p: 2 }}>
+              <CombatLog logs={combatState.combatLog} />
             </Box>
           </Box>
 
