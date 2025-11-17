@@ -1,158 +1,239 @@
-# Next Session: XCOM UI Redesign Complete! ✅
+# Next Session: Map Generation System Improvement
 
 **Date**: 2025-11-17
-**Status**: ✅ UI REDESIGN COMPLETE (100% done)
-**Priority**: Test locally and deploy to production
+**Status**: ⚠️ Current map generation needs improvement
+**Priority**: Design and implement better map generation system
 
 ---
 
-## Implementation Complete - 2025-11-17
+## Session 2025-11-17: UI Completion & Map Integration
 
-### ✅ All Tasks Completed
-1. **Fixed runtime bug** - Removed `isMultiplayer` references causing errors
-2. **Designed 5 UI options** - Full analysis in `UI_REDESIGN_OPTIONS.md`
-3. **Built XCOM components**:
-   - `SettingsMenu.tsx` (285 lines) - Gear icon dropdown with environment controls
-   - `ActionBar.tsx` (243 lines) - Bottom bar with character, health, movement, weapon
-4. **Replaced GameArena layout** ✅ - Removed 540 lines of three-column layout
-5. **Integrated new components** ✅ - Wired up SettingsMenu and ActionBar
-6. **Removed sidebars** ✅ - Deleted left (220px) and right (220px) sidebars
-7. **Expanded map** ✅ - Map now takes 85-90% of screen (flexGrow: 1)
-8. **Build tested** ✅ - `npm run build` succeeded with no errors
-9. **Ready for deployment** ✅ - All changes committed locally
+### ✅ Completed This Session
+
+#### 1. Combat Log & Dice Roll Animations
+- **CombatLog.tsx** (200+ lines) - Right sidebar showing combat events
+- **DiceRollPopup.tsx** (260+ lines) - Animated floating popup for dice rolls
+- Layout adjusted to **15/65/15/5** split:
+  - Initiative Tracker: 15% (left)
+  - Game Canvas: 65% (center, 8px padding)
+  - Combat Log: 15% (right, 16px padding)
+  - 5% spacing (2.5% gap between columns)
+
+#### 2. Actions & Settings Restoration
+- **Actions dropdown** - Opens upward with 20+ Savage Worlds combat actions
+- **Settings cog** - Game environment controls (camera, ranges, illumination)
+- Both integrated into ActionBar on right side
+- Actions menu auto-closes after selection
+
+#### 3. Initiative Tracker Fix
+- Removed hardcoded demo characters (Marshal Wyatt, Doc Holliday, etc.)
+- Now shows only actual session participants
+- Displays selected player character with proper card
+- Empty state message when combat not started
+
+#### 4. AI Game Master Assistant
+- **Brain icon button** (GM only) in ActionBar
+- Opens 500px right-side drawer with AI features:
+  - NPC Dialogue Generator
+  - Rules Lookup
+  - Encounter Generator (GM only)
+  - Location Generator (GM only)
+  - Map Generator (GM only)
+
+#### 5. Map Generator Integration ⚠️
+- "Load in Game" button functional
+- Auto-closes drawer after map load
+- Centers camera on generated map with auto-zoom
+- Renders terrain, buildings, cover, NPCs, background artwork
+- **ISSUE**: Current implementation not meeting expectations
+  - Need better map generation approach
+  - Visual quality needs improvement
+  - Tactical overlay integration could be better
 
 ---
 
-## What Changed
+## Current Production Status
 
-### Modified Files
-- `frontend/src/game/GameArena.tsx` ✅ - Replaced lines 308-846 with new XCOM layout (114 lines)
-  - Removed ~540 lines of old three-column sidebar code
-  - Added top bar with Settings & Turn indicator
-  - Expanded GameCanvas to 85-90% of screen
-  - Added bottom ActionBar with all combat info
+### Deployed Features
+- ✅ 15/65/15/5 layout (Initiative | Map | Combat Log)
+- ✅ Combat log with event history
+- ✅ Animated dice roll popups
+- ✅ Actions dropdown with 20+ combat actions
+- ✅ Settings menu (camera, ranges, illumination)
+- ✅ Initiative tracker (session-only characters)
+- ✅ AI Assistant (GM only, 5 features)
+- ✅ Map generator with camera auto-centering
 
-### New Components (Already Built)
-- `frontend/src/game/components/SettingsMenu.tsx` (285 lines)
-- `frontend/src/game/components/ActionBar.tsx` (243 lines)
-
-### Reference Files
-- `UI_REDESIGN_OPTIONS.md` - Design rationale for all 5 options
-- `XCOM_LAYOUT_REPLACEMENT.txt` - Original replacement guide (now applied)
+### Latest Commits
+- `3ceb1a7` - Fix map not visible: Center camera and auto-zoom
+- `4be6cba` - Fix AI Map Generator: Auto-close drawer
+- `b552166` - Add AI Game Master Assistant button
+- `0498a4a` - Fix InitiativeTracker to show only session characters
+- `2a2fdea` - Add Actions dropdown and Settings cog
+- `0577da4` - Add Combat Log and animated Dice Roll popup
 
 ---
 
-## Next Steps: Local Testing & Deployment
+## ⚠️ Current Issue: Map Generation
 
-### Step 1: Test Locally (Recommended)
-```bash
-cd frontend
-npm run dev
-# Navigate to http://localhost:3000
-# Test:
-#   - Character selection works
-#   - Map is expanded (85-90% of screen)
-#   - Settings menu opens from gear icon
-#   - Action bar shows health, movement, weapon
-#   - All combat features still work
+### What Works
+- ✅ Map generates from AI (terrain, buildings, cover, NPCs)
+- ✅ "Load in Game" button triggers successfully
+- ✅ Drawer closes automatically
+- ✅ Camera centers and zooms to show map
+- ✅ Console logs confirm loading: "Map loaded successfully"
+
+### What Needs Improvement
+- ❌ Visual quality not satisfactory
+- ❌ Terrain rendering too basic (colored rectangles)
+- ❌ Building representation simplistic
+- ❌ Tactical overlay could be more polished
+- ❌ Background artwork integration needs work
+- ❌ Overall aesthetic doesn't match expectations
+
+### User Feedback
+> "I'm not currently happy with the map generation and want to work on a better option for that next"
+
+---
+
+## Next Session: Improve Map Generation
+
+### Priority Goals
+1. **Evaluate current map rendering**
+   - Review `MapLoader.ts` implementation
+   - Identify visual quality issues
+   - Determine if AI generation or rendering is the problem
+
+2. **Design better map generation approach**
+   - Options to consider:
+     - Better tile sprites/textures instead of colored rectangles
+     - Improved building rendering (walls, doors, windows)
+     - Enhanced tactical grid overlay
+     - Better integration of AI-generated artwork
+     - Alternative map generation service/approach
+     - Pre-built map library with AI customization
+
+3. **Implement improvements**
+   - Based on chosen approach
+   - Focus on visual quality and tactical usability
+   - Ensure GM can quickly generate usable battle maps
+
+### Questions to Address
+- Should we use sprite textures instead of procedural graphics?
+- Should we pre-create map templates and let AI customize them?
+- Do we need a different AI model/service for map generation?
+- Should maps be more stylized vs. realistic?
+- What's the ideal balance between AI flexibility and visual quality?
+
+---
+
+## Current Architecture
+
+### Layout Structure
+```
+┌─────────────────────────────────────────────────┐
+│ Top Bar: Deadlands Campaign Manager | Page     │
+├───────┬─────────────────────────────┬───────────┤
+│       │                             │           │
+│ Init  │      Game Canvas (65%)      │  Combat   │
+│ Track │      8px padding            │   Log     │
+│ (15%) │                             │  (15%)    │
+│       │                             │           │
+├───────┴─────────────────────────────┴───────────┤
+│ Action Bar: Avatar | Health | Movement |        │
+│             Weapon | Actions | AI | Settings    │
+└─────────────────────────────────────────────────┘
 ```
 
-### Step 2: Deploy to Production
-```bash
-# Already tested build:
-cd frontend
-npm run build  # ✅ Already passed
-
-# Commit and push:
-git add -A
-git commit -m "Complete XCOM UI redesign: Expand map to 85-90%, move controls to top/bottom bars"
-git push origin main
-```
-
----
-
-## Current Architecture Status
-
-### Production Status
-- ✅ Simplified session architecture deployed
-- ✅ No runtime errors
-- ✅ Game accessible via `/arena`
-- ⚠️ Old UI with cluttered sidebars
-
-### After Next Session
-- ✅ XCOM-style layout (Option 1)
-- ✅ Map: 85-90% of screen
-- ✅ Settings hidden in gear menu
-- ✅ Clean bottom action bar
-- ✅ Professional tactical game aesthetic
+### Component Tree
+- `GameArena.tsx` (main container)
+  - `InitiativeTracker.tsx` (left, 15%)
+  - `GameCanvas.tsx` (center, 65%)
+    - Phaser game (ArenaScene)
+    - DiceRollPopup (overlay)
+  - `CombatLog.tsx` (right, 15%)
+  - `ActionBar.tsx` (bottom)
+    - Actions button → ActionMenu (popover)
+    - AI button → AIAssistantPanel (drawer)
+    - Settings cog → SettingsMenu (menu)
+  - `AIAssistantPanel.tsx` (drawer)
+    - MapGeneratorTab ⚠️ (needs improvement)
 
 ---
 
-## Token Usage Optimization
+## Technical Debt & Known Issues
 
-**This session:**
-- Used: ~138k / 200k tokens (69%)
-- Stopped at optimal point to preserve tokens
-- WIP committed, ready to continue
+### Map Generation (Current Focus)
+- Visual quality below expectations
+- Need better rendering approach
+- Consider alternative generation methods
 
-**Next session start here:**
-1. Apply replacement from `XCOM_LAYOUT_REPLACEMENT.txt`
-2. Test and fix bugs
-3. Deploy
-
-**Estimated tokens needed:** ~10-15k to complete UI
+### Future Enhancements
+- **Multiplayer session support** - Restore session/lobby system
+- **NPC/Enemy tokens** - Add to initiative tracker during combat
+- **Save/Load maps** - Persist generated maps for reuse
+- **Map library** - Pre-built map collection
+- **Token movement** - Drag-and-drop for tactical positioning
+- **Fog of war** - Hide unexplored areas
 
 ---
 
-## Future Enhancements (After XCOM UI Complete)
+## Development Notes
 
-### Phase 2: Additional UI Options
-If you want multiple switchable layouts:
-- Option 2 (MMO Bar): +4-6 hours
-- Option 4 (Split Panel): +3-4 hours
-- Preference system: +2-3 hours
-- **Total: ~9-13 hours** for 3 switchable layouts
+### MapLoader.ts (Current Implementation)
+Location: `frontend/src/game/utils/MapLoader.ts`
 
-### Phase 3: Session Notes Feature
-- Wiki section for campaign history
-- SessionNote entity
-- GM can add notes after each play session
-- **Effort: ~4-6 hours**
+**Rendering Methods:**
+- `renderTerrain()` - Creates colored rectangles for terrain types
+- `renderBuildings()` - Draws building outlines with labels
+- `renderCover()` - Places cover objects (circles with bonus labels)
+- `renderNPCs()` - Spawns NPC markers (gold triangles)
+- `loadBackgroundImage()` - Loads AI artwork at 70% opacity
+- `centerCameraOnMap()` - Auto-centers and zooms camera
+
+**Issues:**
+- Terrain uses simple colored rectangles (no textures)
+- Buildings are just outlined boxes
+- Cover objects are basic circles
+- Overall aesthetic is placeholder-quality
 
 ---
 
 ## Quick Reference
 
-### Current Git Status
-- Latest commit: `939bac9` (XCOM WIP components)
-- Branch: `main`
-- Production: https://deadlands-frontend-production.up.railway.app
-
-### Key Files
-- `frontend/src/game/GameArena.tsx` - Needs layout replacement (lines 307-846)
-- `XCOM_LAYOUT_REPLACEMENT.txt` - Exact replacement code
-- `UI_REDESIGN_OPTIONS.md` - Design documentation
-
 ### Test Credentials
-- GM: `gamemaster` / `Test123!`
-- Player: `e2e_player1` / `Test123!`
+- **GM**: `gamemaster` / `Test123!`
+- **Player**: `e2e_player1` / `Test123!`
+
+### Production URL
+https://deadlands-frontend-production.up.railway.app
+
+### Key Files for Map Improvement
+- `frontend/src/game/utils/MapLoader.ts` - Map rendering logic
+- `frontend/src/components/ai/MapGeneratorTab.tsx` - Map gen UI
+- `frontend/src/services/aiService.ts` - AI integration
+- Backend: `AIGameMasterService.java` - Map generation service
 
 ---
 
 ## Summary
 
-**Status:** ✅ XCOM UI redesign 100% COMPLETE! All components integrated, build tested, ready for deployment.
+**Current Status:** UI redesign complete with all features integrated. Map generation is functional but visual quality needs significant improvement.
 
-**What's Done:**
-- Removed 540 lines of old sidebar code
-- Replaced with clean XCOM-style layout (Option 1)
-- Map now fills 85-90% of screen (up from 60%)
-- Settings hidden in gear menu (top-right)
-- Combat info in bottom action bar
-- Build tested successfully (`npm run build` passed)
+**Completed Today:**
+- 15/65/15/5 layout with Combat Log and Initiative Tracker
+- Animated dice roll popups
+- Actions dropdown with 20+ Savage Worlds actions
+- Settings menu integration
+- AI Assistant with 5 features (including map generator)
+- Camera auto-centering for generated maps
 
-**Next Step:** Test locally with `npm run dev`, then deploy to production.
+**Next Priority:** Redesign map generation system for better visual quality and tactical usability.
 
-**Benefit:** Cleaner interface, more map visibility, better UX, professional tactical game aesthetic.
+**Question for Next Session:** What approach should we take for improved map generation?
+- Better sprites/textures?
+- Pre-built map templates?
+- Different AI service?
+- Manual map editor?
 
-🎮 Ready to deploy!
+🗺️ Ready to improve map generation!
