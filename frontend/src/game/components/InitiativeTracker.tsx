@@ -1,5 +1,4 @@
 import { Box, Typography, Paper } from '@mui/material';
-import { useState, useEffect } from 'react';
 
 // Savage Worlds card suits and values
 const SUITS = ['♠', '♥', '♦', '♣'] as const;
@@ -32,37 +31,8 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
   entries = [],
   currentTurn
 }) => {
-  // Demo data - in real implementation, this would come from props
-  const [initiativeOrder, setInitiativeOrder] = useState<InitiativeEntry[]>([
-    {
-      id: 'player1',
-      name: 'Marshal Wyatt',
-      card: { suit: '♥', value: 'K', isJoker: false },
-      isPlayer: true,
-      isActive: true,
-    },
-    {
-      id: 'enemy1',
-      name: 'Outlaw #1',
-      card: { suit: '♠', value: 'Q', isJoker: false },
-      isPlayer: false,
-      isActive: false,
-    },
-    {
-      id: 'player2',
-      name: 'Doc Holliday',
-      card: { suit: '♦', value: '10', isJoker: false },
-      isPlayer: true,
-      isActive: false,
-    },
-    {
-      id: 'enemy2',
-      name: 'Desperado',
-      card: { suit: '♣', value: '7', isJoker: false },
-      isPlayer: false,
-      isActive: false,
-    },
-  ]);
+  // Use props data instead of demo data
+  const initiativeOrder = entries;
 
   // Card value for sorting (higher = better initiative)
   const getCardValue = (card: Card): number => {
@@ -130,9 +100,27 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
 
       {/* Initiative Cards */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {initiativeOrder
-          .sort((a, b) => getCardValue(b.card) - getCardValue(a.card))
-          .map((entry) => (
+        {initiativeOrder.length === 0 ? (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minHeight: 200,
+              color: '#8b7355',
+              fontSize: '12px',
+              fontStyle: 'italic',
+              textAlign: 'center',
+              px: 2,
+            }}
+          >
+            Combat not yet started.<br />
+            Initiative will be drawn when combat begins.
+          </Box>
+        ) : (
+          initiativeOrder
+            .sort((a, b) => getCardValue(b.card) - getCardValue(a.card))
+            .map((entry) => (
             <Paper
               key={entry.id}
               elevation={entry.isActive ? 8 : 2}
@@ -249,7 +237,8 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
                 />
               )}
             </Paper>
-          ))}
+          ))
+        )}
       </Box>
 
       {/* Round Info */}

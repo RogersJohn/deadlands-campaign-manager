@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { Container, Typography, Paper, Box, Button, CircularProgress, Alert, Grid, Card, CardContent, CardMedia, CardActionArea, Radio, RadioGroup, FormControlLabel, IconButton, Tooltip } from '@mui/material';
 import { WbSunny as SunIcon, WbTwilight as TwilightIcon, Brightness3 as MoonIcon, Brightness1 as DarkIcon, Psychology as AIIcon } from '@mui/icons-material';
 import { GameCanvas } from './components/GameCanvas';
@@ -206,6 +206,23 @@ export function GameArena() {
     setCalledShotDialogOpen(false);
   };
 
+  // Generate initiative entries for the tracker
+  // For now, only show the selected character in the session
+  // TODO: Add NPCs/enemies when combat system is fully integrated
+  const initiativeEntries = useMemo(() => {
+    if (!selectedCharacter) return [];
+
+    return [
+      {
+        id: selectedCharacter.id?.toString() || 'player',
+        name: selectedCharacter.name,
+        card: { suit: '♥' as const, value: 'K' as const, isJoker: false },
+        isPlayer: true,
+        isActive: true,
+      }
+    ];
+  }, [selectedCharacter]);
+
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
       {!gameStarted ? (
@@ -316,7 +333,7 @@ export function GameArena() {
           <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden', gap: '2.5%' }}>
             {/* Left: Initiative Tracker (15% of screen width) */}
             <Box sx={{ width: '15%', minWidth: 150, p: 2 }}>
-              <InitiativeTracker />
+              <InitiativeTracker entries={initiativeEntries} />
             </Box>
 
             {/* Center: Game Canvas (65% of screen width) */}
