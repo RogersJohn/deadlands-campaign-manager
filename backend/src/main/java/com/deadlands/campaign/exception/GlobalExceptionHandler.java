@@ -18,24 +18,6 @@ import java.util.Map;
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(SessionNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleSessionNotFound(SessionNotFoundException ex) {
-        log.warn("Session not found: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.NOT_FOUND, ex.getMessage());
-    }
-
-    @ExceptionHandler(UnauthorizedSessionAccessException.class)
-    public ResponseEntity<Map<String, Object>> handleUnauthorizedAccess(UnauthorizedSessionAccessException ex) {
-        log.warn("Unauthorized session access: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.FORBIDDEN, ex.getMessage());
-    }
-
-    @ExceptionHandler(SessionAlreadyActiveException.class)
-    public ResponseEntity<Map<String, Object>> handleSessionActive(SessionAlreadyActiveException ex) {
-        log.warn("Session active conflict: {}", ex.getMessage());
-        return buildErrorResponse(HttpStatus.CONFLICT, ex.getMessage());
-    }
-
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDenied(AccessDeniedException ex) {
         log.warn("Access denied: {}", ex.getMessage());
