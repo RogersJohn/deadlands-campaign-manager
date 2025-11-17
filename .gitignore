@@ -86,4 +86,9 @@ nul
 
 ### Claude settings ###
 .claude/settings.local.json
-.claude/settings.local.json
+
+### Deployment scripts with credentials ###
+Variables*.txt
+monitor-deployment.js
+verify-deployment.js
+verify-new-deployment.js
