@@ -357,11 +357,16 @@ export function GameArena() {
                 (eq) => eq.type === 'WEAPON_MELEE' || eq.type === 'WEAPON_RANGED'
               ) || []}
               onSelectWeapon={handleSelectWeapon}
-              onSelectAction={() => {
-                // TODO: Open action menu in modal/overlay
-                console.log('Actions button clicked');
-              }}
+              onSelectAction={handleSelectAction}
               remainingActions={remainingActions}
+              cameraFollowEnabled={cameraFollowEnabled}
+              setCameraFollowEnabled={setCameraFollowEnabled}
+              showWeaponRanges={showWeaponRanges}
+              setShowWeaponRanges={setShowWeaponRanges}
+              showMovementRanges={showMovementRanges}
+              setShowMovementRanges={setShowMovementRanges}
+              illumination={illumination}
+              setIllumination={setIllumination}
             />
           )}
         </Box>

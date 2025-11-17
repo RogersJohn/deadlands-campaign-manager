@@ -1,6 +1,9 @@
-import { Box, Typography, Avatar, LinearProgress, Button, Tooltip, MenuItem, Select } from '@mui/material';
-import { Favorite as HeartIcon, DirectionsRun as RunIcon } from '@mui/icons-material';
-import { GameCharacter, Equipment, CombatAction } from '../types/GameTypes';
+import { Box, Typography, Avatar, LinearProgress, Button, Tooltip, MenuItem, Select, Popover, IconButton } from '@mui/material';
+import { Favorite as HeartIcon, DirectionsRun as RunIcon, Settings as SettingsIcon } from '@mui/icons-material';
+import { GameCharacter, Equipment, CombatAction, Illumination } from '../types/GameTypes';
+import { ActionMenu } from './ActionMenu';
+import { SettingsMenu } from './SettingsMenu';
+import { useState } from 'react';
 
 interface ActionBarProps {
   character: GameCharacter;
@@ -11,8 +14,16 @@ interface ActionBarProps {
   selectedWeapon: Equipment | undefined;
   weapons: Equipment[];
   onSelectWeapon: (weapon: Equipment) => void;
-  onSelectAction: () => void;
+  onSelectAction: (action: CombatAction, power?: string) => void;
   remainingActions: number;
+  cameraFollowEnabled: boolean;
+  setCameraFollowEnabled: (enabled: boolean) => void;
+  showWeaponRanges: boolean;
+  setShowWeaponRanges: (show: boolean) => void;
+  showMovementRanges: boolean;
+  setShowMovementRanges: (show: boolean) => void;
+  illumination: Illumination;
+  setIllumination: (level: Illumination) => void;
 }
 
 export function ActionBar({
@@ -26,9 +37,33 @@ export function ActionBar({
   onSelectWeapon,
   onSelectAction,
   remainingActions,
+  cameraFollowEnabled,
+  setCameraFollowEnabled,
+  showWeaponRanges,
+  setShowWeaponRanges,
+  showMovementRanges,
+  setShowMovementRanges,
+  illumination,
+  setIllumination,
 }: ActionBarProps) {
+  const [actionsAnchorEl, setActionsAnchorEl] = useState<null | HTMLElement>(null);
+  const actionsOpen = Boolean(actionsAnchorEl);
+
   const healthPercent = (playerHealth / playerMaxHealth) * 100;
   const movePercent = (movementBudget.current / movementBudget.max) * 100;
+
+  const handleActionsClick = (event: React.MouseEvent<HTMLElement>) => {
+    setActionsAnchorEl(event.currentTarget);
+  };
+
+  const handleActionsClose = () => {
+    setActionsAnchorEl(null);
+  };
+
+  const handleActionSelect = (action: CombatAction, power?: string) => {
+    onSelectAction(action, power);
+    handleActionsClose();
+  };
 
   return (
     <Box
@@ -188,11 +223,12 @@ export function ActionBar({
         )}
       </Box>
 
-      {/* Actions Button */}
-      <Box sx={{ ml: 'auto' }}>
+      {/* Actions Button & Settings */}
+      <Box sx={{ ml: 'auto', display: 'flex', gap: 2, alignItems: 'center' }}>
+        {/* Actions Button */}
         <Button
           variant="contained"
-          onClick={onSelectAction}
+          onClick={handleActionsClick}
           disabled={remainingActions <= 0}
           sx={{
             backgroundColor: remainingActions > 0 ? '#8b4513' : '#4a3520',
@@ -211,6 +247,47 @@ export function ActionBar({
         >
           {remainingActions > 0 ? `Actions (${remainingActions} left)` : 'No Actions Left'}
         </Button>
+
+        {/* Actions Menu Popover */}
+        <Popover
+          open={actionsOpen}
+          anchorEl={actionsAnchorEl}
+          onClose={handleActionsClose}
+          anchorOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          PaperProps={{
+            sx: {
+              backgroundColor: '#2d1b0e',
+              border: '2px solid #8b4513',
+              p: 2,
+              minWidth: 320,
+            },
+          }}
+        >
+          <ActionMenu
+            onSelectAction={handleActionSelect}
+            remainingActions={remainingActions}
+            character={character}
+          />
+        </Popover>
+
+        {/* Settings Menu */}
+        <SettingsMenu
+          cameraFollowEnabled={cameraFollowEnabled}
+          setCameraFollowEnabled={setCameraFollowEnabled}
+          showWeaponRanges={showWeaponRanges}
+          setShowWeaponRanges={setShowWeaponRanges}
+          showMovementRanges={showMovementRanges}
+          setShowMovementRanges={setShowMovementRanges}
+          illumination={illumination}
+          setIllumination={setIllumination}
+        />
       </Box>
     </Box>
   );
