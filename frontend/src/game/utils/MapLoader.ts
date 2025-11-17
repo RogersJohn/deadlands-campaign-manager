@@ -45,7 +45,35 @@ export class MapLoader {
     // Step 5: Spawn NPCs
     this.renderNPCs(mapData.npcs);
 
+    // Step 6: Center camera on the newly loaded map
+    this.centerCameraOnMap(mapData.size.width, mapData.size.height);
+
     console.log('Map loaded successfully:', mapData.name);
+  }
+
+  /**
+   * Center the camera on the loaded map and adjust zoom
+   */
+  private centerCameraOnMap(mapWidth: number, mapHeight: number): void {
+    const centerX = (mapWidth * this.tileSize) / 2;
+    const centerY = (mapHeight * this.tileSize) / 2;
+
+    // Move camera to center of map
+    this.scene.cameras.main.centerOn(centerX, centerY);
+
+    // Adjust zoom to fit the map on screen
+    const camera = this.scene.cameras.main;
+    const mapPixelWidth = mapWidth * this.tileSize;
+    const mapPixelHeight = mapHeight * this.tileSize;
+
+    // Calculate zoom to fit map in viewport (with some padding)
+    const zoomX = (camera.width * 0.9) / mapPixelWidth;
+    const zoomY = (camera.height * 0.9) / mapPixelHeight;
+    const zoom = Math.min(zoomX, zoomY, 1); // Don't zoom in beyond 1x
+
+    camera.setZoom(zoom);
+
+    console.log(`Camera centered on map at (${centerX}, ${centerY}) with zoom ${zoom.toFixed(2)}`);
   }
 
   /**
