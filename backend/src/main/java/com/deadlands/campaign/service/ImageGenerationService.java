@@ -44,20 +44,24 @@ public class ImageGenerationService {
         try {
             log.info("Generating map image with prompt: {}", prompt);
 
-            // Enhance prompt for realistic top-down battle maps
+            // Enhance prompt for hand-drawn illustrated battle maps (D&D/tabletop RPG style)
             String enhancedPrompt = String.format(
-                "%s, realistic top-down aerial view, overhead satellite photograph, " +
-                "photorealistic, natural lighting, highly detailed, tactical battle map, " +
-                "1870s old west, Deadlands setting, clear terrain features, " +
-                "visible walls and structures, natural cover, professional game map quality, " +
-                "orthographic projection, no perspective distortion",
+                "%s, hand-drawn illustrated battle map, tabletop RPG map, D&D style tactical map, " +
+                "top-down orthographic view, painted illustration, colored pencil and ink style, " +
+                "1870s old west Deadlands setting, professional game map quality, " +
+                "detailed terrain features with colored outlines, rocks with brown outlines, " +
+                "trees and bushes with green outlines, buildings with red/brown outlines, " +
+                "natural ground textures (grass, dirt, sand, stone), grid-ready battle map, " +
+                "hand-painted terrain, illustrated cover objects, tactical grid map, " +
+                "artistic illustration, detailed linework, clean outlines",
                 prompt
             );
 
-            String negativePrompt = "blurry, perspective view, 3d rendering, isometric, " +
+            String negativePrompt = "photorealistic, photograph, satellite image, aerial photo, " +
+                "blurry, perspective view, 3d rendering, isometric, diagonal view, " +
                 "people, characters, animals, text, watermarks, low quality, " +
-                "pixel art, cartoon, anime, sketchy, draft, unfinished, " +
-                "diagonal walls, curved perspective, fish-eye, distortion";
+                "pixel art, anime, crude sketch, unfinished, messy, " +
+                "curved perspective, fish-eye, distortion, modern buildings, cars, roads";
 
             // Call Replicate API
             // Using SDXL model for best quality
