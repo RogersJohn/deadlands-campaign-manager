@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { Container, Typography, Paper, Box, Button, CircularProgress, Alert, Grid, Card, CardContent, CardMedia, CardActionArea, Radio, RadioGroup, FormControlLabel, IconButton, Tooltip } from '@mui/material';
+import { Container, Typography, Paper, Box, Button, CircularProgress, Alert, Grid, Card, CardContent, CardMedia, CardActionArea, Radio, RadioGroup, FormControlLabel, IconButton, Tooltip, Drawer } from '@mui/material';
 import { WbSunny as SunIcon, WbTwilight as TwilightIcon, Brightness3 as MoonIcon, Brightness1 as DarkIcon, Psychology as AIIcon } from '@mui/icons-material';
 import { GameCanvas } from './components/GameCanvas';
 import { WeaponSelection } from './components/WeaponSelection';
@@ -11,6 +11,7 @@ import { ActionBar } from './components/ActionBar';
 import InitiativeTracker from './components/InitiativeTracker';
 import { CombatLog } from './components/CombatLog';
 import { DiceRollPopup } from './components/DiceRollPopup';
+import AIAssistantPanel from '../components/ai/AIAssistantPanel';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
@@ -57,6 +58,9 @@ export function GameArena() {
 
   // PHASE 1: Called shot dialog state
   const [calledShotDialogOpen, setCalledShotDialogOpen] = useState(false);
+
+  // AI Assistant drawer state
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
 
 
   const handleCombatStateUpdate = useCallback((state: CombatState) => {
@@ -384,10 +388,27 @@ export function GameArena() {
               setShowMovementRanges={setShowMovementRanges}
               illumination={illumination}
               setIllumination={setIllumination}
+              onOpenAIAssistant={() => setAiAssistantOpen(true)}
+              isGM={isGameMaster}
             />
           )}
         </Box>
       )}
+
+      {/* AI Assistant Drawer */}
+      <Drawer
+        anchor="right"
+        open={aiAssistantOpen}
+        onClose={() => setAiAssistantOpen(false)}
+        PaperProps={{
+          sx: {
+            width: 500,
+            maxWidth: '90vw',
+          },
+        }}
+      >
+        <AIAssistantPanel />
+      </Drawer>
 
       {/* PHASE 1: Called Shot Dialog */}
       <CalledShotDialog

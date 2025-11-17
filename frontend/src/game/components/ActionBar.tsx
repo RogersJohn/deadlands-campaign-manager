@@ -1,5 +1,5 @@
 import { Box, Typography, Avatar, LinearProgress, Button, Tooltip, MenuItem, Select, Popover, IconButton } from '@mui/material';
-import { Favorite as HeartIcon, DirectionsRun as RunIcon, Settings as SettingsIcon } from '@mui/icons-material';
+import { Favorite as HeartIcon, DirectionsRun as RunIcon, Settings as SettingsIcon, Psychology as AIIcon } from '@mui/icons-material';
 import { GameCharacter, Equipment, CombatAction, Illumination } from '../types/GameTypes';
 import { ActionMenu } from './ActionMenu';
 import { SettingsMenu } from './SettingsMenu';
@@ -24,6 +24,8 @@ interface ActionBarProps {
   setShowMovementRanges: (show: boolean) => void;
   illumination: Illumination;
   setIllumination: (level: Illumination) => void;
+  onOpenAIAssistant?: () => void;
+  isGM?: boolean;
 }
 
 export function ActionBar({
@@ -45,6 +47,8 @@ export function ActionBar({
   setShowMovementRanges,
   illumination,
   setIllumination,
+  onOpenAIAssistant,
+  isGM = false,
 }: ActionBarProps) {
   const [actionsAnchorEl, setActionsAnchorEl] = useState<null | HTMLElement>(null);
   const actionsOpen = Boolean(actionsAnchorEl);
@@ -276,6 +280,26 @@ export function ActionBar({
             character={character}
           />
         </Popover>
+
+        {/* AI Assistant Button (GM only) */}
+        {isGM && onOpenAIAssistant && (
+          <Tooltip title="AI Game Master Assistant">
+            <IconButton
+              onClick={onOpenAIAssistant}
+              sx={{
+                color: '#f5e6d3',
+                backgroundColor: '#2d1b0e',
+                border: '2px solid #8b4513',
+                '&:hover': {
+                  backgroundColor: '#3d2b1e',
+                  borderColor: '#d4af37',
+                },
+              }}
+            >
+              <AIIcon />
+            </IconButton>
+          </Tooltip>
+        )}
 
         {/* Settings Menu */}
         <SettingsMenu
