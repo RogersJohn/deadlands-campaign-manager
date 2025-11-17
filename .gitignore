@@ -48,6 +48,9 @@ frontend/.env.local
 ### Environment Variables ###
 .env
 .env.local
+
+### Claude Code Settings ###
+.claude/settings.local.json
 .env.production
 backend/src/main/resources/application-local.yml
 

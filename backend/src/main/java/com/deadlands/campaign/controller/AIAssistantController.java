@@ -165,44 +165,38 @@ public class AIAssistantController {
             // Parse the JSON to validate it
             MapGenerationResponse mapData = objectMapper.readValue(mapJson, MapGenerationResponse.class);
 
-            // Step 2: Optionally generate background image
-            if (request.isGenerateImage()) {
-                if (!imageGenerationService.isAvailable()) {
-                    log.error("⚠️⚠️⚠️ CRITICAL: REPLICATE_API_KEY NOT CONFIGURED! ⚠️⚠️⚠️");
-                    log.error("⚠️ User enabled image generation but API key is MISSING!");
-                    log.error("⚠️ Map will generate WITHOUT background artwork (only tactical overlays)");
-                    log.error("⚠️ TO FIX: Add REPLICATE_API_KEY to Railway environment variables");
-                    log.error("⚠️ Get API key at: https://replicate.com/account/api-tokens");
+            // Step 2: Skip AI image generation (using procedural rendering instead)
+            // HYBRID APPROACH: Frontend draws map programmatically from tactical data
+            log.info("⚙️ Using procedural rendering - AI image generation skipped");
+            log.info("   Map will be drawn programmatically from terrain/building/cover data");
+
+            // Optional: Generate AI images if explicitly requested (future feature)
+            if (request.isGenerateImage() && imageGenerationService.isAvailable()) {
+                log.info("🎨 AI image generation requested (experimental)");
+
+                // Create image prompt from map data
+                String imagePrompt = aiGameMasterService.generateImagePrompt(
+                    mapData.getName(),
+                    request.getLocationType(),
+                    mapData.getDescription()
+                );
+
+                log.info("📝 Image prompt: {}", imagePrompt);
+
+                // Generate image (may take 10-30 seconds)
+                String imageData = imageGenerationService.generateMapImage(
+                    imagePrompt,
+                    1024,
+                    1024
+                );
+
+                if (imageData != null) {
+                    mapData.setImageUrl(imageData);
+                    mapData.setImagePrompt(imagePrompt);
+                    log.info("✅ AI texture generated successfully");
                 } else {
-                    log.info("🎨 Generating background image for map: {}", mapData.getName());
-
-                    // Create image prompt from map data
-                    String imagePrompt = aiGameMasterService.generateImagePrompt(
-                        mapData.getName(),
-                        request.getLocationType(),
-                        mapData.getDescription()
-                    );
-
-                    log.info("📝 Image prompt: {}", imagePrompt);
-
-                    // Generate image (may take 10-30 seconds)
-                    String imageData = imageGenerationService.generateMapImage(
-                        imagePrompt,
-                        1024,
-                        1024
-                    );
-
-                    if (imageData != null) {
-                        mapData.setImageUrl(imageData);
-                        mapData.setImagePrompt(imagePrompt);
-                        log.info("✅✅✅ Successfully generated background image! (length: {} chars)", imageData.length());
-                    } else {
-                        log.error("⚠️ Image generation FAILED - returned null despite API key being present!");
-                        log.error("⚠️ Check Replicate API logs for errors or rate limits");
-                    }
+                    log.warn("⚠️ AI image generation failed - proceeding with procedural rendering only");
                 }
-            } else {
-                log.info("Image generation disabled by user (generateImage=false checkbox unchecked)");
             }
 
             // Convert back to JSON string for response

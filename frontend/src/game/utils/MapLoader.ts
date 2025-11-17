@@ -29,11 +29,11 @@ export class MapLoader {
 
   /**
    * Load map and REPLACE the entire arena (PRIMARY METHOD)
-   * This is the new recommended method for loading maps
+   * HYBRID APPROACH: Programmatic drawing with optional AI textures
    * @param mapData The generated map data from AI
    */
   async loadMapAsArena(mapData: GeneratedMap): Promise<void> {
-    console.log('Loading map as arena:', mapData.name);
+    console.log('Loading map as arena (HYBRID RENDERING):', mapData.name);
 
     // Step 1: Clear entire arena (not just map layers)
     this.clearEntireArena();
@@ -44,14 +44,8 @@ export class MapLoader {
     this.scene.physics.world.setBounds(0, 0, mapWidth, mapHeight);
     console.log(`Arena resized to: ${mapWidth}x${mapHeight} pixels`);
 
-    // Step 3: Load background image (the hand-drawn illustrated map)
-    if (mapData.imageUrl) {
-      console.log('Loading background image from:', mapData.imageUrl.substring(0, 50) + '...');
-      await this.loadBackgroundImage(mapData.imageUrl, mapData.size.width, mapData.size.height);
-    } else {
-      console.warn('No imageUrl provided in map data! Map will have no background artwork.');
-      console.warn('Map data keys:', Object.keys(mapData));
-    }
+    // Step 3: Draw procedural background (terrain + buildings + cover)
+    this.drawProceduralBackground(mapData);
 
     // Step 4: Create tactical grid overlay
     this.createTacticalGrid(mapData.size.width, mapData.size.height);
@@ -83,7 +77,7 @@ export class MapLoader {
     // Step 10: Center camera on map
     this.centerCameraOnMap(mapData.size.width, mapData.size.height);
 
-    console.log(`Arena replaced with map: ${mapWidth}x${mapHeight} pixels`);
+    console.log(`Arena replaced with procedural map: ${mapWidth}x${mapHeight} pixels`);
   }
 
   /**
@@ -93,6 +87,244 @@ export class MapLoader {
   async loadMap(mapData: GeneratedMap): Promise<void> {
     console.warn('loadMap() is deprecated, use loadMapAsArena() instead');
     return this.loadMapAsArena(mapData);
+  }
+
+  /**
+   * HYBRID RENDERING: Draw map programmatically from tactical data
+   * Renders terrain, buildings, and cover as geometric shapes
+   */
+  private drawProceduralBackground(mapData: GeneratedMap): void {
+    console.log('Drawing procedural background from map data...');
+
+    const graphics = this.scene.add.graphics();
+    graphics.setDepth(-100); // Behind everything
+    this.backgroundImage = graphics as any; // Store for later cleanup
+
+    // Step 1: Draw base terrain (grass, dirt, etc.)
+    this.drawTerrain(graphics, mapData);
+
+    // Step 2: Draw buildings (walls, floors, entrances)
+    this.drawBuildings(graphics, mapData.buildings);
+
+    // Step 3: Draw cover objects (barrels, crates, wagons)
+    this.drawCoverObjects(graphics, mapData.cover);
+
+    console.log('Procedural background rendering complete');
+  }
+
+  /**
+   * Draw terrain areas with appropriate colors/patterns
+   */
+  private drawTerrain(graphics: Phaser.GameObjects.Graphics, mapData: GeneratedMap): void {
+    const mapWidth = mapData.size.width * this.tileSize;
+    const mapHeight = mapData.size.height * this.tileSize;
+
+    // Default base terrain (dirt/ground)
+    graphics.fillStyle(0x8B7355, 1.0); // Sandy brown
+    graphics.fillRect(0, 0, mapWidth, mapHeight);
+
+    // Draw each terrain group
+    mapData.terrain.forEach(terrainGroup => {
+      const color = this.getTerrainColor(terrainGroup.type);
+      const x1 = terrainGroup.area.x1 * this.tileSize;
+      const y1 = terrainGroup.area.y1 * this.tileSize;
+      const x2 = terrainGroup.area.x2 * this.tileSize;
+      const y2 = terrainGroup.area.y2 * this.tileSize;
+
+      graphics.fillStyle(color, 1.0);
+      graphics.fillRect(x1, y1, x2 - x1, y2 - y1);
+
+      // Add texture/pattern for variety
+      this.addTerrainPattern(graphics, terrainGroup.type, x1, y1, x2, y2);
+    });
+  }
+
+  /**
+   * Get color for terrain type
+   */
+  private getTerrainColor(terrainType: string): number {
+    const terrainColors: Record<string, number> = {
+      'grass': 0x5A7F3C,      // Dark green
+      'dirt': 0x8B7355,       // Sandy brown
+      'sand': 0xD2B48C,       // Tan
+      'stone': 0x696969,      // Dim gray
+      'rocks': 0x4A4A4A,      // Dark gray
+      'water': 0x4682B4,      // Steel blue
+      'wood_floor': 0x8B6914, // Dark goldenrod (wood)
+      'mud': 0x6B4423,        // Dark brown
+      'gravel': 0x999999,     // Light gray
+    };
+    return terrainColors[terrainType] || 0x8B7355; // Default to dirt
+  }
+
+  /**
+   * Add simple pattern/texture to terrain for visual variety
+   */
+  private addTerrainPattern(graphics: Phaser.GameObjects.Graphics, type: string, x1: number, y1: number, x2: number, y2: number): void {
+    // Add subtle noise/dots for texture
+    if (type === 'grass') {
+      // Random dark spots for grass texture
+      graphics.fillStyle(0x4A6B2F, 0.3);
+      for (let i = 0; i < 20; i++) {
+        const x = x1 + Math.random() * (x2 - x1);
+        const y = y1 + Math.random() * (y2 - y1);
+        graphics.fillCircle(x, y, 2);
+      }
+    } else if (type === 'rocks' || type === 'stone') {
+      // Random lighter spots for rock texture
+      graphics.fillStyle(0x808080, 0.5);
+      for (let i = 0; i < 15; i++) {
+        const x = x1 + Math.random() * (x2 - x1);
+        const y = y1 + Math.random() * (y2 - y1);
+        graphics.fillCircle(x, y, 3);
+      }
+    } else if (type === 'water') {
+      // Wavy lines for water
+      graphics.lineStyle(1, 0x5A9BD5, 0.3);
+      for (let i = 0; i < 5; i++) {
+        const y = y1 + (i / 5) * (y2 - y1);
+        graphics.beginPath();
+        graphics.moveTo(x1, y);
+        graphics.lineTo(x2, y);
+        graphics.strokePath();
+      }
+    }
+  }
+
+  /**
+   * Draw buildings as solid geometric shapes
+   */
+  private drawBuildings(graphics: Phaser.GameObjects.Graphics, buildings: Building[]): void {
+    buildings.forEach(building => {
+      const x = building.position.x * this.tileSize;
+      const y = building.position.y * this.tileSize;
+      const width = building.size.width * this.tileSize;
+      const height = building.size.height * this.tileSize;
+
+      // Draw floor
+      const floorColor = this.getBuildingFloorColor(building.floorTerrain);
+      graphics.fillStyle(floorColor, 1.0);
+      graphics.fillRect(x, y, width, height);
+
+      // Draw walls (darker outline)
+      const wallColor = this.getBuildingWallColor(building.wallTerrain);
+      graphics.lineStyle(4, wallColor, 1.0);
+      graphics.strokeRect(x, y, width, height);
+
+      // Draw entrances (gaps in walls)
+      building.entrances.forEach(entrance => {
+        const entranceSize = this.tileSize * 0.8;
+        let entranceX = x;
+        let entranceY = y;
+
+        // Position entrance based on direction
+        if (entrance.direction === 'north') {
+          entranceX = x + (entrance.x * this.tileSize);
+          entranceY = y;
+        } else if (entrance.direction === 'south') {
+          entranceX = x + (entrance.x * this.tileSize);
+          entranceY = y + height - entranceSize;
+        } else if (entrance.direction === 'east') {
+          entranceX = x + width - entranceSize;
+          entranceY = y + (entrance.y * this.tileSize);
+        } else if (entrance.direction === 'west') {
+          entranceX = x;
+          entranceY = y + (entrance.y * this.tileSize);
+        }
+
+        // Draw entrance as gap (draw floor color over wall)
+        graphics.fillStyle(floorColor, 1.0);
+        graphics.fillRect(entranceX, entranceY, entranceSize, entranceSize);
+      });
+    });
+  }
+
+  /**
+   * Get floor color for building
+   */
+  private getBuildingFloorColor(floorTerrain: string): number {
+    const floorColors: Record<string, number> = {
+      'wood': 0x8B6914,       // Dark goldenrod
+      'stone': 0x696969,      // Dim gray
+      'dirt': 0x8B7355,       // Sandy brown
+      'tile': 0xB8B8B8,       // Light gray
+    };
+    return floorColors[floorTerrain] || 0x8B6914; // Default to wood
+  }
+
+  /**
+   * Get wall color for building
+   */
+  private getBuildingWallColor(wallTerrain: string): number {
+    const wallColors: Record<string, number> = {
+      'wood': 0x654321,       // Dark brown
+      'stone': 0x4A4A4A,      // Dark gray
+      'brick': 0x8B4513,      // Saddle brown
+      'adobe': 0xC19A6B,      // Camel (tan/beige)
+    };
+    return wallColors[wallTerrain] || 0x654321; // Default to wood
+  }
+
+  /**
+   * Draw cover objects (barrels, crates, wagons, etc.)
+   */
+  private drawCoverObjects(graphics: Phaser.GameObjects.Graphics, coverObjects: CoverObject[]): void {
+    coverObjects.forEach(cover => {
+      const x = cover.position.x * this.tileSize + (this.tileSize / 2);
+      const y = cover.position.y * this.tileSize + (this.tileSize / 2);
+      const size = this.getCoverSize(cover.size);
+
+      if (cover.type === 'barrel') {
+        // Draw barrel as brown circle
+        graphics.fillStyle(0x8B4513, 1.0);
+        graphics.fillCircle(x, y, size);
+        graphics.lineStyle(2, 0x654321, 1.0);
+        graphics.strokeCircle(x, y, size);
+      } else if (cover.type === 'crate' || cover.type === 'box') {
+        // Draw crate as brown square
+        graphics.fillStyle(0xA0522D, 1.0);
+        graphics.fillRect(x - size, y - size, size * 2, size * 2);
+        graphics.lineStyle(2, 0x654321, 1.0);
+        graphics.strokeRect(x - size, y - size, size * 2, size * 2);
+      } else if (cover.type === 'wagon') {
+        // Draw wagon as larger brown rectangle
+        const wagonWidth = size * 2;
+        const wagonHeight = size * 1.5;
+        graphics.fillStyle(0x8B6914, 1.0);
+        graphics.fillRect(x - wagonWidth / 2, y - wagonHeight / 2, wagonWidth, wagonHeight);
+        graphics.lineStyle(2, 0x654321, 1.0);
+        graphics.strokeRect(x - wagonWidth / 2, y - wagonHeight / 2, wagonWidth, wagonHeight);
+
+        // Draw wheels
+        graphics.fillStyle(0x3E2723, 1.0);
+        graphics.fillCircle(x - wagonWidth / 3, y + wagonHeight / 2, size / 2);
+        graphics.fillCircle(x + wagonWidth / 3, y + wagonHeight / 2, size / 2);
+      } else if (cover.type === 'fence') {
+        // Draw fence as thin brown rectangle
+        graphics.fillStyle(0x8B6914, 1.0);
+        graphics.fillRect(x - size * 1.5, y - size / 3, size * 3, size / 1.5);
+        graphics.lineStyle(2, 0x654321, 1.0);
+        graphics.strokeRect(x - size * 1.5, y - size / 3, size * 3, size / 1.5);
+      } else {
+        // Default: draw as gray circle
+        graphics.fillStyle(0x808080, 1.0);
+        graphics.fillCircle(x, y, size);
+        graphics.lineStyle(2, 0x404040, 1.0);
+        graphics.strokeCircle(x, y, size);
+      }
+    });
+  }
+
+  /**
+   * Get pixel size for cover object size descriptor
+   */
+  private getCoverSize(size: string): number {
+    const sizes: Record<string, number> = {
+      'small': this.tileSize * 0.3,
+      'medium': this.tileSize * 0.5,
+      'large': this.tileSize * 0.7,
+    };
+    return sizes[size] || this.tileSize * 0.4;
   }
 
   /**
