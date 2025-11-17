@@ -116,7 +116,16 @@ const Layout = () => {
         </Box>
       </Drawer>
 
-      <Container component="main" sx={{ flex: 1, py: 4 }}>
+      <Container
+        component="main"
+        sx={{
+          flex: 1,
+          py: location.pathname === '/arena' ? 0 : 4,
+          px: location.pathname === '/arena' ? 0 : 3,
+          maxWidth: location.pathname === '/arena' ? '100%' : undefined,
+        }}
+        maxWidth={location.pathname === '/arena' ? false : 'lg'}
+      >
         <Outlet />
       </Container>
 

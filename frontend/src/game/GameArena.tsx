@@ -203,7 +203,7 @@ export function GameArena() {
   };
 
   return (
-    <Container maxWidth={false} sx={{ mt: 2, mb: 4, maxWidth: '100%' }}>
+    <Box sx={{ width: '100%', height: '100%' }}>
       {!gameStarted ? (
         /* Character Selection Screen */
         <Paper sx={{ p: 4, backgroundColor: '#2d1b0e' }}>
@@ -359,6 +359,6 @@ export function GameArena() {
         onSelect={handleCalledShotSelect}
         onCancel={handleCalledShotCancel}
       />
-    </Container>
+    </Box>
   );
 }
