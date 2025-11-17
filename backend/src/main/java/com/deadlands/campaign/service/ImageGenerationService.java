@@ -44,16 +44,20 @@ public class ImageGenerationService {
         try {
             log.info("Generating map image with prompt: {}", prompt);
 
-            // Enhance prompt for top-down battle maps
+            // Enhance prompt for realistic top-down battle maps
             String enhancedPrompt = String.format(
-                "%s, top-down view, orthographic, battle map, grid map, " +
-                "game map, tactical map, pixel art style, high contrast, " +
-                "clear details, western theme, 1870s, Deadlands RPG",
+                "%s, realistic top-down aerial view, overhead satellite photograph, " +
+                "photorealistic, natural lighting, highly detailed, tactical battle map, " +
+                "1870s old west, Deadlands setting, clear terrain features, " +
+                "visible walls and structures, natural cover, professional game map quality, " +
+                "orthographic projection, no perspective distortion",
                 prompt
             );
 
-            String negativePrompt = "blurry, perspective view, 3d, isometric, " +
-                "people, characters, text, watermark, low quality";
+            String negativePrompt = "blurry, perspective view, 3d rendering, isometric, " +
+                "people, characters, animals, text, watermarks, low quality, " +
+                "pixel art, cartoon, anime, sketchy, draft, unfinished, " +
+                "diagonal walls, curved perspective, fish-eye, distortion";
 
             // Call Replicate API
             // Using SDXL model for best quality
