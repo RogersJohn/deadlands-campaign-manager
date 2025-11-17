@@ -51,10 +51,12 @@ A comprehensive web-based campaign management system for Deadlands Reloaded tabl
   - Game Master has full control, Players have character-specific abilities
   - Combat arena with tactical battlefield
 
-- **Generators** (Coming Soon)
-  - NPC generator with full stats
-  - Location generator
-  - Random encounter tables
+- **AI Game Master Assistant** ✅
+  - NPC dialogue generation
+  - Rules lookup (Savage Worlds & Deadlands)
+  - Encounter generation
+  - Location generation
+  - Battle map generation with procedural rendering
 
 ## Tech Stack
 
@@ -284,13 +286,11 @@ VITE_API_URL=https://your-backend-domain.com/api
 - [ ] Interactive dice rolling
 - [ ] Wound and Fate Chip tracking
 - [ ] Campaign management features
-- [ ] NPC generator
-- [ ] Location generator
-- [ ] Random tables and generators
-- [ ] Session management and notes
-- [ ] Combat tracker
+- [ ] Session notes (historical journal entries)
+- [ ] Combat tracker enhancements
 - [ ] File uploads for character images
 - [ ] Export characters to PDF
+- [ ] Battle map improvements (textures, visual quality)
 
 ## Documentation
 
