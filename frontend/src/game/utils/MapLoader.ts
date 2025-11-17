@@ -44,9 +44,13 @@ export class MapLoader {
     this.scene.physics.world.setBounds(0, 0, mapWidth, mapHeight);
     console.log(`Arena resized to: ${mapWidth}x${mapHeight} pixels`);
 
-    // Step 3: Load background image (the realistic AI-generated photo)
+    // Step 3: Load background image (the hand-drawn illustrated map)
     if (mapData.imageUrl) {
+      console.log('Loading background image from:', mapData.imageUrl.substring(0, 50) + '...');
       await this.loadBackgroundImage(mapData.imageUrl, mapData.size.width, mapData.size.height);
+    } else {
+      console.warn('No imageUrl provided in map data! Map will have no background artwork.');
+      console.warn('Map data keys:', Object.keys(mapData));
     }
 
     // Step 4: Create tactical grid overlay
@@ -111,14 +115,32 @@ export class MapLoader {
     this.buildingLabels = undefined;
     this.npcMarkers = undefined;
 
-    console.log('Arena cleared');
+    // CRITICAL: Destroy ALL game objects from the original ArenaScene
+    // This includes the brown background rectangle and original grid
+    const allChildren = this.scene.children.getChildren();
+    allChildren.forEach(child => {
+      // Don't destroy player sprite, enemies, or UI elements
+      // Only destroy background graphics and map-related objects
+      if (child instanceof Phaser.GameObjects.Graphics ||
+          child instanceof Phaser.GameObjects.Rectangle ||
+          child instanceof Phaser.GameObjects.Image) {
+        // Check if it's not a character sprite (characters are rectangles with specific depth)
+        const gameObject = child as Phaser.GameObjects.GameObject & { depth?: number };
+        // Preserve characters (depth 5) and UI elements (depth > 100)
+        if (gameObject.depth === undefined || (gameObject.depth < 5 || (gameObject.depth > 5 && gameObject.depth < 100))) {
+          child.destroy();
+        }
+      }
+    });
+
+    console.log('Arena cleared (including original background)');
   }
 
   /**
-   * Load and display realistic background image
+   * Load and display hand-drawn illustrated background image
    */
   private async loadBackgroundImage(imageUrl: string, width: number, height: number): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const textureKey = `map_bg_${Date.now()}`;
 
       this.scene.textures.once('addtexture', () => {
@@ -132,14 +154,25 @@ export class MapLoader {
         const targetHeight = height * this.tileSize;
         this.backgroundImage.setDisplaySize(targetWidth, targetHeight);
 
-        // Full opacity for realistic images (no overlay needed)
+        // Full opacity for hand-drawn illustrated images
         this.backgroundImage.setAlpha(1.0);
 
-        console.log('Realistic background image loaded');
+        console.log('Hand-drawn background image loaded successfully');
+        console.log(`Image scaled to: ${targetWidth}x${targetHeight} px`);
         resolve();
       });
 
-      this.scene.textures.addBase64(textureKey, imageUrl);
+      this.scene.textures.once('onerror', (key: string) => {
+        console.error('Failed to load background image texture:', key);
+        reject(new Error('Failed to load background image'));
+      });
+
+      try {
+        this.scene.textures.addBase64(textureKey, imageUrl);
+      } catch (error) {
+        console.error('Error adding base64 texture:', error);
+        reject(error);
+      }
     });
   }
 
