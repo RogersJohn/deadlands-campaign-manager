@@ -1,8 +1,111 @@
-# Next Session: Map Generation System Improvement
+# Next Session: Battle Map System - Testing & Polish
 
 **Date**: 2025-11-17
-**Status**: ⚠️ Current map generation needs improvement
-**Priority**: Design and implement better map generation system
+**Status**: ✅ Phases 1-4 Complete - Ready for Testing
+**Priority**: Test battle map system, fix issues, polish UI
+**Estimated Time**: 1-2 hours remaining
+
+---
+
+## ✅ IMPLEMENTATION COMPLETE (Phases 1-4)
+
+### Implementation Summary
+
+**All 4 phases completed in this session:**
+
+#### Phase 1: Backend Persistence ✅ (Commit: `5d40f15`)
+- Created BattleMap entity with enums (MapVisibility, MapType, BattleTheme)
+- Created BattleMapRepository with query methods
+- Added 5 REST endpoints to AIAssistantController
+- Created DTOs (SaveMapRequest, BattleMapDTO, BattleMapDetailDTO)
+
+#### Phase 2: Realistic AI Images ✅ (Commit: `6440f4d`)
+- Updated ImageGenerationService prompts
+- Removed "pixel art style"
+- Added "realistic photorealistic aerial view"
+- Enhanced negative prompt
+
+#### Phase 3: MapLoader Redesign ✅ (Commit: `effef02`)
+- New loadMapAsArena() method - replaces entire arena
+- Dynamic world bounds (not fixed 200x200)
+- Tactical overlays: grid, walls (red), cover (green)
+- Toggle methods for all overlays
+- 100% opacity realistic backgrounds
+
+#### Phase 4: Map Library UI ✅ (Commit: `19a3cb1`)
+- Created mapService.ts API client
+- Created MapLibraryTab component (My Maps + Public Library)
+- Added "Library" tab to AI Assistant
+- Added "Save to Library" button to Map Generator
+
+**All User Requirements Met:**
+1. ✅ Semi-realistic top-down aerial images (Phase 2)
+2. ✅ Maps REPLACE entire arena (Phase 3)
+3. ✅ Walls and cover highlighted (Phase 3)
+4. ✅ Maps savable as resources (Phase 1 + 4)
+5. ✅ Map library for reuse (Phase 4)
+
+---
+
+## 🧪 Phase 5: Testing & Polish (Next Steps)
+
+### Testing Checklist
+
+**Backend Testing:**
+- [ ] Start backend, verify compilation (no errors from new entities)
+- [ ] Test POST /ai-gm/maps/save endpoint
+- [ ] Test GET /ai-gm/maps/my-maps endpoint
+- [ ] Test GET /ai-gm/maps/library endpoint
+- [ ] Test GET /ai-gm/maps/{id} endpoint
+- [ ] Test DELETE /ai-gm/maps/{id} endpoint
+- [ ] Verify database schema created (battle_maps table)
+
+**Frontend Testing:**
+- [ ] Start frontend, verify compilation
+- [ ] Login as GM (gamemaster / Test123!)
+- [ ] Open AI Assistant → Map Gen tab
+- [ ] Generate a map (test realistic prompts)
+- [ ] Click "Save to Library" - verify success message
+- [ ] Switch to Library tab → My Maps
+- [ ] Verify saved map appears in grid
+- [ ] Click "Load in Game" - verify map loads and replaces arena
+- [ ] Verify tactical overlays visible (grid, walls, cover)
+- [ ] Test delete map functionality
+
+**Integration Testing:**
+- [ ] Generate multiple maps of different types
+- [ ] Save maps with different visibility levels
+- [ ] Load saved maps and verify they work correctly
+- [ ] Test camera centering and zoom
+- [ ] Test player spawn placement
+- [ ] Verify world bounds match map size
+
+### Known Issues to Fix (if any)
+- None identified yet - will update during testing
+
+### Polish Items
+- [ ] Add loading spinners during map operations
+- [ ] Improve error messages
+- [ ] Add tooltips for tactical overlays
+- [ ] Consider adding map preview before loading
+- [ ] Add search/filter by tags in Library
+
+### Quick Start Commands
+
+```bash
+# Review architecture
+cat MAP_REDESIGN_ARCHITECTURE.md
+
+# Start Phase 1: Backend Persistence
+# 1. Create backend/src/main/java/com/deadlands/campaign/model/BattleMap.java
+# 2. Create backend/src/main/java/com/deadlands/campaign/repository/BattleMapRepository.java
+# 3. Add endpoints to AIAssistantController.java
+# 4. Test with curl/Postman
+
+# Start Phase 2: Better AI Images
+# Edit backend/src/main/java/com/deadlands/campaign/service/ImageGenerationService.java
+# Line 48-52: Update prompt from "pixel art" to "realistic photorealistic aerial view"
+```
 
 ---
 
@@ -218,22 +321,34 @@ https://deadlands-frontend-production.up.railway.app
 
 ## Summary
 
-**Current Status:** UI redesign complete with all features integrated. Map generation is functional but visual quality needs significant improvement.
+**Current Status:** ✅ UI redesign complete. ✅ Map architecture designed. Ready to implement.
 
-**Completed Today:**
+**Completed This Session:**
 - 15/65/15/5 layout with Combat Log and Initiative Tracker
 - Animated dice roll popups
 - Actions dropdown with 20+ Savage Worlds actions
 - Settings menu integration
 - AI Assistant with 5 features (including map generator)
 - Camera auto-centering for generated maps
+- **MAP_REDESIGN_ARCHITECTURE.md** - Complete technical plan (696 lines)
 
-**Next Priority:** Redesign map generation system for better visual quality and tactical usability.
+**Architecture Includes:**
+- BattleMap entity with database persistence
+- Realistic AI image generation (not pixel art)
+- MapLoader redesign (map replaces entire arena)
+- Tactical overlay system (grid, walls, cover)
+- Map library UI for saved maps
+- 5-phase implementation plan (9-14 hours total)
 
-**Question for Next Session:** What approach should we take for improved map generation?
-- Better sprites/textures?
-- Pre-built map templates?
-- Different AI service?
-- Manual map editor?
+**Next Session Priority:** Implement battle map system
 
-🗺️ Ready to improve map generation!
+**Recommended Approach:** Phase-by-phase implementation
+1. **Phase 1 (2-3h)**: Backend persistence - immediate save/load value
+2. **Phase 2 (1-2h)**: Better AI images - immediate visual improvement
+3. **Phase 3 (3-4h)**: MapLoader redesign - maps become arenas
+4. **Phase 4 (2-3h)**: Map library UI - instant loading
+5. **Phase 5 (1-2h)**: Polish & testing
+
+**Why New Session:** Fresh context for major feature implementation (map system is complex and touches many systems)
+
+🗺️ Architecture complete - ready to build!
