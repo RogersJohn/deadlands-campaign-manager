@@ -37,9 +37,12 @@ public class ImageGenerationService {
      */
     public String generateMapImage(String prompt, int width, int height) {
         if (replicateApiKey == null || replicateApiKey.isEmpty()) {
-            log.warn("Replicate API key not configured, skipping image generation");
+            log.error("⚠️ REPLICATE_API_KEY not configured! Set it in Railway to enable AI artwork generation.");
+            log.error("⚠️ Maps will generate WITHOUT background images until API key is added.");
             return null;
         }
+
+        log.info("✅ Replicate API key found, proceeding with image generation...");
 
         try {
             log.info("Generating map image with prompt: {}", prompt);
@@ -59,9 +62,12 @@ public class ImageGenerationService {
 
             String negativePrompt = "photorealistic, photograph, satellite image, aerial photo, " +
                 "blurry, perspective view, 3d rendering, isometric, diagonal view, " +
-                "people, characters, animals, text, watermarks, low quality, " +
+                "people, person, human, humans, characters, NPCs, cowboys, outlaws, bandits, " +
+                "figures, silhouettes, stick figures, portraits, faces, bodies, " +
+                "animals, horses, dogs, cats, creatures, wildlife, " +
+                "text, watermarks, labels, signs, writing, letters, numbers, low quality, " +
                 "pixel art, anime, crude sketch, unfinished, messy, " +
-                "curved perspective, fish-eye, distortion, modern buildings, cars, roads";
+                "curved perspective, fish-eye, distortion, modern buildings, cars, roads, vehicles";
 
             // Call Replicate API
             // Using SDXL model for best quality
@@ -106,10 +112,16 @@ public class ImageGenerationService {
             String imageUrl = pollForCompletion(predictionId, 60);
 
             if (imageUrl != null) {
+                log.info("✅ Image generated successfully, downloading and encoding...");
                 // Download image and convert to base64
-                return downloadAndEncodeImage(imageUrl);
+                String encoded = downloadAndEncodeImage(imageUrl);
+                if (encoded != null) {
+                    log.info("✅ Image encoded successfully (base64 length: {} chars)", encoded.length());
+                }
+                return encoded;
             }
 
+            log.error("⚠️ Image generation completed but no image URL returned!");
             return null;
 
         } catch (Exception e) {
