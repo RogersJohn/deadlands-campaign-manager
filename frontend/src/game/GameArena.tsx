@@ -13,6 +13,7 @@ import { CombatLog } from './components/CombatLog';
 import { DiceRollPopup } from './components/DiceRollPopup';
 import AIAssistantPanel from '../components/ai/AIAssistantPanel';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
+import { GeneratedMap } from '../types/map';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
 import { wrapGameEvents, TypedGameEvents } from './events/GameEvents';
@@ -130,6 +131,28 @@ export function GameArena() {
       gameEvents.emit('illuminationChange', { level: illumination });
     }
   }, [gameEvents, illumination]);
+
+  // Listen for AI-generated map loading
+  useEffect(() => {
+    const handleLoadGeneratedMap = (event: CustomEvent<GeneratedMap>) => {
+      console.log('Received loadGeneratedMap event:', event.detail);
+
+      if (gameEvents) {
+        // Emit to Phaser game to load the map
+        gameEvents.emit('loadGeneratedMap', { mapData: event.detail });
+        console.log('Sent map data to Phaser game');
+      } else {
+        console.warn('Game not ready to receive map data');
+      }
+    };
+
+    // Listen for custom event from AI Assistant
+    window.addEventListener('loadGeneratedMap', handleLoadGeneratedMap as EventListener);
+
+    return () => {
+      window.removeEventListener('loadGeneratedMap', handleLoadGeneratedMap as EventListener);
+    };
+  }, [gameEvents]);
 
   // WebSocket logic removed - single player game for now
   // Can be re-added later for real-time GM/player synchronization
@@ -407,7 +430,7 @@ export function GameArena() {
           },
         }}
       >
-        <AIAssistantPanel />
+        <AIAssistantPanel onClose={() => setAiAssistantOpen(false)} />
       </Drawer>
 
       {/* PHASE 1: Called Shot Dialog */}

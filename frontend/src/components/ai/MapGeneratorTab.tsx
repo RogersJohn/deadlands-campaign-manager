@@ -27,9 +27,10 @@ import { GeneratedMap } from '../../types/map';
 interface MapGeneratorTabProps {
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
+  onMapLoaded?: () => void;
 }
 
-export default function MapGeneratorTab({ isLoading, setIsLoading }: MapGeneratorTabProps) {
+export default function MapGeneratorTab({ isLoading, setIsLoading, onMapLoaded }: MapGeneratorTabProps) {
   const [locationType, setLocationType] = useState('town');
   const [size, setSize] = useState('medium');
   const [theme, setTheme] = useState('combat');
@@ -91,18 +92,16 @@ export default function MapGeneratorTab({ isLoading, setIsLoading }: MapGenerato
   const handleLoadInGame = () => {
     if (!generatedMap) return;
 
-    // Emit event to parent window (where Phaser game is running)
-    if (window.opener) {
-      window.opener.dispatchEvent(new CustomEvent('loadGeneratedMap', {
-        detail: generatedMap
-      }));
-      alert(`Map "${generatedMap.name}" loaded! Close this window and check the game.`);
-    } else {
-      // Fallback: dispatch to current window (if not in popup)
-      window.dispatchEvent(new CustomEvent('loadGeneratedMap', {
-        detail: generatedMap
-      }));
-      alert(`Map "${generatedMap.name}" loaded!`);
+    // Dispatch event to load the map in Phaser
+    window.dispatchEvent(new CustomEvent('loadGeneratedMap', {
+      detail: generatedMap
+    }));
+
+    console.log('Map load event dispatched:', generatedMap.name);
+
+    // Close the AI Assistant drawer to reveal the map
+    if (onMapLoaded) {
+      onMapLoaded();
     }
   };
 

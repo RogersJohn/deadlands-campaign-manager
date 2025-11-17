@@ -24,11 +24,15 @@ import EncounterGeneratorTab from './EncounterGeneratorTab';
 import LocationGeneratorTab from './LocationGeneratorTab';
 import MapGeneratorTab from './MapGeneratorTab';
 
+interface AIAssistantPanelProps {
+  onClose?: () => void;
+}
+
 /**
  * AI Game Master Assistant Panel
  * Provides AI-powered assistance for NPCs, rules, encounters, and locations
  */
-export default function AIAssistantPanel() {
+export default function AIAssistantPanel({ onClose }: AIAssistantPanelProps = {}) {
   const { user } = useAuthStore();
   const isGM = user?.role === 'GAME_MASTER';
 
@@ -153,6 +157,7 @@ export default function AIAssistantPanel() {
           <MapGeneratorTab
             isLoading={isLoading}
             setIsLoading={setIsLoading}
+            onMapLoaded={onClose}
           />
         )}
       </Box>

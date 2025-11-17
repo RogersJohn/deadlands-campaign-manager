@@ -11,6 +11,7 @@
 
 import { Equipment, CombatLogEntry, DiceRollEvent, CombatAction, CalledShotTarget, Illumination } from '../types/GameTypes';
 import { TurnPhase } from '../engine/CombatManager';
+import { GeneratedMap } from '../../types/map';
 
 // =============================================================================
 // React → Phaser Events (User actions)
@@ -43,6 +44,10 @@ export interface MovementRangesToggleEvent {
 
 export interface IlluminationChangeEvent {
   level: Illumination;
+}
+
+export interface LoadGeneratedMapEvent {
+  mapData: GeneratedMap;
 }
 
 // =============================================================================
@@ -115,6 +120,7 @@ export interface GameEventMap {
   'weaponRangesToggle': WeaponRangesToggleEvent;
   'movementRangesToggle': MovementRangesToggleEvent;
   'illuminationChange': IlluminationChangeEvent;
+  'loadGeneratedMap': LoadGeneratedMapEvent;
   'remoteTokenMoved': RemoteTokenMovedEvent;
 
   // Phaser → React
