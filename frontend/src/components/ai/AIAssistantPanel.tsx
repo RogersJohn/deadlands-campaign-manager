@@ -14,6 +14,7 @@ import {
   Dangerous as EncounterIcon,
   Place as LocationIcon,
   Map as MapIcon,
+  Folder as LibraryIcon,
 } from '@mui/icons-material';
 import { useAuthStore } from '../../store/authStore';
 import { AIMode, ChatMessage } from '../../types/ai';
@@ -23,6 +24,7 @@ import RulesLookupTab from './RulesLookupTab';
 import EncounterGeneratorTab from './EncounterGeneratorTab';
 import LocationGeneratorTab from './LocationGeneratorTab';
 import MapGeneratorTab from './MapGeneratorTab';
+import MapLibraryTab from './MapLibraryTab';
 
 interface AIAssistantPanelProps {
   onClose?: () => void;
@@ -36,7 +38,7 @@ export default function AIAssistantPanel({ onClose }: AIAssistantPanelProps = {}
   const { user } = useAuthStore();
   const isGM = user?.role === 'GAME_MASTER';
 
-  const [mode, setMode] = useState<'npc' | 'rules' | 'encounter' | 'location' | 'mapgen'>('npc');
+  const [mode, setMode] = useState<'npc' | 'rules' | 'encounter' | 'location' | 'mapgen' | 'library'>('npc');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isHealthy, setIsHealthy] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,6 +115,7 @@ export default function AIAssistantPanel({ onClose }: AIAssistantPanelProps = {}
           {isGM && <Tab icon={<EncounterIcon />} label="Encounter" value="encounter" />}
           {isGM && <Tab icon={<LocationIcon />} label="Location" value="location" />}
           {isGM && <Tab icon={<MapIcon />} label="Map Gen" value="mapgen" />}
+          {isGM && <Tab icon={<LibraryIcon />} label="Library" value="library" />}
         </Tabs>
       </Box>
 
@@ -157,6 +160,11 @@ export default function AIAssistantPanel({ onClose }: AIAssistantPanelProps = {}
           <MapGeneratorTab
             isLoading={isLoading}
             setIsLoading={setIsLoading}
+            onMapLoaded={onClose}
+          />
+        )}
+        {mode === 'library' && isGM && (
+          <MapLibraryTab
             onMapLoaded={onClose}
           />
         )}

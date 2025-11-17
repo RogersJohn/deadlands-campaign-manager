@@ -20,8 +20,10 @@ import {
   Map as MapIcon,
   Download as DownloadIcon,
   Image as ImageIcon,
+  Save as SaveIcon,
 } from '@mui/icons-material';
 import aiService from '../../services/aiService';
+import mapService from '../../services/mapService';
 import { GeneratedMap } from '../../types/map';
 
 interface MapGeneratorTabProps {
@@ -38,6 +40,7 @@ export default function MapGeneratorTab({ isLoading, setIsLoading, onMapLoaded }
   const [description, setDescription] = useState('');
   const [generatedMap, setGeneratedMap] = useState<GeneratedMap | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
 
   const handleGenerate = async () => {
     setIsLoading(true);
@@ -102,6 +105,48 @@ export default function MapGeneratorTab({ isLoading, setIsLoading, onMapLoaded }
     // Close the AI Assistant drawer to reveal the map
     if (onMapLoaded) {
       onMapLoaded();
+    }
+  };
+
+  const handleSaveMap = async () => {
+    if (!generatedMap) return;
+
+    setIsLoading(true);
+    setError(null);
+    setSaveSuccess(null);
+
+    try {
+      // Extract walls from buildings
+      const walls = generatedMap.buildings.map(building => ({
+        x: building.position.x,
+        y: building.position.y,
+        width: building.size.width,
+        height: building.size.height
+      }));
+
+      const saveRequest = {
+        name: generatedMap.name,
+        description: generatedMap.description,
+        widthTiles: generatedMap.size.width,
+        heightTiles: generatedMap.size.height,
+        imageData: generatedMap.imageUrl,
+        mapData: JSON.stringify(generatedMap),
+        wallsData: JSON.stringify(walls),
+        coverData: JSON.stringify(generatedMap.cover),
+        visibility: 'PRIVATE' as const,
+        type: locationType.toUpperCase().replace('-', '_') as any,
+        theme: theme.toUpperCase() as any,
+        tags: `${locationType},${theme},${size}`
+      };
+
+      const saved = await mapService.saveMap(saveRequest);
+      setSaveSuccess(`Map "${saved.name}" saved to your library!`);
+      console.log('Map saved successfully:', saved.id);
+    } catch (err: any) {
+      console.error('Error saving map:', err);
+      setError(err.response?.data?.message || 'Failed to save map');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -238,6 +283,13 @@ export default function MapGeneratorTab({ isLoading, setIsLoading, onMapLoaded }
         </Alert>
       )}
 
+      {/* Save Success */}
+      {saveSuccess && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {saveSuccess}
+        </Alert>
+      )}
+
       {/* Generated Map Display */}
       {generatedMap && (
         <Box sx={{ flex: '1 1 auto', overflow: 'auto' }}>
@@ -316,6 +368,22 @@ export default function MapGeneratorTab({ isLoading, setIsLoading, onMapLoaded }
                 }}
               >
                 Load in Game
+              </Button>
+
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<SaveIcon />}
+                onClick={handleSaveMap}
+                disabled={isLoading}
+                sx={{
+                  color: '#00ff00',
+                  borderColor: '#00ff00',
+                  '&:hover': { borderColor: '#00cc00', bgcolor: '#3c2415' },
+                  '&:disabled': { color: '#8B7355', borderColor: '#8B7355' },
+                }}
+              >
+                Save to Library
               </Button>
 
               <Button
