@@ -8,6 +8,7 @@ import { StatusEffects } from './components/StatusEffects';
 import { CalledShotDialog } from './components/CalledShotDialog';
 import { SettingsMenu } from './components/SettingsMenu';
 import { ActionBar } from './components/ActionBar';
+import InitiativeTracker from './components/InitiativeTracker';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
@@ -305,86 +306,28 @@ export function GameArena() {
           )}
         </Paper>
       ) : (
-        /* XCOM-STYLE GAME LAYOUT */
+        /* ARENA LAYOUT WITH INITIATIVE TRACKER */
         <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
-          {/* Top Bar - Settings & Turn Info */}
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              px: 2,
-              py: 1,
-              backgroundColor: '#2d1b0e',
-              borderBottom: '2px solid #8b4513',
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: 'Rye, serif',
-                color: '#f5e6d3',
-                fontSize: '18px',
-              }}
-            >
-              Deadlands Arena
-            </Typography>
-
-            <Box
-              sx={{
-                px: 2,
-                py: 0.5,
-                backgroundColor: '#1a0f08',
-                border: '2px solid #8b4513',
-                borderRadius: 1,
-              }}
-            >
-              <Typography
-                sx={{
-                  fontFamily: 'Rye, serif',
-                  color:
-                    combatState.phase === 'player'
-                      ? '#4169e1'
-                      : combatState.phase === 'enemy'
-                      ? '#ff4444'
-                      : '#888888',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                }}
-              >
-                {combatState.phase === 'player'
-                  ? 'YOUR TURN'
-                  : combatState.phase === 'enemy'
-                  ? 'ENEMY TURN'
-                  : combatState.phase === 'victory'
-                  ? 'VICTORY!'
-                  : 'DEFEAT'}
-              </Typography>
+          {/* Main Content Area - Initiative Tracker + Map */}
+          <Box sx={{ display: 'flex', flexGrow: 1, gap: 2, overflow: 'hidden' }}>
+            {/* Left: Initiative Tracker (25% width) */}
+            <Box sx={{ width: '25%', minWidth: 200, maxWidth: 300 }}>
+              <InitiativeTracker />
             </Box>
 
-            <SettingsMenu
-              cameraFollowEnabled={cameraFollowEnabled}
-              setCameraFollowEnabled={setCameraFollowEnabled}
-              showWeaponRanges={showWeaponRanges}
-              setShowWeaponRanges={setShowWeaponRanges}
-              showMovementRanges={showMovementRanges}
-              setShowMovementRanges={setShowMovementRanges}
-              illumination={illumination}
-              setIllumination={setIllumination}
-            />
-          </Box>
-
-          {/* Main Game Canvas - Takes 85-90% of screen */}
-          <Box sx={{ flexGrow: 1, position: 'relative', overflow: 'hidden' }}>
-            <GameCanvas
-              character={selectedCharacter}
-              selectedWeapon={selectedWeapon}
-              onCombatStateUpdate={handleCombatStateUpdate}
-              onDiceRoll={handleDiceRoll}
-              onWoundsUpdate={handleWoundsUpdate}
-              onShakenUpdate={handleShakenUpdate}
-              onMovementBudgetUpdate={handleMovementBudgetUpdate}
-              onPhaserGameReady={handlePhaserGameReady}
-            />
+            {/* Right: Game Canvas (75% width) */}
+            <Box sx={{ flexGrow: 1, position: 'relative', overflow: 'hidden' }}>
+              <GameCanvas
+                character={selectedCharacter}
+                selectedWeapon={selectedWeapon}
+                onCombatStateUpdate={handleCombatStateUpdate}
+                onDiceRoll={handleDiceRoll}
+                onWoundsUpdate={handleWoundsUpdate}
+                onShakenUpdate={handleShakenUpdate}
+                onMovementBudgetUpdate={handleMovementBudgetUpdate}
+                onPhaserGameReady={handlePhaserGameReady}
+              />
+            </Box>
           </Box>
 
           {/* Bottom Action Bar */}
@@ -405,7 +348,6 @@ export function GameArena() {
                 console.log('Actions button clicked');
               }}
               remainingActions={remainingActions}
-              turnNumber={combatState.turnNumber}
             />
           )}
         </Box>

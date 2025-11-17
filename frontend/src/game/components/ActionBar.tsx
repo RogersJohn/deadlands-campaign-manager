@@ -13,7 +13,6 @@ interface ActionBarProps {
   onSelectWeapon: (weapon: Equipment) => void;
   onSelectAction: () => void;
   remainingActions: number;
-  turnNumber: number;
 }
 
 export function ActionBar({
@@ -27,7 +26,6 @@ export function ActionBar({
   onSelectWeapon,
   onSelectAction,
   remainingActions,
-  turnNumber,
 }: ActionBarProps) {
   const healthPercent = (playerHealth / playerMaxHealth) * 100;
   const movePercent = (movementBudget.current / movementBudget.max) * 100;
@@ -213,29 +211,6 @@ export function ActionBar({
         >
           {remainingActions > 0 ? `Actions (${remainingActions} left)` : 'No Actions Left'}
         </Button>
-      </Box>
-
-      {/* Turn Counter */}
-      <Box
-        sx={{
-          px: 2,
-          py: 1,
-          backgroundColor: '#1a0f08',
-          border: '2px solid #8b4513',
-          borderRadius: 1,
-        }}
-      >
-        <Typography
-          sx={{
-            fontFamily: 'Rye, serif',
-            color: '#4169e1',
-            fontSize: '18px',
-            fontWeight: 'bold',
-            textAlign: 'center',
-          }}
-        >
-          TURN {turnNumber}
-        </Typography>
       </Box>
     </Box>
   );
