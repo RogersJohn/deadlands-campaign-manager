@@ -309,14 +309,14 @@ export function GameArena() {
         /* ARENA LAYOUT WITH INITIATIVE TRACKER */
         <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
           {/* Main Content Area - Initiative Tracker + Map */}
-          <Box sx={{ display: 'flex', flexGrow: 1, gap: 2, overflow: 'hidden' }}>
-            {/* Left: Initiative Tracker (25% width) */}
-            <Box sx={{ width: '25%', minWidth: 200, maxWidth: 300 }}>
+          <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden' }}>
+            {/* Left: Initiative Tracker (20% of screen width) */}
+            <Box sx={{ width: '20%', minWidth: 180, p: 2 }}>
               <InitiativeTracker />
             </Box>
 
-            {/* Right: Game Canvas (75% width) */}
-            <Box sx={{ flexGrow: 1, position: 'relative', overflow: 'hidden' }}>
+            {/* Right: Game Canvas (80% of screen width) */}
+            <Box sx={{ width: '80%', position: 'relative', overflow: 'hidden', p: 2 }}>
               <GameCanvas
                 character={selectedCharacter}
                 selectedWeapon={selectedWeapon}
