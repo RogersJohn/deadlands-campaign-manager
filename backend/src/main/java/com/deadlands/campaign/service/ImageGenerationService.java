@@ -94,22 +94,33 @@ public class ImageGenerationService {
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
 
             // Create prediction
+            log.info("📡 Sending request to Replicate API...");
             ResponseEntity<Map> predictionResponse = restTemplate.postForEntity(
                 "https://api.replicate.com/v1/predictions",
                 request,
                 Map.class
             );
 
+            log.info("📡 Replicate API response status: {}", predictionResponse.getStatusCode());
+
             if (predictionResponse.getStatusCode() != HttpStatus.CREATED) {
-                log.error("Failed to create prediction: {}", predictionResponse.getStatusCode());
+                log.error("❌ Failed to create prediction: {}", predictionResponse.getStatusCode());
+                log.error("❌ Response body: {}", predictionResponse.getBody());
                 return null;
             }
 
             Map<String, Object> prediction = predictionResponse.getBody();
             String predictionId = (String) prediction.get("id");
 
+            log.info("✅ Prediction created with ID: {}", predictionId);
+            log.info("⏳ Polling for completion (max 60 seconds)...");
+
             // Poll for completion (max 60 seconds)
             String imageUrl = pollForCompletion(predictionId, 60);
+
+            if (imageUrl == null) {
+                log.error("❌ Polling returned null - image generation timed out or failed!");
+            }
 
             if (imageUrl != null) {
                 log.info("✅ Image generated successfully, downloading and encoding...");
@@ -125,7 +136,9 @@ public class ImageGenerationService {
             return null;
 
         } catch (Exception e) {
-            log.error("Error generating map image: {}", e.getMessage(), e);
+            log.error("❌❌❌ EXCEPTION during image generation: {}", e.getMessage());
+            log.error("❌ Exception type: {}", e.getClass().getName());
+            log.error("❌ Stack trace:", e);
             return null;
         }
     }
@@ -155,19 +168,28 @@ public class ImageGenerationService {
                 Map<String, Object> prediction = response.getBody();
                 String status = (String) prediction.get("status");
 
-                log.debug("Prediction status: {}", status);
+                log.info("⏳ Poll attempt {}/{}: status = {}", attempts + 1, maxAttempts, status);
 
                 if ("succeeded".equals(status)) {
+                    log.info("✅ Prediction succeeded!");
                     Object output = prediction.get("output");
                     if (output instanceof java.util.List) {
                         java.util.List<?> outputs = (java.util.List<?>) output;
                         if (!outputs.isEmpty()) {
-                            return (String) outputs.get(0);
+                            String imageUrl = (String) outputs.get(0);
+                            log.info("✅ Image URL received: {}", imageUrl.substring(0, Math.min(50, imageUrl.length())) + "...");
+                            return imageUrl;
                         }
                     }
+                    log.error("❌ Prediction succeeded but no output found!");
+                    log.error("❌ Output object: {}", output);
                     return null;
                 } else if ("failed".equals(status) || "canceled".equals(status)) {
-                    log.error("Prediction failed with status: {}", status);
+                    log.error("❌ Prediction failed with status: {}", status);
+                    Object error = prediction.get("error");
+                    Object logs = prediction.get("logs");
+                    log.error("❌ Error details: {}", error);
+                    log.error("❌ Prediction logs: {}", logs);
                     return null;
                 }
 
