@@ -190,7 +190,6 @@ Feature: GM Control Panel
     And "GM" leaves the map name input empty
     And "GM" clicks "Confirm"
     Then the map change should not be processed
-    Or "GM" should see an error message
 
   @gm-panel @real-time-sync
   Scenario: GM panel updates in real-time as players join and move
