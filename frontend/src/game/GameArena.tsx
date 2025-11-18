@@ -12,6 +12,7 @@ import InitiativeTracker from './components/InitiativeTracker';
 import { CombatLog } from './components/CombatLog';
 import { DiceRollPopup } from './components/DiceRollPopup';
 import AIAssistantPanel from '../components/ai/AIAssistantPanel';
+import GMControlPanel from './components/GMControlPanel';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
 import { GeneratedMap } from '../types/map';
 import { TurnPhase } from './engine/CombatManager';
@@ -511,8 +512,21 @@ export function GameArena() {
           )}
         </Paper>
       ) : (
-        /* ARENA LAYOUT: 15% Initiative | 65% Map | 15% Combat Log | 5% Spacing */
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
+        <>
+          {/* GM Control Panel - Only visible to Game Masters */}
+          <GMControlPanel
+            onMapChange={() => {
+              // Optionally reload game state or refresh arena
+              console.log('Map changed by GM');
+            }}
+            onGameReset={() => {
+              // Optionally reset local game state
+              console.log('Game reset by GM');
+            }}
+          />
+
+          {/* ARENA LAYOUT: 15% Initiative | 65% Map | 15% Combat Log | 5% Spacing */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 100px)' }}>
           {/* Main Content Area - Initiative Tracker + Map + Combat Log */}
           <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden', gap: '2.5%' }}>
             {/* Left: Initiative Tracker (15% of screen width) */}
@@ -579,6 +593,7 @@ export function GameArena() {
             />
           )}
         </Box>
+        </>
       )}
 
       {/* AI Assistant Drawer */}
