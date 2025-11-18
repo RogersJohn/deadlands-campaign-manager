@@ -78,7 +78,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/characters", "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers(HttpMethod.POST, "/characters").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers(HttpMethod.PUT, "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
-                        .requestMatchers(HttpMethod.DELETE, "/characters/**").hasRole("GAME_MASTER")
+                        .requestMatchers(HttpMethod.DELETE, "/characters/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         .requestMatchers("/wiki/**").hasAnyRole("PLAYER", "GAME_MASTER")
                         // Admin endpoints
                         .requestMatchers("/admin/**").hasRole("GAME_MASTER")
