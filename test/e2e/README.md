@@ -1,18 +1,20 @@
 # Deadlands E2E Automated Tests
 
-**Status:** ✅ Production-Ready (Framework Complete) | **Created:** 2025-11-12
+**Status:** ✅ Production-Ready (Expanded Test Suite) | **Updated:** 2025-11-18
 
-Fully automated end-to-end tests for multiplayer functionality using Selenium WebDriver, Cucumber BDD, and Docker.
+Comprehensive automated end-to-end tests for multiplayer functionality, game state persistence, and GM administrative controls using Selenium WebDriver, Cucumber BDD, and Docker.
 
-## Current Status (2025-11-12)
+## Current Status (2025-11-18)
 
 **Framework:** ✅ Complete and production-ready
-**Tests:** ⏳ Waiting for Sessions Management UI implementation
+**Tests:** ✅ 28 scenarios covering multiplayer sync, persistence, and GM controls
+**Recent Updates:** 🆕 Added game state persistence and GM Control Panel tests
 
-**Latest Test Run:**
-- 77 steps: 28 passed, 7 failed, 5 undefined, 37 skipped
-- Execution time: 3m 30s
-- **Blocker:** Sessions Management UI (`/sessions` route) not yet implemented in frontend
+**Test Coverage:**
+- ✅ Multiplayer token synchronization (7 scenarios)
+- ✅ Game state persistence and database integration (8 scenarios)
+- ✅ GM Control Panel functionality (13 scenarios)
+- **Total:** 28 scenarios, ~150 step definitions, ~2,500 lines of test code
 
 **Test Infrastructure:**
 - ✅ Selenium Grid (Hub + 3 Chrome nodes)
@@ -73,11 +75,15 @@ npm test
 # Run tests in headless mode
 npm run test:headless
 
-# Run specific feature
+# Run specific feature files
 npx cucumber-js features/multiplayer-token-sync.feature
+npx cucumber-js features/game-state-persistence.feature
+npx cucumber-js features/gm-control-panel.feature
 
 # Run specific scenario by tag
 npx cucumber-js --tags @critical
+npx cucumber-js --tags @persistence
+npx cucumber-js --tags @gm-panel
 ```
 
 ## Test Architecture
@@ -85,16 +91,22 @@ npx cucumber-js --tags @critical
 ```
 test/e2e/
 ├── features/
-│   ├── multiplayer-token-sync.feature    # BDD scenarios
+│   ├── multiplayer-token-sync.feature    # Multiplayer WebSocket tests (7 scenarios)
+│   ├── game-state-persistence.feature    # 🆕 Persistence & database tests (8 scenarios)
+│   ├── gm-control-panel.feature          # 🆕 GM admin panel tests (13 scenarios)
 │   ├── step_definitions/
-│   │   └── multiplayer_steps.js          # Step implementations
+│   │   ├── multiplayer_steps.js          # Multiplayer step implementations
+│   │   ├── persistence_steps.js          # 🆕 Persistence step implementations
+│   │   └── gm_control_steps.js           # 🆕 GM panel step implementations
 │   └── support/
 │       ├── world.js                      # Test context & browser management
 │       └── pages/                         # Page Object Model
 │           ├── BasePage.js
 │           ├── LoginPage.js
-│           ├── SessionsPage.js
-│           └── GameArenaPage.js
+│           ├── SessionsPage.js           # 🆕 Session lobby page object
+│           ├── SessionRoomPage.js        # 🆕 Pre-game waiting room page object
+│           ├── GameArenaPage.js          # Main game arena (Phaser canvas)
+│           └── GMControlPanelPage.js     # 🆕 GM admin panel page object
 ├── reports/                               # Test reports (generated)
 ├── cucumber.js                            # Cucumber configuration
 ├── docker-compose.yml                     # Docker test environment
@@ -120,7 +132,45 @@ SELENIUM_HUB_URL=http://localhost:4444
 HEADLESS=true
 ```
 
-## Test Scenarios
+## New Test Scenarios (2025-11-18)
+
+### Game State Persistence (@persistence)
+
+**File:** `features/game-state-persistence.feature` (8 scenarios)
+
+Tests backend persistence and database integration:
+- Token positions persist across page refresh
+- Late-joining players see existing tokens
+- Token ownership validation (players can only move their own tokens)
+- GM authority (can move any token)
+- Database state loading on arena entry
+- Movement bounds validation (0-199 grid)
+- Multi-player state recovery
+- WebSocket + database synchronization
+
+### GM Control Panel (@gm-panel)
+
+**File:** `features/gm-control-panel.feature` (13 scenarios)
+
+Tests GM-only administrative interface:
+- Panel visibility (role-based access control)
+- Real-time game state display (map, turn, token count)
+- Map change functionality (clears all tokens including offline players)
+- Game reset functionality
+- UI workflows with confirmation dialogs
+- Notification feedback system
+- Real-time panel updates as players join/move
+- Keyboard accessibility
+- Styling validation
+
+### Page Objects Added
+
+- **GMControlPanelPage.js** (300 lines): Complete page object for GM admin panel
+  - Methods: `changeMap()`, `resetGame()`, `getGameState()`, `waitForNotification()`
+- **SessionsPage.js**: Session lobby management
+- **SessionRoomPage.js**: Pre-game waiting room
+
+## Existing Test Scenarios
 
 ### Critical Path (@critical)
 
@@ -392,5 +442,6 @@ Track test metrics:
 ---
 
 **Maintained by**: Deadlands Development Team
-**Last Updated**: 2025-11-12
-**Test Framework Version**: 1.0.0
+**Last Updated**: 2025-11-18
+**Test Framework Version**: 2.0.0
+**Total Test Scenarios**: 28 (7 multiplayer + 8 persistence + 13 GM panel)
