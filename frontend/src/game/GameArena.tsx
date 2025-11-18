@@ -18,6 +18,7 @@ import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
 import { wrapGameEvents, TypedGameEvents } from './events/GameEvents';
 import { useAuthStore } from '../store/authStore';
+import { getWebSocketService } from '../services/websocketService';
 
 interface CombatState {
   playerHealth: number;
@@ -183,8 +184,135 @@ export function GameArena() {
     };
   }, [gameEvents]);
 
-  // WebSocket logic removed - single player game for now
-  // Can be re-added later for real-time GM/player synchronization
+  // WebSocket connection for real-time multiplayer synchronization in shared world
+  useEffect(() => {
+    if (!token || !selectedCharacter || !gameEvents) {
+      return;
+    }
+
+    const wsService = getWebSocketService();
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
+    console.log('[GameArena] Connecting to WebSocket for shared world sync...');
+
+    wsService.connect(apiUrl, token)
+      .then(() => {
+        console.log('[GameArena] WebSocket connected successfully');
+
+        // Listen for LOCAL token movements from Phaser and send to server
+        const handleLocalTokenMove = (data: any) => {
+          console.log('[GameArena] Sending local token move to server:', data);
+          wsService.sendTokenMove(
+            data.tokenId,
+            data.tokenType,
+            data.fromX,
+            data.fromY,
+            data.toX,
+            data.toY
+          );
+        };
+
+        // Listen for REMOTE token movements from server and forward to Phaser
+        const handleRemoteTokenMove = (event: Event) => {
+          const customEvent = event as CustomEvent;
+          const moveData = customEvent.detail;
+
+          // Don't echo back our own movements
+          if (moveData.tokenId !== String(selectedCharacter.id)) {
+            console.log('[GameArena] Received remote token move:', moveData);
+            gameEvents.emit('remoteTokenMoved', moveData);
+          }
+        };
+
+        // Listen for player join events
+        const handlePlayerJoin = (event: Event) => {
+          const customEvent = event as CustomEvent;
+          console.log('[GameArena] Player joined:', customEvent.detail);
+          // Could show notification: "{username} joined the game"
+        };
+
+        // Listen for player leave events
+        const handlePlayerLeave = (event: Event) => {
+          const customEvent = event as CustomEvent;
+          console.log('[GameArena] Player left:', customEvent.detail);
+          // Could show notification: "{username} left the game"
+        };
+
+        // Subscribe to Phaser game events
+        gameEvents.on('localTokenMoved', handleLocalTokenMove);
+
+        // Subscribe to window events from WebSocket service
+        window.addEventListener('remoteTokenMoved', handleRemoteTokenMove);
+        window.addEventListener('playerJoined', handlePlayerJoin);
+        window.addEventListener('playerLeft', handlePlayerLeave);
+
+        // Cleanup on unmount
+        return () => {
+          gameEvents.off('localTokenMoved', handleLocalTokenMove);
+          window.removeEventListener('remoteTokenMoved', handleRemoteTokenMove);
+          window.removeEventListener('playerJoined', handlePlayerJoin);
+          window.removeEventListener('playerLeft', handlePlayerLeave);
+          wsService.disconnect();
+          console.log('[GameArena] WebSocket disconnected');
+        };
+      })
+      .catch((error) => {
+        console.error('[GameArena] Failed to connect to WebSocket:', error);
+        // Could show error notification to user
+      });
+  }, [token, selectedCharacter, gameEvents]);
+
+  // Load existing game state when entering arena (positions of players already on map)
+  useEffect(() => {
+    if (!token || !selectedCharacter || !gameEvents) {
+      return;
+    }
+
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
+    console.log('[GameArena] Loading existing game state...');
+
+    // Fetch current game state from server
+    fetch(`${apiUrl}/game/state`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load game state: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((gameState) => {
+        console.log('[GameArena] Game state loaded:', gameState);
+        console.log(`[GameArena] Current map: ${gameState.currentMap}`);
+        console.log(`[GameArena] Turn ${gameState.turnNumber} (${gameState.turnPhase} phase)`);
+        console.log(`[GameArena] ${gameState.tokenPositions.length} token(s) on map`);
+
+        // Render all existing token positions (excluding our own character)
+        gameState.tokenPositions.forEach((position: any) => {
+          // Don't render our own character (it's already placed by Phaser)
+          if (position.tokenId !== String(selectedCharacter.id)) {
+            console.log(`[GameArena] Rendering existing token: ${position.tokenId} at (${position.gridX}, ${position.gridY})`);
+
+            // Emit to Phaser to render remote token
+            gameEvents.emit('remoteTokenMoved', {
+              tokenId: position.tokenId,
+              tokenType: position.tokenType,
+              toX: position.gridX,
+              toY: position.gridY,
+              username: position.lastMovedBy,
+              timestamp: new Date(position.lastMoved).getTime(),
+            });
+          }
+        });
+      })
+      .catch((error) => {
+        console.error('[GameArena] Failed to load game state:', error);
+        // Non-critical error - game can still start without seeing other players
+      });
+  }, [token, selectedCharacter, gameEvents]);
 
   // Fetch characters on component mount
   useEffect(() => {
