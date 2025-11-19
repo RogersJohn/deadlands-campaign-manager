@@ -54,10 +54,10 @@ public class RateLimitService {
 
     /**
      * Create a bucket for login rate limiting.
-     * Allows 30 attempts per 10 minutes (more lenient for E2E testing while still preventing brute force).
+     * Allows 150 attempts per 10 minutes (lenient for E2E testing while still preventing brute force).
      */
     private Bucket createLoginBucket() {
-        Bandwidth limit = Bandwidth.classic(30, Refill.intervally(30, Duration.ofMinutes(10)));
+        Bandwidth limit = Bandwidth.classic(150, Refill.intervally(150, Duration.ofMinutes(10)));
         return Bucket.builder()
                 .addLimit(limit)
                 .build();

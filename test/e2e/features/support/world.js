@@ -10,7 +10,7 @@ setDefaultTimeout(60000);
 const config = {
   seleniumHubUrl: process.env.SELENIUM_HUB_URL || 'http://localhost:4444',
   frontendUrl: process.env.FRONTEND_URL || 'https://deadlands-frontend-production.up.railway.app',
-  apiUrl: process.env.API_URL || 'https://deadlands-campaign-manager-production-053e.up.railway.app/api',
+  apiUrl: process.env.API_URL || 'https://deadlands-campaign-manager-production.up.railway.app/api',
   headless: process.env.HEADLESS === 'true',
   devtools: process.env.DEVTOOLS === 'true',
   slowMo: parseInt(process.env.SLOW_MO || '0'),
@@ -115,32 +115,12 @@ class CustomWorld {
     }
   }
 
-  // Create test accounts via API
+  // Use existing test accounts (no creation needed)
   async createTestAccount(username, email, password) {
-    try {
-      const response = await axios.post(`${this.config.apiUrl}/auth/register`, {
-        username,
-        email,
-        password,
-      });
-      console.log(`Account created: ${username}`);
-      return response.data;
-    } catch (error) {
-      // Check if account already exists (handle both string and object responses)
-      const errorData = error.response?.data;
-      const errorMessage = typeof errorData === 'string' ? errorData : errorData?.message || JSON.stringify(errorData);
-
-      if (error.response?.status === 400 &&
-          (errorMessage.includes('already') ||
-           errorMessage.includes('exists') ||
-           errorMessage.includes('duplicate'))) {
-        console.log(`Account already exists: ${username} (skipping)`);
-        return { message: 'Account already exists', username };
-      }
-
-      console.error(`Failed to create account ${username}:`, error.response?.status, errorMessage);
-      throw error;
-    }
+    // NOTE: Test accounts already exist in production database
+    // e2e_testgm, e2e_player1, e2e_player2 were created via SQL scripts
+    console.log(`Using existing test account: ${username}`);
+    return { message: 'Using existing account', username };
   }
 
   // Promote user to GM role via API

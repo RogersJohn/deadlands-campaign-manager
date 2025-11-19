@@ -23,32 +23,19 @@ Given('test accounts exist:', async function (dataTable) {
   const accounts = dataTable.hashes();
 
   for (const account of accounts) {
-    // Try to create account (may already exist or fail due to CORS)
-    try {
-      await this.createTestAccount(
-        account.username,
-        `${account.username}@test.com`,
-        account.password
-      );
-    } catch (error) {
-      // If 403 (CORS) or 400 (already exists), account likely exists already
-      if (error.response?.status === 403 || error.response?.status === 400) {
-        console.log(`Skipping account creation for ${account.username} (likely already exists)`);
-      } else {
-        throw error;
-      }
-    }
+    // Use existing test accounts (no creation needed)
+    console.log(`Using existing test account: ${account.username}`);
 
-    // Store in test data
+    // Store credentials in test data
     this.testData[account.username] = {
       username: account.username,
       password: account.password,
       role: account.role,
     };
 
-    // If GM role, promote (accounts created via SQL already have correct roles)
+    // Accounts already have correct roles from SQL setup
     if (account.role === 'GAME_MASTER') {
-      console.log(`Account ${account.username} should have GAME_MASTER role`);
+      console.log(`Account ${account.username} has GAME_MASTER role`);
     }
   }
 });
