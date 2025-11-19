@@ -1,8 +1,6 @@
 const { Given, When, Then } = require('@cucumber/cucumber');
 const { expect } = require('chai');
 const LoginPage = require('../support/pages/LoginPage');
-const SessionsPage = require('../support/pages/SessionsPage');
-const SessionRoomPage = require('../support/pages/SessionRoomPage');
 const GameArenaPage = require('../support/pages/GameArenaPage');
 const axios = require('axios');
 
@@ -21,26 +19,13 @@ Given('{string} enters the game arena with their character', async function (use
   await loginPage.login(username, this.testData[username].password);
   expect(await loginPage.isLoginSuccessful()).to.be.true;
 
-  // Create session (player acts as GM for solo session)
-  const sessionsPage = new SessionsPage(driver);
-  await sessionsPage.navigate(this.config.frontendUrl);
-  const sessionName = `E2E_Persistence_${Date.now()}`;
-  await sessionsPage.createSession(sessionName, 'E2E Persistence Test', 5);
-  this.testData.currentSessionName = sessionName;
-
-  // Should now be in SessionRoom
-  const sessionRoomPage = new SessionRoomPage(driver);
-  expect(await sessionRoomPage.isSessionRoomLoaded()).to.be.true;
-
-  // Start the game
-  await sessionRoomPage.clickStartGame();
-
-  // Verify in arena
+  // Go directly to arena
   const arenaPage = new GameArenaPage(driver);
+  await arenaPage.navigate(this.config.frontendUrl);
   const isLoaded = await arenaPage.isArenaLoaded();
   expect(isLoaded).to.be.true;
 
-  this.pages[browserName] = { loginPage, sessionsPage, sessionRoomPage, arenaPage };
+  this.pages[browserName] = { loginPage, arenaPage };
 });
 
 When('{string} refreshes the page', async function (browserName) {
@@ -68,133 +53,82 @@ When('{string} logs in and enters the game arena in browser {string}', async fun
   await loginPage.login(username, this.testData[username].password);
   expect(await loginPage.isLoginSuccessful()).to.be.true;
 
-  // Join existing session
-  const sessionsPage = new SessionsPage(driver);
-  await sessionsPage.navigate(this.config.frontendUrl);
-  await sessionsPage.joinSession(
-    this.testData.currentSessionName,
-    this.testData[username].character?.name
-  );
-
-  // Should now be in SessionRoom
-  const sessionRoomPage = new SessionRoomPage(driver);
-  expect(await sessionRoomPage.isSessionRoomLoaded()).to.be.true;
-
-  // Wait for arena (GM will start the game)
-  await this.sleep(3000);
+  // Go directly to arena
   const arenaPage = new GameArenaPage(driver);
+  await arenaPage.navigate(this.config.frontendUrl);
   const isLoaded = await arenaPage.isArenaLoaded();
   expect(isLoaded).to.be.true;
 
-  this.pages[browserName] = { loginPage, sessionsPage, sessionRoomPage, arenaPage };
+  this.pages[browserName] = { loginPage, arenaPage };
 });
 
 Given('both players are in the game arena with their tokens', async function () {
-  // Player 1 creates session and joins
+  // Player 1 logs in and goes to arena
   const driver1 = await this.getBrowser('Player1');
   const loginPage1 = new LoginPage(driver1);
   await loginPage1.navigate(this.config.frontendUrl);
   await loginPage1.login('e2e_player1', this.testData['e2e_player1'].password);
   expect(await loginPage1.isLoginSuccessful()).to.be.true;
 
-  const sessionsPage1 = new SessionsPage(driver1);
-  await sessionsPage1.navigate(this.config.frontendUrl);
-  const sessionName = `E2E_BothPlayers_${Date.now()}`;
-  await sessionsPage1.createSession(sessionName, 'Two Player Test', 2);
-  this.testData.currentSessionName = sessionName;
+  const arenaPage1 = new GameArenaPage(driver1);
+  await arenaPage1.navigate(this.config.frontendUrl);
+  expect(await arenaPage1.isArenaLoaded()).to.be.true;
 
-  const sessionRoomPage1 = new SessionRoomPage(driver1);
-  expect(await sessionRoomPage1.isSessionRoomLoaded()).to.be.true;
-
-  // Player 2 joins
+  // Player 2 logs in and goes to arena
   const driver2 = await this.getBrowser('Player2');
   const loginPage2 = new LoginPage(driver2);
   await loginPage2.navigate(this.config.frontendUrl);
   await loginPage2.login('e2e_player2', this.testData['e2e_player2'].password);
   expect(await loginPage2.isLoginSuccessful()).to.be.true;
 
-  const sessionsPage2 = new SessionsPage(driver2);
-  await sessionsPage2.navigate(this.config.frontendUrl);
-  await sessionsPage2.joinSession(sessionName, this.testData['e2e_player2'].character?.name);
-
-  const sessionRoomPage2 = new SessionRoomPage(driver2);
-  expect(await sessionRoomPage2.isSessionRoomLoaded()).to.be.true;
-
-  // Player 1 starts the game
-  await sessionRoomPage1.clickStartGame();
-
-  // Both should now be in arena
-  const arenaPage1 = new GameArenaPage(driver1);
   const arenaPage2 = new GameArenaPage(driver2);
-  expect(await arenaPage1.isArenaLoaded()).to.be.true;
+  await arenaPage2.navigate(this.config.frontendUrl);
   expect(await arenaPage2.isArenaLoaded()).to.be.true;
 
-  this.pages['Player1'] = { loginPage: loginPage1, sessionsPage: sessionsPage1, sessionRoomPage: sessionRoomPage1, arenaPage: arenaPage1 };
-  this.pages['Player2'] = { loginPage: loginPage2, sessionsPage: sessionsPage2, sessionRoomPage: sessionRoomPage2, arenaPage: arenaPage2 };
+  this.pages['Player1'] = { loginPage: loginPage1, arenaPage: arenaPage1 };
+  this.pages['Player2'] = { loginPage: loginPage2, arenaPage: arenaPage2 };
 });
 
 Given('both are in the game arena', async function () {
-  // GM creates session
+  // GM logs in and goes to arena
   const driverGM = await this.getBrowser('GM');
   const loginPageGM = new LoginPage(driverGM);
   await loginPageGM.navigate(this.config.frontendUrl);
   await loginPageGM.login('e2e_testgm', this.testData['e2e_testgm'].password);
   expect(await loginPageGM.isLoginSuccessful()).to.be.true;
 
-  const sessionsPageGM = new SessionsPage(driverGM);
-  await sessionsPageGM.navigate(this.config.frontendUrl);
-  const sessionName = `E2E_GM_Player_${Date.now()}`;
-  await sessionsPageGM.createSession(sessionName, 'GM + Player Test', 5);
-  this.testData.currentSessionName = sessionName;
+  const arenaPageGM = new GameArenaPage(driverGM);
+  await arenaPageGM.navigate(this.config.frontendUrl);
+  expect(await arenaPageGM.isArenaLoaded()).to.be.true;
 
-  const sessionRoomPageGM = new SessionRoomPage(driverGM);
-  expect(await sessionRoomPageGM.isSessionRoomLoaded()).to.be.true;
-
-  // Player joins
+  // Player logs in and goes to arena
   const driverPlayer = await this.getBrowser('Player1');
   const loginPagePlayer = new LoginPage(driverPlayer);
   await loginPagePlayer.navigate(this.config.frontendUrl);
   await loginPagePlayer.login('e2e_player1', this.testData['e2e_player1'].password);
   expect(await loginPagePlayer.isLoginSuccessful()).to.be.true;
 
-  const sessionsPagePlayer = new SessionsPage(driverPlayer);
-  await sessionsPagePlayer.navigate(this.config.frontendUrl);
-  await sessionsPagePlayer.joinSession(sessionName, this.testData['e2e_player1'].character?.name);
-
-  const sessionRoomPagePlayer = new SessionRoomPage(driverPlayer);
-  expect(await sessionRoomPagePlayer.isSessionRoomLoaded()).to.be.true;
-
-  // GM starts the game
-  await sessionRoomPageGM.clickStartGame();
-
-  // Both should now be in arena
-  const arenaPageGM = new GameArenaPage(driverGM);
   const arenaPagePlayer = new GameArenaPage(driverPlayer);
-  expect(await arenaPageGM.isArenaLoaded()).to.be.true;
+  await arenaPagePlayer.navigate(this.config.frontendUrl);
   expect(await arenaPagePlayer.isArenaLoaded()).to.be.true;
 
-  this.pages['GM'] = { loginPage: loginPageGM, sessionsPage: sessionsPageGM, sessionRoomPage: sessionRoomPageGM, arenaPage: arenaPageGM };
-  this.pages['Player1'] = { loginPage: loginPagePlayer, sessionsPage: sessionsPagePlayer, sessionRoomPage: sessionRoomPagePlayer, arenaPage: arenaPagePlayer };
+  this.pages['GM'] = { loginPage: loginPageGM, arenaPage: arenaPageGM };
+  this.pages['Player1'] = { loginPage: loginPagePlayer, arenaPage: arenaPagePlayer };
 });
 
 Given('all players are in the game arena', async function () {
-  // GM creates session
+  // GM logs in and goes to arena
   const driverGM = await this.getBrowser('GM');
   const loginPageGM = new LoginPage(driverGM);
   await loginPageGM.navigate(this.config.frontendUrl);
   await loginPageGM.login('e2e_testgm', this.testData['e2e_testgm'].password);
   expect(await loginPageGM.isLoginSuccessful()).to.be.true;
 
-  const sessionsPageGM = new SessionsPage(driverGM);
-  await sessionsPageGM.navigate(this.config.frontendUrl);
-  const sessionName = `E2E_AllPlayers_${Date.now()}`;
-  await sessionsPageGM.createSession(sessionName, 'All Players Test', 5);
-  this.testData.currentSessionName = sessionName;
+  const arenaPageGM = new GameArenaPage(driverGM);
+  await arenaPageGM.navigate(this.config.frontendUrl);
+  expect(await arenaPageGM.isArenaLoaded()).to.be.true;
 
-  const sessionRoomPageGM = new SessionRoomPage(driverGM);
-  expect(await sessionRoomPageGM.isSessionRoomLoaded()).to.be.true;
-
-  // Both players join
+  // Both players log in and go to arena
   for (const [playerUsername, browserName] of [['e2e_player1', 'Player1'], ['e2e_player2', 'Player2']]) {
     const driver = await this.getBrowser(browserName);
     const loginPage = new LoginPage(driver);
@@ -202,34 +136,16 @@ Given('all players are in the game arena', async function () {
     await loginPage.login(playerUsername, this.testData[playerUsername].password);
     expect(await loginPage.isLoginSuccessful()).to.be.true;
 
-    const sessionsPage = new SessionsPage(driver);
-    await sessionsPage.navigate(this.config.frontendUrl);
-    await sessionsPage.joinSession(sessionName, this.testData[playerUsername].character?.name);
-
-    const sessionRoomPage = new SessionRoomPage(driver);
-    expect(await sessionRoomPage.isSessionRoomLoaded()).to.be.true;
+    const arenaPage = new GameArenaPage(driver);
+    await arenaPage.navigate(this.config.frontendUrl);
+    expect(await arenaPage.isArenaLoaded()).to.be.true;
 
     if (!this.pages[browserName]) this.pages[browserName] = {};
     this.pages[browserName].loginPage = loginPage;
-    this.pages[browserName].sessionsPage = sessionsPage;
-    this.pages[browserName].sessionRoomPage = sessionRoomPage;
-  }
-
-  // GM starts the game
-  await sessionRoomPageGM.clickStartGame();
-
-  // Verify all are in arena
-  for (const browserName of ['GM', 'Player1', 'Player2']) {
-    const driver = await this.getBrowser(browserName);
-    const arenaPage = new GameArenaPage(driver);
-    expect(await arenaPage.isArenaLoaded()).to.be.true;
-    if (!this.pages[browserName]) this.pages[browserName] = {};
     this.pages[browserName].arenaPage = arenaPage;
   }
 
-  this.pages['GM'].loginPage = loginPageGM;
-  this.pages['GM'].sessionsPage = sessionsPageGM;
-  this.pages['GM'].sessionRoomPage = sessionRoomPageGM;
+  this.pages['GM'] = { loginPage: loginPageGM, arenaPage: arenaPageGM };
 });
 
 // ==================== TOKEN MOVEMENT VALIDATION STEPS ====================

@@ -342,25 +342,39 @@ export class MapLoader {
     this.buildingLabels = undefined;
     this.npcMarkers = undefined;
 
-    // CRITICAL: Destroy ALL game objects from the original ArenaScene
-    // This includes the brown background rectangle and original grid
+    // CRITICAL: Destroy the original ArenaScene background and grid
+    const arenaScene = this.scene as any;
+
+    // Destroy original brown background
+    if (arenaScene.arenaBackground) {
+      arenaScene.arenaBackground.destroy();
+      arenaScene.arenaBackground = undefined;
+      console.log('Original arena background destroyed');
+    }
+
+    // Destroy original grid
+    if (arenaScene.gridGraphics) {
+      arenaScene.gridGraphics.destroy();
+      arenaScene.gridGraphics = undefined;
+      console.log('Original grid graphics destroyed');
+    }
+
+    // Also destroy any remaining Graphics or Image objects at background depths
     const allChildren = this.scene.children.getChildren();
     allChildren.forEach(child => {
-      // Don't destroy player sprite, enemies, or UI elements
-      // Only destroy background graphics and map-related objects
-      if (child instanceof Phaser.GameObjects.Graphics ||
-          child instanceof Phaser.GameObjects.Rectangle ||
-          child instanceof Phaser.GameObjects.Image) {
-        // Check if it's not a character sprite (characters are rectangles with specific depth)
-        const gameObject = child as Phaser.GameObjects.GameObject & { depth?: number };
-        // Preserve characters (depth 5) and UI elements (depth > 100)
-        if (gameObject.depth === undefined || (gameObject.depth < 5 || (gameObject.depth > 5 && gameObject.depth < 100))) {
-          child.destroy();
-        }
+      const gameObject = child as Phaser.GameObjects.GameObject & { depth?: number };
+
+      // Destroy objects at background depth (-100 to 0)
+      if ((child instanceof Phaser.GameObjects.Graphics ||
+           child instanceof Phaser.GameObjects.Image ||
+           child instanceof Phaser.GameObjects.Rectangle) &&
+          gameObject.depth !== undefined &&
+          gameObject.depth < 1) {
+        child.destroy();
       }
     });
 
-    console.log('Arena cleared (including original background)');
+    console.log('Arena cleared completely - ready for new map');
   }
 
   /**
@@ -635,15 +649,18 @@ export class MapLoader {
   private centerCameraOnMap(mapWidth: number, mapHeight: number): void {
     const centerX = (mapWidth * this.tileSize) / 2;
     const centerY = (mapHeight * this.tileSize) / 2;
-
-    // Move camera to center
-    this.scene.cameras.main.centerOn(centerX, centerY);
-
-    // Adjust zoom to fit map on screen
-    const camera = this.scene.cameras.main;
     const mapPixelWidth = mapWidth * this.tileSize;
     const mapPixelHeight = mapHeight * this.tileSize;
 
+    // Update camera bounds to match new map size
+    const camera = this.scene.cameras.main;
+    camera.setBounds(0, 0, mapPixelWidth, mapPixelHeight);
+    console.log(`Camera bounds updated to ${mapPixelWidth}x${mapPixelHeight} pixels`);
+
+    // Move camera to center
+    camera.centerOn(centerX, centerY);
+
+    // Adjust zoom to fit map on screen
     const zoomX = (camera.width * 0.9) / mapPixelWidth;
     const zoomY = (camera.height * 0.9) / mapPixelHeight;
     const zoom = Math.min(zoomX, zoomY, 1); // Don't zoom in beyond 1x

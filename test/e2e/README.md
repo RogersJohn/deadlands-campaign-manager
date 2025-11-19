@@ -39,7 +39,7 @@ docker-compose down -v && docker-compose up --abort-on-container-exit --build
 - **Docker Containerization**: Tests run in isolated Docker containers
 - **Parallel Execution**: Run multiple browsers simultaneously
 - **Visual Testing**: Validates token colors, positions, and synchronization
-- **Comprehensive Coverage**: Tests WebSocket connections, token movements, session management
+- **Comprehensive Coverage**: Tests WebSocket connections, token movements, game state persistence
 
 ## Quick Start
 
@@ -103,10 +103,8 @@ test/e2e/
 │       └── pages/                         # Page Object Model
 │           ├── BasePage.js
 │           ├── LoginPage.js
-│           ├── SessionsPage.js           # 🆕 Session lobby page object
-│           ├── SessionRoomPage.js        # 🆕 Pre-game waiting room page object
 │           ├── GameArenaPage.js          # Main game arena (Phaser canvas)
-│           └── GMControlPanelPage.js     # 🆕 GM admin panel page object
+│           └── GMControlPanelPage.js     # GM admin panel page object
 ├── reports/                               # Test reports (generated)
 ├── cucumber.js                            # Cucumber configuration
 ├── docker-compose.yml                     # Docker test environment
@@ -167,30 +165,27 @@ Tests GM-only administrative interface:
 
 - **GMControlPanelPage.js** (300 lines): Complete page object for GM admin panel
   - Methods: `changeMap()`, `resetGame()`, `getGameState()`, `waitForNotification()`
-- **SessionsPage.js**: Session lobby management
-- **SessionRoomPage.js**: Pre-game waiting room
 
 ## Existing Test Scenarios
 
 ### Critical Path (@critical)
 
 1. **Two players see each other's token movements in real-time**
-   - GM creates session
-   - 2 players join
+   - 2 players log in and access arena
    - Each player moves token
    - Verify both see each other's movements
 
 ### WebSocket Tests (@websocket)
 
 2. **WebSocket connection status is visible**
-   - Player joins session
+   - Player accesses arena
    - Verify WebSocket connects
    - Check console logs
 
 ### Edge Cases (@edge-case)
 
 3. **Token movement synchronization with 3 simultaneous players**
-   - 3 players in same session
+   - 3 players access arena
    - All move at once
    - Verify all see all movements
 

@@ -1,0 +1,1 @@
+- In previous sessions we set up selenium and cucumber, can you use the selenium grid to automate these tests and expand on them?

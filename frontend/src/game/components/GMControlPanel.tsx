@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
 
 interface GameState {
@@ -22,6 +22,13 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({ onMapChange, onGameRese
   const [showMapInput, setShowMapInput] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Draggable panel state
+  const [position, setPosition] = useState({ x: window.innerWidth - 420, y: 80 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
@@ -119,11 +126,63 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({ onMapChange, onGameRese
     setTimeout(() => setNotification(null), 5000);
   };
 
+  // Drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isCollapsed) return; // Don't allow dragging when collapsed header is too small
+
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+
+      // Keep panel within viewport bounds
+      const panelWidth = 300;
+      const panelHeight = 50; // Minimum draggable area
+      const maxX = window.innerWidth - panelWidth;
+      const maxY = window.innerHeight - panelHeight;
+
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY)),
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
   // Don't render if not GM
   if (!isGM) return null;
 
   return (
-    <div style={styles.container}>
+    <div
+      ref={panelRef}
+      style={{
+        ...styles.container,
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+      }}
+    >
       {/* Notification Toast */}
       {notification && (
         <div style={styles.notification}>
@@ -133,27 +192,43 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({ onMapChange, onGameRese
 
       {/* GM Control Panel */}
       <div style={styles.panel}>
-        <div style={styles.header}>
+        <div
+          style={{
+            ...styles.header,
+            cursor: isDragging ? 'grabbing' : 'grab',
+          }}
+          onMouseDown={handleMouseDown}
+        >
           <h3 style={styles.title}>🎮 GM Controls</h3>
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            style={styles.collapseButton}
+            title={isCollapsed ? 'Expand' : 'Collapse'}
+          >
+            {isCollapsed ? '▼' : '▲'}
+          </button>
         </div>
 
-        {/* Game State Display */}
-        {gameState && (
-          <div style={styles.stateDisplay}>
-            <div style={styles.stateLine}>
-              <strong>Map:</strong> {gameState.currentMap || 'No map set'}
-            </div>
-            <div style={styles.stateLine}>
-              <strong>Turn:</strong> {gameState.turnNumber} ({gameState.turnPhase} phase)
-            </div>
-            <div style={styles.stateLine}>
-              <strong>Tokens:</strong> {gameState.tokenPositions.length} on map
-            </div>
-          </div>
-        )}
+        {/* Collapsible Content */}
+        {!isCollapsed && (
+          <>
+            {/* Game State Display */}
+            {gameState && (
+              <div style={styles.stateDisplay}>
+                <div style={styles.stateLine}>
+                  <strong>Map:</strong> {gameState.currentMap || 'No map set'}
+                </div>
+                <div style={styles.stateLine}>
+                  <strong>Turn:</strong> {gameState.turnNumber} ({gameState.turnPhase} phase)
+                </div>
+                <div style={styles.stateLine}>
+                  <strong>Tokens:</strong> {gameState.tokenPositions.length} on map
+                </div>
+              </div>
+            )}
 
-        {/* Change Map Section */}
-        <div style={styles.section}>
+            {/* Change Map Section */}
+            <div style={styles.section}>
           {!showMapInput ? (
             <button
               onClick={() => setShowMapInput(true)}
@@ -233,6 +308,8 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({ onMapChange, onGameRese
             Clears tokens, resets turn to 1 (keeps current map)
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -241,9 +318,8 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({ onMapChange, onGameRese
 const styles: { [key: string]: React.CSSProperties } = {
   container: {
     position: 'fixed',
-    top: '80px',
-    right: '20px',
     zIndex: 1000,
+    userSelect: 'none', // Prevent text selection while dragging
   },
   panel: {
     backgroundColor: 'rgba(30, 30, 30, 0.95)',
@@ -254,18 +330,31 @@ const styles: { [key: string]: React.CSSProperties } = {
     maxWidth: '400px',
     color: '#FFFFFF',
     fontFamily: 'Arial, sans-serif',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.8)',
   },
   header: {
     marginBottom: '12px',
     borderBottom: '1px solid #FFD700',
     paddingBottom: '8px',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     margin: 0,
     fontSize: '18px',
     fontWeight: 'bold',
     color: '#FFD700',
+    flex: 1,
+  },
+  collapseButton: {
+    background: 'transparent',
+    border: 'none',
+    color: '#FFD700',
+    fontSize: '16px',
+    cursor: 'pointer',
+    padding: '4px 8px',
+    marginLeft: '8px',
   },
   stateDisplay: {
     backgroundColor: 'rgba(50, 50, 50, 0.8)',

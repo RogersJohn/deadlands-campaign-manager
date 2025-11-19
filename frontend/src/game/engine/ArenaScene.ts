@@ -24,6 +24,7 @@ export class ArenaScene extends Phaser.Scene {
   private remotePlayerSprites: Map<string, Phaser.GameObjects.Rectangle> = new Map();
 
   // Grid visuals
+  private arenaBackground?: Phaser.GameObjects.Rectangle; // Original brown background
   private gridGraphics?: Phaser.GameObjects.Graphics;
   private movementRangeGraphics?: Phaser.GameObjects.Graphics;
   private attackRangeGraphics?: Phaser.GameObjects.Graphics;
@@ -80,6 +81,10 @@ export class ArenaScene extends Phaser.Scene {
   private coverTooltipTimer?: Phaser.Time.TimerEvent;
   private hoveredCoverTile?: { gridX: number; gridY: number };
 
+  // Coordinate display
+  private coordinateText?: Phaser.GameObjects.Text;
+  private showCoordinates = true; // Toggle for coordinate display
+
   // Map loader for tactical overlays
   private mapLoader?: MapLoader;
 
@@ -100,14 +105,15 @@ export class ArenaScene extends Phaser.Scene {
     const arenaWidth = this.GRID_WIDTH * this.TILE_SIZE;
     const arenaHeight = this.GRID_HEIGHT * this.TILE_SIZE;
 
-    // Draw arena background
-    this.add.rectangle(
+    // Draw arena background (store reference so it can be destroyed when loading custom maps)
+    this.arenaBackground = this.add.rectangle(
       arenaWidth / 2,
       arenaHeight / 2,
       arenaWidth,
       arenaHeight,
       0x2d1b0e // Dark brown arena floor
     );
+    this.arenaBackground.setDepth(-1); // Below everything
 
     // Draw the grid
     this.drawGrid();
@@ -204,6 +210,17 @@ export class ArenaScene extends Phaser.Scene {
     this.coverTooltip.setScrollFactor(0); // Fix to screen (HUD element)
     this.coverTooltip.setVisible(false);
 
+    // Create coordinate display (follows mouse cursor)
+    this.coordinateText = this.add.text(0, 0, '', {
+      fontSize: '12px',
+      color: '#FFD700',
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      padding: { x: 6, y: 3 },
+    });
+    this.coordinateText.setDepth(200);
+    this.coordinateText.setScrollFactor(0); // Fix to screen (HUD element)
+    this.coordinateText.setVisible(false);
+
     // Create test enemies around the player
     this.createTestEnemy(115, 95); // Northeast
     this.createTestEnemy(105, 110); // South
@@ -231,6 +248,11 @@ export class ArenaScene extends Phaser.Scene {
           const camera = this.cameras.main;
           camera.scrollX = this.cameraStartX - (pointer.x - this.dragStartX) / this.currentZoom;
           camera.scrollY = this.cameraStartY - (pointer.y - this.dragStartY) / this.currentZoom;
+
+          // Hide coordinate display while dragging
+          if (this.coordinateText) {
+            this.coordinateText.setVisible(false);
+          }
           return; // Don't update hover tile while dragging
         }
       }
@@ -242,12 +264,25 @@ export class ArenaScene extends Phaser.Scene {
         this.hoveredTile = { x: gridX, y: gridY };
         this.updateMovementRange();
 
+        // Update coordinate display (only if enabled)
+        if (this.coordinateText && this.showCoordinates) {
+          this.coordinateText.setText(`(${gridX}, ${gridY})`);
+          // Position slightly below and to the right of cursor
+          this.coordinateText.setPosition(pointer.x + 15, pointer.y + 15);
+          this.coordinateText.setVisible(true);
+        } else if (this.coordinateText) {
+          this.coordinateText.setVisible(false);
+        }
+
         // Update cover tooltip
         this.updateCoverTooltip(gridX, gridY, pointer.x, pointer.y);
       } else {
-        // Hide tooltip when outside grid
+        // Hide tooltips when outside grid
         if (this.coverTooltip) {
           this.coverTooltip.setVisible(false);
+        }
+        if (this.coordinateText) {
+          this.coordinateText.setVisible(false);
         }
       }
     });
@@ -313,7 +348,7 @@ export class ArenaScene extends Phaser.Scene {
     });
 
     // Add instructions
-    this.add.text(16, 16, 'Arrow Keys/Click to Move | A or Click Enemy to Attack | Space to End Turn', {
+    this.add.text(16, 16, 'Arrow Keys/Click to Move | A or Click Enemy to Attack | Space to End Turn | C to Toggle Coordinates', {
       fontSize: '12px',
       color: '#f5e6d3',
       backgroundColor: '#2d1b0e',
@@ -453,6 +488,15 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
     this.input.keyboard?.on('keydown-EQUALS', () => {
       this.currentZoom = Phaser.Math.Clamp(this.currentZoom + 0.1, this.minZoom, this.maxZoom);
       this.cameras.main.setZoom(this.currentZoom);
+    });
+
+    // Toggle coordinate display with 'C' key
+    this.input.keyboard?.on('keydown-C', () => {
+      this.showCoordinates = !this.showCoordinates;
+      if (!this.showCoordinates && this.coordinateText) {
+        this.coordinateText.setVisible(false);
+      }
+      console.log(`[ArenaScene] Coordinate display: ${this.showCoordinates ? 'ON' : 'OFF'}`);
     });
   }
 
