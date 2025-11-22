@@ -45,7 +45,7 @@ const Dashboard = () => {
             size="large"
             color="success"
             startIcon={<GameIcon />}
-            onClick={() => navigate('/arena')}
+            onClick={() => navigate('/character-select')}
           >
             Play Game
           </Button>

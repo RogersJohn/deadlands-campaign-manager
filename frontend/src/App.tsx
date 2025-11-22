@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import CharacterSheet from './pages/CharacterSheet'
 import CharacterCreate from './pages/CharacterCreate'
 import CharacterEdit from './pages/CharacterEdit'
+import CharacterSelect from './pages/CharacterSelect'
 import ChangePassword from './pages/ChangePassword'
 import Wiki from './pages/Wiki'
 import AIAssistantWindow from './pages/AIAssistantWindow'
@@ -31,6 +32,7 @@ function App() {
           <Route path="change-password" element={<ChangePassword />} />
           <Route path="wiki" element={<Wiki />} />
           <Route path="wiki/:slug" element={<Wiki />} />
+          <Route path="character-select" element={<CharacterSelect />} />
           <Route path="arena" element={<GameArena />} />
         </Route>
 

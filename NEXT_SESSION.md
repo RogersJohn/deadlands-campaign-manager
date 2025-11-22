@@ -1,13 +1,36 @@
-# Next Session: Manual Testing & Feature Development
+# Next Session: Manual Testing & Bug Fixes
 
-**Date**: 2025-11-20 (Session 6)
-**Status**: ✅ Core Architecture Verified - Ready for Manual Testing & Features
-**Priority**: Manual testing of core flow, then feature development
-**Estimated Time**: 2-3 hours
+**Date**: 2025-11-23 (Session 7)
+**Status**: ✅ Code Refactored - Ready for Manual Testing
+**Priority**: Test character selection flow and WebSocket multiplayer
+**Estimated Time**: 1-2 hours
 
 ---
 
-## ✅ This Session's Accomplishments (2025-11-19 - Session 5)
+## ✅ This Session's Accomplishments (2025-11-22 - Session 6)
+
+### Documentation Created (Major Token Savings) ✅
+- **ARCHITECTURE_DECISIONS.md** - Why we made design choices
+- **COMMON_PATTERNS.md** - How to implement features
+- **STATE_MANAGEMENT.md** - When to use each state tool
+- **Expected savings:** ~60% reduction in future session tokens
+
+### State Management Refactoring ✅
+- **Created gameStore.ts** - Global game state (selectedCharacter, UI preferences)
+- **Created CharacterSelect.tsx** - Dedicated character selection screen
+- **Created useGameWebSocket hook** - Extracted 80 lines from GameArena
+- **Created useCharacters hook** - React Query wrapper for character fetching
+- **Updated flow:** Login → Dashboard → Character Select → Arena
+
+### Code Quality Improvements ✅
+- **GameArena.tsx:** -80 lines (WebSocket logic extracted to hook)
+- **CharacterSelect.tsx:** Uses React Query (no manual state management)
+- **Better separation of concerns** - Hooks, stores, components
+- **Type-safe event system** - TypedGameEvents wrapper
+
+---
+
+## ✅ Previous Session's Accomplishments (2025-11-19 - Session 5)
 
 ### Session Architecture Removal Complete ✅
 - **Verified core flow works**: Login → Arena → Move tokens → See each other
@@ -62,9 +85,29 @@
 
 ## 🎯 Next Session Goals
 
-### Priority A: Manual Testing - Core Multiplayer Flow (30 minutes)
+### Priority A: Test Character Selection Flow (15 minutes)
 
-**CRITICAL: Test the verified architecture actually works end-to-end**
+**NEW: Test the refactored character selection flow**
+
+#### Test 1: Character Selection Flow
+1. Start frontend: `npm run dev`
+2. Start backend: `./mvnw spring-boot:run` (or `mvnw.cmd` on Windows)
+3. Login as `gamemaster` / `password`
+4. Click "Play Game" button on Dashboard
+5. **Verify:** Redirects to `/character-select` ✅
+6. **Verify:** Character grid displays with Western styling ✅
+7. Click a character card
+8. **Verify:** Redirects to `/arena` ✅
+9. **Verify:** Arena loads with selected character ✅
+10. **Verify:** No console errors ✅
+
+**Expected:** Smooth flow from dashboard → character select → arena
+
+---
+
+### Priority B: Test WebSocket Multiplayer (30 minutes)
+
+**Test the refactored WebSocket hook**
 
 #### Test 1: Basic Multiplayer Token Sync
 1. Open browser 1 (Incognito/Private mode)
@@ -114,77 +157,30 @@
 
 ---
 
-### Priority B: Fix Character Selection Flow (1 hour)
+### Priority C: Add Arena Protection (15 minutes) - OPTIONAL
 
-**BLOCKER IDENTIFIED:** There's no UI to select a character before entering arena!
+**Enhancement:** Prevent direct navigation to `/arena` without character selection
 
-**Current Issue:**
-- `selectedCharacter` in GameArena might be undefined
-- Players can't choose which character to play
-- No character selection step between login and arena
-
-**Solution:**
-1. Create `CharacterSelect.tsx` component
-   - List all characters owned by logged-in user
-   - Show character name, level, archetype
-   - "Select Character" button for each
-   - Store selected character in Zustand store
-
-2. Update routing in `App.tsx`:
-   ```
-   Old: Login → Dashboard → Arena
-   New: Login → Dashboard → Character Select → Arena
-   ```
-
-3. Update `GameArena.tsx`:
-   - Get `selectedCharacter` from store
-   - Show error if no character selected
-   - Add "Back to Character Select" button
-
-**Files to Create/Modify:**
-- `frontend/src/components/CharacterSelect.tsx` (NEW)
-- `frontend/src/App.tsx` (add route)
-- `frontend/src/store/gameStore.ts` (add selectedCharacter state)
-
----
-
-### Priority C: Dashboard/Lobby Entry Point (45 minutes)
-
-**Current Issue:**
-- After login, users need a proper landing page
-- No clear "Play Game" button to enter arena
+**Current Behavior:**
+- User can navigate directly to `/arena` URL
+- Results in "undefined character" error
 
 **Solution:**
-Create a simple Dashboard component:
-
+Add redirect check in GameArena.tsx:
 ```typescript
-// Dashboard.tsx
-<div>
-  <h1>Welcome, {user.username}!</h1>
-
-  <button onClick={() => navigate('/character-select')}>
-    Play Game
-  </button>
-
-  <button onClick={() => navigate('/characters')}>
-    Manage Characters
-  </button>
-
-  {user.role === 'GAME_MASTER' && (
-    <button onClick={() => navigate('/gm-tools')}>
-      GM Tools
-    </button>
-  )}
-</div>
+useEffect(() => {
+  if (!selectedCharacter) {
+    navigate('/character-select');
+  }
+}, [selectedCharacter, navigate]);
 ```
 
-**Files to Create:**
-- `frontend/src/components/Dashboard.tsx` (NEW)
-- Update `App.tsx` routing
+**Files to Modify:**
+- `frontend/src/game/GameArena.tsx` (add redirect)
 
 ---
 
-### Priority D: Phaser Visual Token Rendering (1 hour)
+### Priority D: Phaser Visual Token Rendering (1 hour) - IF NEEDED
 
 **Verify tokens actually render on canvas:**
 
@@ -245,15 +241,16 @@ Current ArenaScene creates:
 | Feature | Status |
 |---------|--------|
 | Login/Register | ✅ Working |
+| Dashboard | ✅ Complete (Play Game button) |
+| **Character Selection** | ✅ **NEW: Complete** |
 | Arena Route | ✅ Working |
-| WebSocket Connection | ✅ Working (verified) |
-| Token Movement | ✅ Working (verified) |
+| WebSocket Connection | ✅ Refactored to hook |
+| Token Movement | ✅ Working (needs testing) |
 | Remote Token Rendering | ⚠️ Needs manual testing |
-| **Character Selection** | ❌ **Missing** |
-| **Dashboard** | ❌ **Missing** |
 | GM Control Panel | ✅ Floating/Draggable |
 | Coordinate Display | ✅ Toggle with 'C' |
 | Map Loading | ✅ Full replacement |
+| **State Management** | ✅ **NEW: Zustand + React Query** |
 
 ### Backend Features
 | Feature | Status |
@@ -315,25 +312,20 @@ Current ArenaScene creates:
 
 ### High Priority Issues
 
-1. **No Character Selection UI** ⚠️
-   - Players can't choose which character to use
-   - `selectedCharacter` might be undefined in GameArena
-   - **Blocks:** Proper game flow
-
-2. **No Dashboard** ⚠️
-   - After login, users land on empty page (or immediate arena entry)
-   - No clear entry point to game
-   - **Blocks:** UX flow
-
-3. **Manual Testing Not Done** ⚠️
+1. **Manual Testing Not Done** ⚠️
    - Core flow verified in code, but NOT tested end-to-end
    - Don't know if WebSocket actually works with 2 browsers
    - Don't know if tokens render visually
    - **Blocks:** Confidence in system
 
+2. **Optional: Arena Protection** 💡
+   - Direct navigation to `/arena` without character selection
+   - Causes undefined character error
+   - **Fix:** Add redirect check (see Priority C)
+
 ### Medium Priority Issues
 
-4. **E2E Tests Broken**
+3. **E2E Tests Broken**
    - All session-based tests archived
    - No automated regression testing
    - **Impact:** Can't catch bugs automatically
@@ -386,6 +378,14 @@ Backend: https://deadlands-campaign-manager-production-053e.up.railway.app
 
 ## 📖 Reference Documentation
 
+### **NEW: Architecture & Patterns (Session 2025-11-22)** ⭐
+- **ARCHITECTURE_DECISIONS.md** - Why we made these design choices
+- **COMMON_PATTERNS.md** - How to implement common features
+- **STATE_MANAGEMENT.md** - When to use Zustand vs React Query vs useState
+- **SESSION_2025-11-22_SUMMARY.md** - Full summary of refactoring changes
+
+**Use these first in future sessions to avoid re-explaining patterns!**
+
 ### Architecture Docs
 - **SIMPLIFIED_ARCHITECTURE.md** - Single persistent game world design
 - **docs/architecture/PHASER_INTEGRATION.md** - Game engine integration
@@ -397,7 +397,10 @@ Backend: https://deadlands-campaign-manager-production-053e.up.railway.app
 ### Current Implementation
 - `backend/src/main/java/com/deadlands/campaign/controller/GameController.java` - WebSocket endpoints
 - `backend/src/main/java/com/deadlands/campaign/controller/GameStateController.java` - REST API
-- `frontend/src/game/GameArena.tsx` - Main game component
+- `frontend/src/game/GameArena.tsx` - Main game component (refactored)
+- `frontend/src/pages/CharacterSelect.tsx` - Character selection screen (NEW)
+- `frontend/src/hooks/useGameWebSocket.ts` - WebSocket custom hook (NEW)
+- `frontend/src/store/gameStore.ts` - Global game state (NEW)
 - `frontend/src/services/websocketService.ts` - WebSocket client
 - `frontend/src/game/components/GMControlPanel.tsx` - GM tools (floating panel)
 
@@ -405,33 +408,51 @@ Backend: https://deadlands-campaign-manager-production-053e.up.railway.app
 
 ## ✅ Success Criteria for Next Session
 
-**Manual Testing:**
-- [ ] Core multiplayer flow tested with 2 browsers
+**Manual Testing (CRITICAL):**
+- [ ] Character selection flow tested (Dashboard → Select → Arena)
+- [ ] WebSocket multiplayer tested with 2 browsers
 - [ ] Token synchronization confirmed working
 - [ ] Database persistence confirmed (survives restart)
-- [ ] GM Control Panel tested (drag, collapse, map change)
-- [ ] Coordinate display tested (toggle works)
-
-**Feature Development:**
-- [ ] Character Selection UI created
-- [ ] Dashboard/Lobby created
-- [ ] Routing updated: Login → Dashboard → Character Select → Arena
+- [ ] No console errors during flow
 - [ ] selectedCharacter properly stored and retrieved
 
-**Optional:**
+**Optional Enhancements:**
+- [ ] Add arena protection redirect (if no character selected)
 - [ ] Phaser rendering verified (tokens visible)
-- [ ] Turn management UI added
-- [ ] Combat HUD improvements
-
-**Testing:**
-- [ ] At least 1 frontend service test file created
 - [ ] Plan documented for rewriting E2E tests
+- [ ] Add loading boundaries for better UX
+
+**Already Complete (Session 2025-11-22):**
+- ✅ Documentation created (3 reference guides)
+- ✅ Character Selection UI created
+- ✅ Dashboard updated with "Play Game" button
+- ✅ Routing updated: Login → Dashboard → Character Select → Arena
+- ✅ State management refactored (Zustand + React Query)
+- ✅ WebSocket logic extracted to custom hook
 
 ---
 
 ## 💡 Key Decisions Made
 
-### Session Removal Strategy
+### Token Efficiency Strategy (Session 2025-11-22)
+- **Decision:** Create comprehensive documentation instead of re-explaining patterns
+- **Rationale:** ~1500 tokens per session wasted on architecture explanations
+- **Impact:** 3 reference documents created, ~60% estimated token savings
+- **Files:** ARCHITECTURE_DECISIONS.md, COMMON_PATTERNS.md, STATE_MANAGEMENT.md
+
+### State Management Refactoring (Session 2025-11-22)
+- **Decision:** Extract WebSocket logic to custom hook, use Zustand for global state
+- **Rationale:** 80 lines in GameArena just for WebSocket setup, prop drilling issues
+- **Impact:** Cleaner code, better separation of concerns, reusable hooks
+- **Files:** useGameWebSocket.ts, gameStore.ts, useCharacters.ts
+
+### Character Selection Flow (Session 2025-11-22)
+- **Decision:** Dedicated character selection screen instead of inline selection
+- **Rationale:** Prevents "undefined character" bugs, better UX
+- **Impact:** Clear user flow, selectedCharacter stored in global state
+- **Files:** CharacterSelect.tsx, updated App.tsx routing
+
+### Session Removal Strategy (Session 2025-11-19)
 - **Decision:** Removed ALL session-related code, archived broken tests
 - **Rationale:** Session concept no longer fits architecture
 - **Impact:** Clean codebase, but E2E tests need rewrite

@@ -19,6 +19,8 @@ import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
 import { wrapGameEvents, TypedGameEvents } from './events/GameEvents';
 import { useAuthStore } from '../store/authStore';
+import { useGameStore } from '../store/gameStore';
+import { useGameWebSocket } from '../hooks/useGameWebSocket';
 import { getWebSocketService } from '../services/websocketService';
 
 interface CombatState {
@@ -31,9 +33,9 @@ interface CombatState {
 
 export function GameArena() {
   const { token, user } = useAuthStore();
+  const { selectedCharacter, setSelectedCharacter } = useGameStore();
   const isGameMaster = user?.role === 'GAME_MASTER';
 
-  const [selectedCharacter, setSelectedCharacter] = useState<GameCharacter | undefined>();
   const [gameStarted, setGameStarted] = useState(false);
   const [characters, setCharacters] = useState<GameCharacter[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,6 +100,9 @@ export function GameArena() {
     // Wrap game events with type-safe wrapper
     setGameEvents(wrapGameEvents(game));
   }, []);
+
+  // WebSocket connection for real-time multiplayer (custom hook)
+  useGameWebSocket(gameEvents);
 
   // Emit weapon changes to Phaser when weapon or game ref changes (TYPE-SAFE)
   useEffect(() => {
@@ -185,83 +190,7 @@ export function GameArena() {
     };
   }, [gameEvents]);
 
-  // WebSocket connection for real-time multiplayer synchronization in shared world
-  useEffect(() => {
-    if (!token || !selectedCharacter || !gameEvents) {
-      return;
-    }
-
-    const wsService = getWebSocketService();
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
-
-    console.log('[GameArena] Connecting to WebSocket for shared world sync...');
-
-    wsService.connect(apiUrl, token)
-      .then(() => {
-        console.log('[GameArena] WebSocket connected successfully');
-
-        // Listen for LOCAL token movements from Phaser and send to server
-        const handleLocalTokenMove = (data: any) => {
-          console.log('[GameArena] Sending local token move to server:', data);
-          wsService.sendTokenMove(
-            data.tokenId,
-            data.tokenType,
-            data.fromX,
-            data.fromY,
-            data.toX,
-            data.toY
-          );
-        };
-
-        // Listen for REMOTE token movements from server and forward to Phaser
-        const handleRemoteTokenMove = (event: Event) => {
-          const customEvent = event as CustomEvent;
-          const moveData = customEvent.detail;
-
-          // Don't echo back our own movements
-          if (moveData.tokenId !== String(selectedCharacter.id)) {
-            console.log('[GameArena] Received remote token move:', moveData);
-            gameEvents.emit('remoteTokenMoved', moveData);
-          }
-        };
-
-        // Listen for player join events
-        const handlePlayerJoin = (event: Event) => {
-          const customEvent = event as CustomEvent;
-          console.log('[GameArena] Player joined:', customEvent.detail);
-          // Could show notification: "{username} joined the game"
-        };
-
-        // Listen for player leave events
-        const handlePlayerLeave = (event: Event) => {
-          const customEvent = event as CustomEvent;
-          console.log('[GameArena] Player left:', customEvent.detail);
-          // Could show notification: "{username} left the game"
-        };
-
-        // Subscribe to Phaser game events
-        gameEvents.on('localTokenMoved', handleLocalTokenMove);
-
-        // Subscribe to window events from WebSocket service
-        window.addEventListener('remoteTokenMoved', handleRemoteTokenMove);
-        window.addEventListener('playerJoined', handlePlayerJoin);
-        window.addEventListener('playerLeft', handlePlayerLeave);
-
-        // Cleanup on unmount
-        return () => {
-          gameEvents.off('localTokenMoved', handleLocalTokenMove);
-          window.removeEventListener('remoteTokenMoved', handleRemoteTokenMove);
-          window.removeEventListener('playerJoined', handlePlayerJoin);
-          window.removeEventListener('playerLeft', handlePlayerLeave);
-          wsService.disconnect();
-          console.log('[GameArena] WebSocket disconnected');
-        };
-      })
-      .catch((error) => {
-        console.error('[GameArena] Failed to connect to WebSocket:', error);
-        // Could show error notification to user
-      });
-  }, [token, selectedCharacter, gameEvents]);
+  // WebSocket connection is now handled by useGameWebSocket hook
 
   // Load existing game state when entering arena (positions of players already on map)
   useEffect(() => {
