@@ -31,10 +31,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String requestURI = request.getRequestURI();
 
-        // Only log for session endpoints to reduce noise
-        boolean isSessionEndpoint = requestURI.contains("/sessions");
+        // Debug logging disabled by default (enable for troubleshooting)
+        boolean debugEnabled = false;
 
-        if (isSessionEndpoint) {
+        if (debugEnabled) {
             System.out.println("========== JWT FILTER DEBUG ==========");
             System.out.println("Request URI: " + requestURI);
             System.out.println("Method: " + request.getMethod());

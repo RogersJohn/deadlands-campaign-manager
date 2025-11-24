@@ -71,7 +71,7 @@ public class SecurityConfig {
                         .requestMatchers("/reference/**").permitAll()
                         .requestMatchers("/portraits/**").permitAll()
                         .requestMatchers("/ai-gm/health").permitAll()
-                        // WebSocket endpoints (for future single-world sync)
+                        // WebSocket endpoints for real-time game synchronization
                         .requestMatchers("/ws/**").permitAll()
                         // Authenticated endpoints
                         .requestMatchers("/auth/change-password").authenticated()

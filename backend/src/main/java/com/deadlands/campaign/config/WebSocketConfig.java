@@ -11,12 +11,13 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 /**
- * WebSocket configuration for real-time multiplayer game sessions.
+ * WebSocket configuration for real-time multiplayer synchronization.
  *
- * Architecture:
+ * Architecture: Single Shared World
+ * - All players connect to the same game space (no session management)
  * - Clients connect via STOMP over WebSocket at /ws endpoint
  * - Simple in-memory message broker handles pub/sub messaging
- * - /topic/* for broadcasts to all session participants
+ * - /topic/game/* for broadcasts to all connected players
  * - /queue/* for private messages to individual users
  * - /app/* prefix for client messages to server
  */
@@ -33,8 +34,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         // Enable simple broker for pub/sub messaging
-        // /topic: broadcast to all subscribers (e.g., /topic/session/{sessionId}/updates)
-        // /queue: private messages to individual users (e.g., /queue/game-view)
+        // /topic: broadcast to all connected players (e.g., /topic/game/moves, /topic/game/turn)
+        // /queue: private messages to individual users (e.g., /user/queue/pong)
         config.enableSimpleBroker("/topic", "/queue");
 
         // Prefix for messages FROM client TO server

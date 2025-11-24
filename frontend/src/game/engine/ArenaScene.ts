@@ -1379,7 +1379,7 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
 
   /**
    * MULTIPLAYER: Handle remote player token movement
-   * Creates or updates sprites for other players in the session
+   * Creates or updates sprites for other players in the game
    */
   private handleRemoteTokenMoved(event: { tokenId: string; tokenType: string; gridX: number; gridY: number; movedBy: string }) {
     // Only handle player tokens (not enemies)

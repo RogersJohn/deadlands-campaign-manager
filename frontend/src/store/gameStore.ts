@@ -24,7 +24,7 @@ interface GameState {
 export const useGameStore = create<GameState>()(
   persist(
     (set) => ({
-      // Selected character (not persisted - user should re-select each session)
+      // Selected character (not persisted - user must re-select on each page visit)
       selectedCharacter: null,
       setSelectedCharacter: (character) => set({ selectedCharacter: character }),
 

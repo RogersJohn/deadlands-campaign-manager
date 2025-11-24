@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Event broadcast when a token has moved.
- * Sent from server to all clients in a session.
+ * Sent from server to all connected clients in the shared game world.
  */
 @Data
 @NoArgsConstructor
