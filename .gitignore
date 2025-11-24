@@ -69,6 +69,7 @@ Thumbs.db
 
 ### Migration Scripts (contain production credentials) ###
 migrate-*.js
+archive/
 
 ### Database utility scripts (may contain credentials) ###
 list-users.js
