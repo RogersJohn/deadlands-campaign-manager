@@ -14,6 +14,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/characters")
@@ -72,6 +73,10 @@ public class CharacterController {
         // XP tracking
         dto.setTotalXp(character.getTotalXp());
         dto.setSpentXp(character.getSpentXp());
+        // Power Points and Fate Chips
+        dto.setCurrentPowerPoints(character.getCurrentPowerPoints());
+        dto.setMaxPowerPoints(character.getMaxPowerPoints());
+        dto.setFateChips(character.getFateChips());
 
         // Add player information
         if (character.getPlayer() != null) {
@@ -154,6 +159,9 @@ public class CharacterController {
         private Boolean isNpc;
         private Integer totalXp;
         private Integer spentXp;
+        private Integer currentPowerPoints;
+        private Integer maxPowerPoints;
+        private Integer fateChips;
         private Long playerId;
         private String playerName;
         private java.util.List<EquipmentDTO> equipment;
@@ -207,6 +215,12 @@ public class CharacterController {
         public void setTotalXp(Integer totalXp) { this.totalXp = totalXp; }
         public Integer getSpentXp() { return spentXp; }
         public void setSpentXp(Integer spentXp) { this.spentXp = spentXp; }
+        public Integer getCurrentPowerPoints() { return currentPowerPoints; }
+        public void setCurrentPowerPoints(Integer currentPowerPoints) { this.currentPowerPoints = currentPowerPoints; }
+        public Integer getMaxPowerPoints() { return maxPowerPoints; }
+        public void setMaxPowerPoints(Integer maxPowerPoints) { this.maxPowerPoints = maxPowerPoints; }
+        public Integer getFateChips() { return fateChips; }
+        public void setFateChips(Integer fateChips) { this.fateChips = fateChips; }
         public Long getPlayerId() { return playerId; }
         public void setPlayerId(Long playerId) { this.playerId = playerId; }
         public String getPlayerName() { return playerName; }
@@ -456,5 +470,134 @@ public class CharacterController {
         characterRepository.save(character);
 
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Spend power points (for casting powers).
+     * POST /api/characters/{id}/power-points/spend
+     */
+    @PostMapping("/{id}/power-points/spend")
+    public ResponseEntity<?> spendPowerPoints(@PathVariable Long id,
+                                               @RequestBody PowerPointsRequest request,
+                                               Authentication authentication) {
+        Character character = characterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check permission: owner or GM
+        if (user.getRole() != User.Role.GAME_MASTER &&
+            !character.getPlayer().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to modify this character");
+        }
+
+        int amount = request.getAmount();
+        if (amount <= 0) {
+            return ResponseEntity.badRequest().body("Amount must be positive");
+        }
+
+        if (character.getCurrentPowerPoints() < amount) {
+            return ResponseEntity.badRequest().body("Insufficient power points");
+        }
+
+        character.setCurrentPowerPoints(character.getCurrentPowerPoints() - amount);
+        characterRepository.save(character);
+
+        return ResponseEntity.ok(Map.of(
+                "currentPowerPoints", character.getCurrentPowerPoints(),
+                "maxPowerPoints", character.getMaxPowerPoints()
+        ));
+    }
+
+    /**
+     * Restore power points (natural recovery, rest, or GM action).
+     * POST /api/characters/{id}/power-points/restore
+     */
+    @PostMapping("/{id}/power-points/restore")
+    public ResponseEntity<?> restorePowerPoints(@PathVariable Long id,
+                                                 @RequestBody PowerPointsRequest request,
+                                                 Authentication authentication) {
+        Character character = characterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check permission: owner or GM
+        if (user.getRole() != User.Role.GAME_MASTER &&
+            !character.getPlayer().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to modify this character");
+        }
+
+        int amount = request.getAmount();
+        if (amount <= 0) {
+            return ResponseEntity.badRequest().body("Amount must be positive");
+        }
+
+        int newAmount = Math.min(
+                character.getCurrentPowerPoints() + amount,
+                character.getMaxPowerPoints()
+        );
+        character.setCurrentPowerPoints(newAmount);
+        characterRepository.save(character);
+
+        return ResponseEntity.ok(Map.of(
+                "currentPowerPoints", character.getCurrentPowerPoints(),
+                "maxPowerPoints", character.getMaxPowerPoints()
+        ));
+    }
+
+    /**
+     * Spend a fate chip (benny).
+     * POST /api/characters/{id}/fate-chips/spend
+     */
+    @PostMapping("/{id}/fate-chips/spend")
+    public ResponseEntity<?> spendFateChip(@PathVariable Long id,
+                                            Authentication authentication) {
+        Character character = characterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check permission: owner or GM
+        if (user.getRole() != User.Role.GAME_MASTER &&
+            !character.getPlayer().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to modify this character");
+        }
+
+        if (character.getFateChips() <= 0) {
+            return ResponseEntity.badRequest().body("No fate chips remaining");
+        }
+
+        character.setFateChips(character.getFateChips() - 1);
+        characterRepository.save(character);
+
+        return ResponseEntity.ok(Map.of("fateChips", character.getFateChips()));
+    }
+
+    /**
+     * Gain a fate chip (GM award, or start of session).
+     * POST /api/characters/{id}/fate-chips/gain
+     */
+    @PostMapping("/{id}/fate-chips/gain")
+    @PreAuthorize("hasRole('GAME_MASTER')")
+    public ResponseEntity<?> gainFateChip(@PathVariable Long id) {
+        Character character = characterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        character.setFateChips(character.getFateChips() + 1);
+        characterRepository.save(character);
+
+        return ResponseEntity.ok(Map.of("fateChips", character.getFateChips()));
+    }
+
+    // Request DTOs
+    static class PowerPointsRequest {
+        private int amount;
+
+        public int getAmount() { return amount; }
+        public void setAmount(int amount) { this.amount = amount; }
     }
 }

@@ -569,4 +569,168 @@ class CharacterControllerTest {
         verify(characterRepository, times(1)).findByIdIncludingDeleted(2L);
         verify(characterRepository, never()).save(any(Character.class));
     }
+
+    // =====================================================================
+    // POWER POINTS MANAGEMENT TESTS
+    // =====================================================================
+
+    @Test
+    @DisplayName("Spend power points - SUCCESS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testSpendPowerPoints_Success() throws Exception {
+        // Arrange
+        playerCharacter.setCurrentPowerPoints(10);
+        playerCharacter.setMaxPowerPoints(10);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/power-points/spend")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\": 3}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentPowerPoints").value(7))
+                .andExpect(jsonPath("$.maxPowerPoints").value(10));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Spend power points - INSUFFICIENT")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testSpendPowerPoints_Insufficient() throws Exception {
+        // Arrange
+        playerCharacter.setCurrentPowerPoints(2);
+        playerCharacter.setMaxPowerPoints(10);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/power-points/spend")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\": 5}"))
+                .andExpect(status().isBadRequest());
+
+        verify(characterRepository, never()).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Restore power points - SUCCESS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testRestorePowerPoints_Success() throws Exception {
+        // Arrange
+        playerCharacter.setCurrentPowerPoints(5);
+        playerCharacter.setMaxPowerPoints(10);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/power-points/restore")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\": 3}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentPowerPoints").value(8))
+                .andExpect(jsonPath("$.maxPowerPoints").value(10));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Restore power points - CAPS AT MAX")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testRestorePowerPoints_CapsAtMax() throws Exception {
+        // Arrange
+        playerCharacter.setCurrentPowerPoints(8);
+        playerCharacter.setMaxPowerPoints(10);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/power-points/restore")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"amount\": 5}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentPowerPoints").value(10))
+                .andExpect(jsonPath("$.maxPowerPoints").value(10));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    // =====================================================================
+    // FATE CHIPS MANAGEMENT TESTS
+    // =====================================================================
+
+    @Test
+    @DisplayName("Spend fate chip - SUCCESS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testSpendFateChip_Success() throws Exception {
+        // Arrange
+        playerCharacter.setFateChips(3);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/fate-chips/spend")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fateChips").value(2));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Spend fate chip - NONE LEFT")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testSpendFateChip_NoneLeft() throws Exception {
+        // Arrange
+        playerCharacter.setFateChips(0);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/fate-chips/spend")
+                        .with(csrf()))
+                .andExpect(status().isBadRequest());
+
+        verify(characterRepository, never()).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Gain fate chip - GM ONLY - SUCCESS")
+    @WithMockUser(username = "gm", roles = "GAME_MASTER")
+    void testGainFateChip_GM_Success() throws Exception {
+        // Arrange
+        playerCharacter.setFateChips(2);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/fate-chips/gain")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.fateChips").value(3));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Gain fate chip - PLAYER FORBIDDEN")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testGainFateChip_Player_Forbidden() throws Exception {
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/fate-chips/gain")
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verify(characterRepository, never()).findById(any());
+        verify(characterRepository, never()).save(any(Character.class));
+    }
 }

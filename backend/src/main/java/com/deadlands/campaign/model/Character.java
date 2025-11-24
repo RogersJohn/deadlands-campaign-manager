@@ -70,6 +70,17 @@ public class Character {
     @Column(name = "spent_xp", nullable = false)
     private Integer spentXp = 0; // XP spent on improvements
 
+    // Power Points (Savage Worlds - for arcane background characters)
+    @Column(name = "current_power_points", nullable = false)
+    private Integer currentPowerPoints = 0; // Current PP available for casting
+
+    @Column(name = "max_power_points", nullable = false)
+    private Integer maxPowerPoints = 10; // Maximum PP (base 10 + Power Points edge)
+
+    // Fate Chips (Bennies) - Savage Worlds core mechanic
+    @Column(name = "fate_chips", nullable = false)
+    private Integer fateChips = 3; // Wild Cards start with 3, NPCs with 1
+
     // Savage Worlds Attributes - stored as dice notation (e.g., "3d6")
     @Column(name = "agility_die")
     private String agilityDie = "1d6";

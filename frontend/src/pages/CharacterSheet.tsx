@@ -377,6 +377,30 @@ const CharacterSheet = () => {
                       {(character.totalXp || 0) - (character.spentXp || 0)}
                     </Typography>
                   </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <Tooltip title="Power Points for casting arcane powers" arrow>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          ⚡ Power Points
+                        </Typography>
+                        <Typography variant="h6">
+                          {character.currentPowerPoints || 0} / {character.maxPowerPoints || 10}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <Tooltip title="Fate Chips (Bennies) - use for rerolls and soaking damage" arrow>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          🎲 Fate Chips
+                        </Typography>
+                        <Typography variant="h6">
+                          {character.fateChips || 0}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  </Grid>
                   {character.size !== undefined && character.size !== 0 && (
                     <Grid item xs={6} sm={4} md={3}>
                       <Typography variant="subtitle2" color="text.secondary">

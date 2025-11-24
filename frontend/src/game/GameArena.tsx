@@ -466,6 +466,16 @@ export function GameArena() {
                           <Typography sx={{ fontSize: '0.75rem', mt: 0.5 }}>
                             Str: {character.strengthDie} | Agi: {character.agilityDie} | Vig: {character.vigorDie}
                           </Typography>
+                          {(character.maxPowerPoints && character.maxPowerPoints > 0) && (
+                            <Typography sx={{ fontSize: '0.75rem', mt: 0.5, color: '#87CEEB' }}>
+                              ⚡ PP: {character.currentPowerPoints || 0}/{character.maxPowerPoints}
+                            </Typography>
+                          )}
+                          {character.fateChips !== undefined && (
+                            <Typography sx={{ fontSize: '0.75rem', mt: 0.5, color: '#FFD700' }}>
+                              🎲 Fate Chips: {character.fateChips}
+                            </Typography>
+                          )}
                         </Box>
                       </CardContent>
                     </CardActionArea>

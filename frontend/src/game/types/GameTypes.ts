@@ -43,6 +43,11 @@ export interface GameCharacter {
   toughness: number;
   pace: number;
 
+  // Power Points and Fate Chips (Savage Worlds)
+  currentPowerPoints?: number;
+  maxPowerPoints?: number;
+  fateChips?: number;
+
   // Character abilities
   equipment?: Equipment[];
   skills?: Skill[];

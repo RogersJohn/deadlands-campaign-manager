@@ -22,6 +22,10 @@ export interface Character {
   // XP Tracking
   totalXp?: number
   spentXp?: number
+  // Power Points and Fate Chips (Savage Worlds)
+  currentPowerPoints?: number
+  maxPowerPoints?: number
+  fateChips?: number
   // Legacy Deadlands Classic Attributes (deprecated)
   cognitionDie?: string
   deftnessDie?: string
@@ -61,6 +65,28 @@ const characterService = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/characters/${id}`)
+  },
+
+  // Power Points management
+  spendPowerPoints: async (id: number, amount: number): Promise<{currentPowerPoints: number, maxPowerPoints: number}> => {
+    const response = await api.post(`/characters/${id}/power-points/spend`, { amount })
+    return response.data
+  },
+
+  restorePowerPoints: async (id: number, amount: number): Promise<{currentPowerPoints: number, maxPowerPoints: number}> => {
+    const response = await api.post(`/characters/${id}/power-points/restore`, { amount })
+    return response.data
+  },
+
+  // Fate Chips management
+  spendFateChip: async (id: number): Promise<{fateChips: number}> => {
+    const response = await api.post(`/characters/${id}/fate-chips/spend`)
+    return response.data
+  },
+
+  gainFateChip: async (id: number): Promise<{fateChips: number}> => {
+    const response = await api.post(`/characters/${id}/fate-chips/gain`)
+    return response.data
   },
 }
 
