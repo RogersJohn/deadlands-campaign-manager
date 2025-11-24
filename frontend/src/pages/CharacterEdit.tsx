@@ -40,6 +40,7 @@ import {
   Info as InfoIcon,
   Save as SaveIcon,
   Cancel as CancelIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material'
 import characterService, { Character } from '../services/characterService'
 import referenceService, {
@@ -437,6 +438,17 @@ const CharacterEdit = () => {
 
   return (
     <Box>
+      {/* Back Button Header */}
+      <Box sx={{ mb: 2 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(`/character/${id}`)}
+          aria-label="Go back"
+        >
+          Back to Character
+        </Button>
+      </Box>
+
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mb: 3 }}>
         <Box>
           <Button

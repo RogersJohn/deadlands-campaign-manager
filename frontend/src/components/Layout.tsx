@@ -52,7 +52,6 @@ const Layout = () => {
   }
 
   const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/dashboard' },
     { text: 'My Characters', icon: <PersonIcon />, path: '/dashboard' },
     { text: 'Game Arena', icon: <GameIcon />, path: '/arena' },
     { text: 'Wiki', icon: <WikiIcon />, path: '/wiki' },

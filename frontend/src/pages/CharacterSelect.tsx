@@ -12,6 +12,7 @@ import {
   CircularProgress,
   Alert,
   Button,
+  Tooltip,
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { useGameStore } from '../store/gameStore';
@@ -196,14 +197,38 @@ export default function CharacterSelect() {
                         }}
                       >
                         <Typography sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                          <strong>Pace:</strong> {character.pace} |{' '}
-                          <strong>Parry:</strong> {character.parry} |{' '}
-                          <strong>Tough:</strong> {character.toughness}
+                          <Tooltip title="Movement rate per round" arrow>
+                            <Box component="span">
+                              <strong>Pace:</strong> {character.pace}
+                            </Box>
+                          </Tooltip> |{' '}
+                          <Tooltip title="Defense against melee attacks" arrow>
+                            <Box component="span">
+                              <strong>Parry:</strong> {character.parry}
+                            </Box>
+                          </Tooltip> |{' '}
+                          <Tooltip title="Resistance to damage" arrow>
+                            <Box component="span">
+                              <strong>Tough:</strong> {character.toughness}
+                            </Box>
+                          </Tooltip>
                         </Typography>
                         <Typography sx={{ fontSize: '0.8rem' }}>
-                          <strong>Str:</strong> {character.strengthDie} |{' '}
-                          <strong>Agi:</strong> {character.agilityDie} |{' '}
-                          <strong>Vig:</strong> {character.vigorDie}
+                          <Tooltip title="Strength - Physical power and melee damage" arrow>
+                            <Box component="span">
+                              <strong>Str:</strong> {character.strengthDie}
+                            </Box>
+                          </Tooltip> |{' '}
+                          <Tooltip title="Agility - Coordination, dexterity, and reflexes" arrow>
+                            <Box component="span">
+                              <strong>Agi:</strong> {character.agilityDie}
+                            </Box>
+                          </Tooltip> |{' '}
+                          <Tooltip title="Vigor - Endurance and resistance to harm" arrow>
+                            <Box component="span">
+                              <strong>Vig:</strong> {character.vigorDie}
+                            </Box>
+                          </Tooltip>
                         </Typography>
                       </Box>
                     </CardContent>

@@ -13,6 +13,13 @@ import {
   Card,
   CardContent,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Breadcrumbs,
+  Link,
 } from '@mui/material'
 import {
   Person as PersonIcon,
@@ -21,6 +28,8 @@ import {
   Backpack as BackpackIcon,
   AutoAwesome as MagicIcon,
   Edit as EditIcon,
+  Delete as DeleteIcon,
+  NavigateNext as NavigateNextIcon,
 } from '@mui/icons-material'
 import { useState } from 'react'
 import characterService from '../services/characterService'
@@ -52,6 +61,8 @@ const CharacterSheet = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [currentTab, setCurrentTab] = useState(0)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   const { data: character, isLoading } = useQuery({
     queryKey: ['character', id],
@@ -110,6 +121,22 @@ const CharacterSheet = () => {
     setCurrentTab(newValue)
   }
 
+  const handleDeleteCharacter = async () => {
+    if (!id) return
+
+    setDeleting(true)
+    try {
+      await characterService.delete(Number(id))
+      navigate('/dashboard') // Redirect to dashboard after deletion
+    } catch (error) {
+      console.error('Failed to delete character:', error)
+      alert('Failed to delete character. You may not have permission.')
+    } finally {
+      setDeleting(false)
+      setDeleteDialogOpen(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -124,21 +151,52 @@ const CharacterSheet = () => {
 
   return (
     <Box>
+      {/* Breadcrumbs */}
+      <Breadcrumbs
+        separator={<NavigateNextIcon fontSize="small" />}
+        aria-label="breadcrumb"
+        sx={{ mb: 2 }}
+      >
+        <Link
+          underline="hover"
+          color="inherit"
+          href="/dashboard"
+          onClick={(e) => {
+            e.preventDefault()
+            navigate('/dashboard')
+          }}
+          sx={{ cursor: 'pointer' }}
+        >
+          My Characters
+        </Link>
+        <Typography color="text.primary">{character.name}</Typography>
+      </Breadcrumbs>
+
       {/* Header with character name */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h3" fontWeight="bold">
           {character.name}
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<EditIcon />}
-          onClick={() => {
-            console.log('Edit button clicked, navigating to:', `/character/${id}/edit`)
-            navigate(`/character/${id}/edit`)
-          }}
-        >
-          Edit Character
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="contained"
+            startIcon={<EditIcon />}
+            onClick={() => {
+              console.log('Edit button clicked, navigating to:', `/character/${id}/edit`)
+              navigate(`/character/${id}/edit`)
+            }}
+          >
+            Edit Character
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={() => setDeleteDialogOpen(true)}
+          >
+            Delete
+          </Button>
+        </Box>
       </Box>
 
       {/* Tabs Navigation */}
@@ -683,6 +741,31 @@ const CharacterSheet = () => {
           </Typography>
         )}
       </TabPanel>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          Delete Character
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            Are you sure you want to delete "{character.name}"? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+            Cancel
+          </Button>
+          <Button onClick={handleDeleteCharacter} color="error" variant="contained" disabled={deleting}>
+            {deleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   )
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -10,19 +11,28 @@ import {
   Button,
   CircularProgress,
   Paper,
+  TextField,
+  InputAdornment,
 } from '@mui/material'
-import { Add as AddIcon, Person as PersonIcon, SportsEsports as GameIcon } from '@mui/icons-material'
+import { Add as AddIcon, Person as PersonIcon, SportsEsports as GameIcon, Search as SearchIcon } from '@mui/icons-material'
 import characterService from '../services/characterService'
 import { useAuthStore } from '../store/authStore'
 
 const Dashboard = () => {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { data: characters, isLoading } = useQuery({
     queryKey: ['characters'],
     queryFn: characterService.getAll,
   })
+
+  // Filter characters based on search query
+  const filteredCharacters = characters?.filter((character) =>
+    character.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    character.occupation?.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   if (isLoading) {
     return (
@@ -62,12 +72,28 @@ const Dashboard = () => {
       </Paper>
 
       {/* Characters Section */}
-      <Typography variant="h5" gutterBottom>
-        Your Characters
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h5">
+          Your Characters
+        </Typography>
+        <TextField
+          size="small"
+          placeholder="Search characters..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ width: 300 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
 
       <Grid container spacing={3}>
-        {characters?.map((character) => (
+        {filteredCharacters?.map((character) => (
           <Grid item xs={12} sm={6} md={4} key={character.id}>
             <Card>
               <CardContent>
@@ -97,6 +123,14 @@ const Dashboard = () => {
           </Grid>
         ))}
       </Grid>
+
+      {filteredCharacters?.length === 0 && searchQuery && (
+        <Box sx={{ textAlign: 'center', mt: 8 }}>
+          <Typography variant="h6" color="text.secondary">
+            No characters found matching "{searchQuery}"
+          </Typography>
+        </Box>
+      )}
 
       {!characters?.length && (
         <Box sx={{ textAlign: 'center', mt: 8 }}>
