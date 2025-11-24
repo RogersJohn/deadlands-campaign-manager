@@ -43,20 +43,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String jwt = getJwtFromRequest(request);
 
-            if (isSessionEndpoint) {
+            if (debugEnabled) {
                 System.out.println("Authorization Header: " + (jwt != null ? "Present" : "MISSING"));
             }
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromToken(jwt);
 
-                if (isSessionEndpoint) {
+                if (debugEnabled) {
                     System.out.println("JWT Valid - Username: " + username);
                 }
 
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
-                if (isSessionEndpoint) {
+                if (debugEnabled) {
                     System.out.println("UserDetails loaded: " + userDetails.getUsername());
                     System.out.println("Authorities: " + userDetails.getAuthorities());
                 }
@@ -67,21 +67,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                if (isSessionEndpoint) {
+                if (debugEnabled) {
                     System.out.println("✓ Authentication SET in SecurityContext");
                 }
-            } else if (isSessionEndpoint && StringUtils.hasText(jwt)) {
+            } else if (debugEnabled && StringUtils.hasText(jwt)) {
                 System.out.println("✗ JWT validation FAILED");
             }
         } catch (Exception ex) {
             logger.error("Could not set user authentication in security context", ex);
-            if (isSessionEndpoint) {
+            if (debugEnabled) {
                 System.out.println("✗ Exception: " + ex.getMessage());
                 ex.printStackTrace();
             }
         }
 
-        if (isSessionEndpoint) {
+        if (debugEnabled) {
             System.out.println("Final Authentication: " +
                 (SecurityContextHolder.getContext().getAuthentication() != null ?
                     SecurityContextHolder.getContext().getAuthentication().getName() + " [" +
