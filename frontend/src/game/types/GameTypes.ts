@@ -56,6 +56,17 @@ export interface GameCharacter {
   equipment?: Equipment[];
   skills?: Skill[];
   edges?: Edge[];
+  powers?: Array<{
+    id: number;
+    name: string;
+    description: string;
+    powerPoints: number;
+    range: string;
+    duration: string;
+    effect: string;
+    traitRoll: string;
+    arcaneBackgrounds: string;
+  }>;
 
   // For game rendering
   characterImageUrl?: string;

@@ -1,6 +1,19 @@
 import api from './api'
 import { Skill, Edge, Hindrance, Equipment, ArcanePower } from './referenceService'
 
+// Power interface for character powers (matches backend ArcanePowerDTO)
+export interface Power {
+  id: number
+  name: string
+  description: string
+  powerPoints: number
+  range: string
+  duration: string
+  effect: string
+  traitRoll: string
+  arcaneBackgrounds: string
+}
+
 export interface Character {
   id?: number
   name: string
@@ -43,6 +56,7 @@ export interface Character {
   hindrances?: Hindrance[]
   equipment?: Equipment[]
   arcanePowers?: ArcanePower[]
+  powers?: Power[]  // Powers known by this character (from backend DTO)
 }
 
 const characterService = {
@@ -105,6 +119,30 @@ const characterService = {
 
   recoverFromShaken: async (id: number, spiritRoll: number): Promise<{isShaken: boolean, recovered: boolean, spiritRoll: number}> => {
     const response = await api.post(`/characters/${id}/combat/recover`, { spiritRoll })
+    return response.data
+  },
+
+  // Power casting
+  castPower: async (
+    id: number,
+    powerReferenceId: number,
+    targetId?: number,
+    gridX?: number,
+    gridY?: number
+  ): Promise<{
+    currentPowerPoints: number,
+    maxPowerPoints: number,
+    powerCast: string,
+    powerEffect: string,
+    powerCost: number,
+    targetId: number
+  }> => {
+    const response = await api.post(`/characters/${id}/powers/cast`, {
+      powerReferenceId,
+      targetId,
+      gridX,
+      gridY
+    })
     return response.data
   },
 }

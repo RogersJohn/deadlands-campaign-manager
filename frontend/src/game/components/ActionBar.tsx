@@ -1,5 +1,5 @@
 import { Box, Typography, Avatar, LinearProgress, Button, Tooltip, MenuItem, Select, Popover, IconButton } from '@mui/material';
-import { Favorite as HeartIcon, DirectionsRun as RunIcon, Settings as SettingsIcon, Psychology as AIIcon } from '@mui/icons-material';
+import { Favorite as HeartIcon, DirectionsRun as RunIcon, Settings as SettingsIcon, Psychology as AIIcon, FlashOn as PowerIcon } from '@mui/icons-material';
 import { GameCharacter, Equipment, CombatAction, Illumination } from '../types/GameTypes';
 import { ActionMenu } from './ActionMenu';
 import { SettingsMenu } from './SettingsMenu';
@@ -31,6 +31,8 @@ interface ActionBarProps {
   showMapCover?: boolean;
   setShowMapCover?: (show: boolean) => void;
   onOpenAIAssistant?: () => void;
+  onOpenPowers?: () => void;
+  hasPowers?: boolean;
   isGM?: boolean;
 }
 
@@ -60,6 +62,8 @@ export function ActionBar({
   showMapCover,
   setShowMapCover,
   onOpenAIAssistant,
+  onOpenPowers,
+  hasPowers = false,
   isGM = false,
 }: ActionBarProps) {
   const [actionsAnchorEl, setActionsAnchorEl] = useState<null | HTMLElement>(null);
@@ -292,6 +296,26 @@ export function ActionBar({
             character={character}
           />
         </Popover>
+
+        {/* Powers Button (Phase 3) */}
+        {hasPowers && onOpenPowers && (
+          <Tooltip title="Cast Powers">
+            <IconButton
+              onClick={onOpenPowers}
+              sx={{
+                color: '#87CEEB',
+                backgroundColor: '#2d1b0e',
+                border: '2px solid #4682B4',
+                '&:hover': {
+                  backgroundColor: '#3d2b1e',
+                  borderColor: '#87CEEB',
+                },
+              }}
+            >
+              <PowerIcon />
+            </IconButton>
+          </Tooltip>
+        )}
 
         {/* AI Assistant Button (GM only) */}
         {isGM && onOpenAIAssistant && (

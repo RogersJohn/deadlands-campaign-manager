@@ -2,8 +2,11 @@ package com.deadlands.campaign.controller;
 
 import com.deadlands.campaign.model.Character;
 import com.deadlands.campaign.model.User;
+import com.deadlands.campaign.model.ArcanePower;
+import com.deadlands.campaign.model.ArcanePowerReference;
 import com.deadlands.campaign.repository.CharacterRepository;
 import com.deadlands.campaign.repository.UserRepository;
+import com.deadlands.campaign.repository.ArcanePowerReferenceRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -57,6 +60,9 @@ class CharacterControllerTest {
 
     @MockBean
     private UserRepository userRepository;
+
+    @MockBean
+    private ArcanePowerReferenceRepository arcanePowerReferenceRepository;
 
     private User testPlayer;
     private User testGM;
@@ -871,5 +877,110 @@ class CharacterControllerTest {
                 .andExpect(jsonPath("$.recovered").value(false));
 
         verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    // ===== PHASE 3: Power Casting Tests =====
+
+    @Test
+    @DisplayName("Cast Power - SUCCESS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testCastPower_Success() throws Exception {
+        // Arrange
+        ArcanePowerReference boltPower = ArcanePowerReference.builder()
+                .id(1L)
+                .name("Bolt")
+                .powerPoints(1)
+                .effect("2d6 damage")
+                .build();
+
+        ArcanePower characterPower = ArcanePower.builder()
+                .id(1L)
+                .character(playerCharacter)
+                .powerReference(boltPower)
+                .build();
+
+        playerCharacter.getArcanePowers().add(characterPower);
+        playerCharacter.setCurrentPowerPoints(5);
+
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(arcanePowerReferenceRepository.findById(1L)).thenReturn(Optional.of(boltPower));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/powers/cast")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"powerReferenceId\": 1}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.currentPowerPoints").value(4))
+                .andExpect(jsonPath("$.powerCast").value("Bolt"))
+                .andExpect(jsonPath("$.powerCost").value(1));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Cast Power - INSUFFICIENT POWER POINTS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testCastPower_InsufficientPowerPoints() throws Exception {
+        // Arrange
+        ArcanePowerReference boltPower = ArcanePowerReference.builder()
+                .id(1L)
+                .name("Bolt")
+                .powerPoints(5)
+                .build();
+
+        ArcanePower characterPower = ArcanePower.builder()
+                .id(1L)
+                .character(playerCharacter)
+                .powerReference(boltPower)
+                .build();
+
+        playerCharacter.getArcanePowers().add(characterPower);
+        playerCharacter.setCurrentPowerPoints(2); // Not enough PP
+
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(arcanePowerReferenceRepository.findById(1L)).thenReturn(Optional.of(boltPower));
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/powers/cast")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"powerReferenceId\": 1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Insufficient power points"));
+
+        verify(characterRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Cast Power - CHARACTER DOESN'T KNOW POWER")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testCastPower_UnknownPower() throws Exception {
+        // Arrange
+        ArcanePowerReference boltPower = ArcanePowerReference.builder()
+                .id(1L)
+                .name("Bolt")
+                .powerPoints(1)
+                .build();
+
+        playerCharacter.setCurrentPowerPoints(5);
+        // Character has NO powers learned
+
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(arcanePowerReferenceRepository.findById(1L)).thenReturn(Optional.of(boltPower));
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/powers/cast")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"powerReferenceId\": 1}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("Character does not know this power"));
+
+        verify(characterRepository, never()).save(any());
     }
 }

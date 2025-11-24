@@ -5,8 +5,11 @@ import com.deadlands.campaign.model.Equipment;
 import com.deadlands.campaign.model.Skill;
 import com.deadlands.campaign.model.Edge;
 import com.deadlands.campaign.model.User;
+import com.deadlands.campaign.model.ArcanePower;
+import com.deadlands.campaign.model.ArcanePowerReference;
 import com.deadlands.campaign.repository.CharacterRepository;
 import com.deadlands.campaign.repository.UserRepository;
+import com.deadlands.campaign.repository.ArcanePowerReferenceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +28,9 @@ public class CharacterController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ArcanePowerReferenceRepository arcanePowerReferenceRepository;
 
     @GetMapping
     public ResponseEntity<List<CharacterDTO>> getAllCharacters(Authentication authentication) {
@@ -102,6 +108,11 @@ public class CharacterController {
                 .map(this::toEdgeDTO)
                 .toList());
 
+        // Add powers (for arcane characters)
+        dto.setPowers(character.getArcanePowers().stream()
+                .map(this::toArcanePowerDTO)
+                .toList());
+
         return dto;
     }
 
@@ -133,6 +144,27 @@ public class CharacterController {
         dto.setId(edge.getId());
         dto.setName(edge.getName());
         dto.setDescription(edge.getDescription());
+        return dto;
+    }
+
+    private ArcanePowerDTO toArcanePowerDTO(ArcanePower arcanePower) {
+        ArcanePowerDTO dto = new ArcanePowerDTO();
+        if (arcanePower.getPowerReference() != null) {
+            ArcanePowerReference ref = arcanePower.getPowerReference();
+            dto.setId(ref.getId());
+            dto.setName(ref.getName());
+            dto.setDescription(ref.getDescription());
+            dto.setPowerPoints(ref.getPowerPoints());
+            dto.setRange(ref.getRange());
+            dto.setDuration(ref.getDuration());
+            dto.setEffect(ref.getEffect());
+            dto.setTraitRoll(ref.getTraitRoll());
+            dto.setArcaneBackgrounds(ref.getArcaneBackgrounds());
+        } else {
+            // Legacy support - use ArcanePower's own fields if no reference
+            dto.setId(arcanePower.getId());
+            dto.setName(arcanePower.getName());
+        }
         return dto;
     }
 
@@ -172,6 +204,7 @@ public class CharacterController {
         private java.util.List<EquipmentDTO> equipment;
         private java.util.List<SkillDTO> skills;
         private java.util.List<EdgeDTO> edges;
+        private java.util.List<ArcanePowerDTO> powers;
 
         // Getters and setters
         public Long getId() { return id; }
@@ -240,6 +273,8 @@ public class CharacterController {
         public void setSkills(java.util.List<SkillDTO> skills) { this.skills = skills; }
         public java.util.List<EdgeDTO> getEdges() { return edges; }
         public void setEdges(java.util.List<EdgeDTO> edges) { this.edges = edges; }
+        public java.util.List<ArcanePowerDTO> getPowers() { return powers; }
+        public void setPowers(java.util.List<ArcanePowerDTO> powers) { this.powers = powers; }
     }
 
     static class EquipmentDTO {
@@ -300,6 +335,37 @@ public class CharacterController {
         public void setName(String name) { this.name = name; }
         public String getDescription() { return description; }
         public void setDescription(String description) { this.description = description; }
+    }
+
+    static class ArcanePowerDTO {
+        private Long id;
+        private String name;
+        private String description;
+        private Integer powerPoints;
+        private String range;
+        private String duration;
+        private String effect;
+        private String traitRoll;
+        private String arcaneBackgrounds;
+
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+        public Integer getPowerPoints() { return powerPoints; }
+        public void setPowerPoints(Integer powerPoints) { this.powerPoints = powerPoints; }
+        public String getRange() { return range; }
+        public void setRange(String range) { this.range = range; }
+        public String getDuration() { return duration; }
+        public void setDuration(String duration) { this.duration = duration; }
+        public String getEffect() { return effect; }
+        public void setEffect(String effect) { this.effect = effect; }
+        public String getTraitRoll() { return traitRoll; }
+        public void setTraitRoll(String traitRoll) { this.traitRoll = traitRoll; }
+        public String getArcaneBackgrounds() { return arcaneBackgrounds; }
+        public void setArcaneBackgrounds(String arcaneBackgrounds) { this.arcaneBackgrounds = arcaneBackgrounds; }
     }
 
     @GetMapping("/{id}")
@@ -764,6 +830,62 @@ public class CharacterController {
         ));
     }
 
+    /**
+     * Cast a power (spend power points and invoke power effect).
+     * POST /api/characters/{id}/powers/cast
+     */
+    @PostMapping("/{id}/powers/cast")
+    public ResponseEntity<?> castPower(@PathVariable Long id,
+                                        @RequestBody CastPowerRequest request,
+                                        Authentication authentication) {
+        Character character = characterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Owner or GM can cast powers
+        if (user.getRole() != User.Role.GAME_MASTER &&
+            !character.getPlayer().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to modify this character");
+        }
+
+        // Get the power reference
+        ArcanePowerReference powerRef = arcanePowerReferenceRepository.findById(request.getPowerReferenceId())
+                .orElseThrow(() -> new RuntimeException("Power not found"));
+
+        // Validate character knows this power
+        boolean knowsPower = character.getArcanePowers().stream()
+                .anyMatch(ap -> ap.getPowerReference() != null &&
+                               ap.getPowerReference().getId().equals(powerRef.getId()));
+
+        if (!knowsPower) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Character does not know this power"));
+        }
+
+        // Validate sufficient power points
+        int powerCost = powerRef.getPowerPoints() != null ? powerRef.getPowerPoints() : 0;
+        if (character.getCurrentPowerPoints() < powerCost) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Insufficient power points"));
+        }
+
+        // Deduct power points
+        character.setCurrentPowerPoints(character.getCurrentPowerPoints() - powerCost);
+        characterRepository.save(character);
+
+        // Return updated state and power details
+        return ResponseEntity.ok(Map.of(
+                "currentPowerPoints", character.getCurrentPowerPoints(),
+                "maxPowerPoints", character.getMaxPowerPoints(),
+                "powerCast", powerRef.getName(),
+                "powerEffect", powerRef.getEffect() != null ? powerRef.getEffect() : "",
+                "powerCost", powerCost,
+                "targetId", request.getTargetId() != null ? request.getTargetId() : 0
+        ));
+    }
+
     // Request DTOs
     static class PowerPointsRequest {
         private int amount;
@@ -791,5 +913,24 @@ public class CharacterController {
 
         public int getSpiritRoll() { return spiritRoll; }
         public void setSpiritRoll(int spiritRoll) { this.spiritRoll = spiritRoll; }
+    }
+
+    static class CastPowerRequest {
+        private Long powerReferenceId;
+        private Long targetId; // Character or enemy ID (null for self/area powers)
+        private Integer gridX;  // For area effect powers
+        private Integer gridY;
+
+        public Long getPowerReferenceId() { return powerReferenceId; }
+        public void setPowerReferenceId(Long powerReferenceId) { this.powerReferenceId = powerReferenceId; }
+
+        public Long getTargetId() { return targetId; }
+        public void setTargetId(Long targetId) { this.targetId = targetId; }
+
+        public Integer getGridX() { return gridX; }
+        public void setGridX(Integer gridX) { this.gridX = gridX; }
+
+        public Integer getGridY() { return gridY; }
+        public void setGridY(Integer gridY) { this.gridY = gridY; }
     }
 }

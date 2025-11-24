@@ -15,6 +15,7 @@ import { DiceRollPopup } from './components/DiceRollPopup';
 import { CombatHUD } from './components/CombatHUD';
 import AIAssistantPanel from '../components/ai/AIAssistantPanel';
 import GMControlPanel from './components/GMControlPanel';
+import { PowersPanel } from './components/PowersPanel';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
 import { GeneratedMap } from '../types/map';
 import { TurnPhase } from './engine/CombatManager';
@@ -82,6 +83,15 @@ export function GameArena() {
 
   // AI Assistant drawer state
   const [aiAssistantOpen, setAiAssistantOpen] = useState(false);
+
+  // Powers Panel drawer state (Phase 3)
+  const [powersOpen, setPowersOpen] = useState(false);
+  const [castingPower, setCastingPower] = useState<{
+    powerId: number;
+    powerName: string;
+    powerCost: number;
+    needsTarget: boolean;
+  } | null>(null);
 
 
   const handleCombatStateUpdate = useCallback((state: CombatState) => {
@@ -226,6 +236,62 @@ export function GameArena() {
   }, []);
 
   // WebSocket connection is now handled by useGameWebSocket hook
+
+  // Handle power casting (Phase 3)
+  const handleCastPower = useCallback(async (
+    powerId: number,
+    powerName: string,
+    powerCost: number,
+    needsTarget: boolean
+  ) => {
+    if (!selectedCharacter) return;
+
+    if (needsTarget) {
+      // Enter target selection mode
+      setCastingPower({ powerId, powerName, powerCost, needsTarget });
+      setPowersOpen(false);
+      console.log(`[GameArena] Selecting target for power: ${powerName}`);
+      // TODO: Integrate with Phaser scene for target selection
+      return;
+    }
+
+    // Self-targeting or no-target power - cast immediately
+    try {
+      const result = await characterService.castPower(selectedCharacter.id!, powerId);
+
+      // Update character's power points
+      setSelectedCharacter({
+        ...selectedCharacter,
+        currentPowerPoints: result.currentPowerPoints
+      });
+
+      // Add to combat log
+      const newLog: CombatLogEntry = {
+        id: `${Date.now()}`,
+        timestamp: Date.now(),
+        message: `${selectedCharacter.name} casts ${result.powerCast}! (${powerCost} PP)`,
+        type: 'success'
+      };
+      setCombatState(prev => ({
+        ...prev,
+        combatLog: [...prev.combatLog, newLog]
+      }));
+
+      console.log(`[GameArena] Power cast successful: ${powerName}`);
+    } catch (error: any) {
+      console.error('[GameArena] Failed to cast power:', error);
+      const errorLog: CombatLogEntry = {
+        id: `${Date.now()}`,
+        timestamp: Date.now(),
+        message: error.response?.data?.error || 'Power casting failed!',
+        type: 'damage'
+      };
+      setCombatState(prev => ({
+        ...prev,
+        combatLog: [...prev.combatLog, errorLog]
+      }));
+    }
+  }, [selectedCharacter, setSelectedCharacter]);
 
   // Load existing game state when entering arena (positions of players already on map)
   useEffect(() => {
@@ -587,6 +653,8 @@ export function GameArena() {
               showMapCover={showMapCover}
               setShowMapCover={setShowMapCover}
               onOpenAIAssistant={() => setAiAssistantOpen(true)}
+              onOpenPowers={() => setPowersOpen(true)}
+              hasPowers={selectedCharacter.powers && selectedCharacter.powers.length > 0}
               isGM={isGameMaster}
             />
           )}
@@ -608,6 +676,38 @@ export function GameArena() {
       >
         <AIAssistantPanel onClose={() => setAiAssistantOpen(false)} />
       </Drawer>
+
+      {/* PHASE 3: Powers Drawer */}
+      {selectedCharacter && selectedCharacter.powers && selectedCharacter.powers.length > 0 && (
+        <Drawer
+          anchor="right"
+          open={powersOpen}
+          onClose={() => setPowersOpen(false)}
+          PaperProps={{
+            sx: {
+              width: 600,
+              maxWidth: '95vw',
+              bgcolor: 'background.default'
+            },
+          }}
+        >
+          <Box sx={{ p: 2 }}>
+            <Button
+              onClick={() => setPowersOpen(false)}
+              variant="outlined"
+              fullWidth
+              sx={{ mb: 2 }}
+            >
+              Close
+            </Button>
+            <PowersPanel
+              character={selectedCharacter}
+              onCastPower={handleCastPower}
+              disabled={false}
+            />
+          </Box>
+        </Drawer>
+      )}
 
       {/* PHASE 1: Called Shot Dialog */}
       <CalledShotDialog
