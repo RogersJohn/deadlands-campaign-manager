@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { Illumination } from '../types/GameTypes';
 
 interface GameState {
   turnNumber: number;
@@ -12,9 +13,16 @@ interface GameState {
 interface GMControlPanelProps {
   onMapChange?: () => void;
   onGameReset?: () => void;
+  currentIllumination?: Illumination;
+  onIlluminationChange?: (level: Illumination) => void;
 }
 
-const GMControlPanel: React.FC<GMControlPanelProps> = ({ onMapChange, onGameReset }) => {
+const GMControlPanel: React.FC<GMControlPanelProps> = ({
+  onMapChange,
+  onGameReset,
+  currentIllumination = Illumination.BRIGHT,
+  onIlluminationChange
+}) => {
   const { user, token } = useAuthStore();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -126,6 +134,46 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({ onMapChange, onGameRese
     setTimeout(() => setNotification(null), 5000);
   };
 
+  const handleIlluminationChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLevel = event.target.value as Illumination;
+    if (onIlluminationChange) {
+      onIlluminationChange(newLevel);
+      const levelNames: Record<Illumination, string> = {
+        [Illumination.BRIGHT]: 'Bright',
+        [Illumination.DIM]: 'Dim',
+        [Illumination.DARK]: 'Dark',
+        [Illumination.PITCH_BLACK]: 'Pitch Black'
+      };
+      showNotification(`Illumination changed to: ${levelNames[newLevel]}`);
+    }
+  };
+
+  const handleAdvanceTurn = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/game/turn/advance`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const updatedState = await response.json();
+        setGameState(updatedState);
+        showNotification(`Turn advanced! Now: Turn ${updatedState.turnNumber} (${updatedState.turnPhase} phase)`);
+      } else {
+        const error = await response.text();
+        showNotification(`Failed to advance turn: ${error}`);
+      }
+    } catch (error) {
+      console.error('Failed to advance turn:', error);
+      showNotification('Error advancing turn');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isCollapsed) return; // Don't allow dragging when collapsed header is too small
@@ -226,6 +274,41 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({ onMapChange, onGameRese
                 </div>
               </div>
             )}
+
+            {/* Illumination Control */}
+            <div style={styles.section}>
+              <label style={styles.label}>
+                💡 Illumination Level
+              </label>
+              <select
+                value={currentIllumination}
+                onChange={handleIlluminationChange}
+                style={styles.select}
+                data-testid="illumination-select"
+              >
+                <option value={Illumination.BRIGHT}>☀️ Bright (no penalty)</option>
+                <option value={Illumination.DIM}>🌅 Dim (-1 penalty)</option>
+                <option value={Illumination.DARK}>🌙 Dark (-2 penalty)</option>
+                <option value={Illumination.PITCH_BLACK}>🌑 Pitch Black (-4 penalty)</option>
+              </select>
+              <div style={styles.helpText}>
+                Affects attack and Notice rolls for all characters
+              </div>
+            </div>
+
+            {/* End Turn Section */}
+            <div style={styles.section}>
+              <button
+                onClick={handleAdvanceTurn}
+                style={styles.button}
+                disabled={isLoading}
+              >
+                ⏭️ {isLoading ? 'Advancing...' : 'End Turn'}
+              </button>
+              <div style={styles.helpText}>
+                Cycles: player → enemy → resolution → next turn
+              </div>
+            </div>
 
             {/* Change Map Section */}
             <div style={styles.section}>
@@ -442,6 +525,24 @@ const styles: { [key: string]: React.CSSProperties } = {
     boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
     zIndex: 2000,
     maxWidth: '400px',
+  },
+  label: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#FFD700',
+    marginBottom: '8px',
+  },
+  select: {
+    width: '100%',
+    padding: '10px',
+    fontSize: '14px',
+    border: '2px solid #FFD700',
+    borderRadius: '4px',
+    backgroundColor: '#2a2a2a',
+    color: '#FFFFFF',
+    cursor: 'pointer',
+    marginBottom: '4px',
   },
 };
 

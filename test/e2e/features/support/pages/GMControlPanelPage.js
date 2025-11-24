@@ -33,6 +33,9 @@ class GMControlPanelPage extends BasePage {
     this.confirmResetButton = By.xpath('//button[contains(text(), "Yes, Reset") or contains(text(), "Confirm")]');
     this.cancelResetButton = By.xpath('//button[contains(text(), "Cancel")]');
 
+    // Turn management controls
+    this.endTurnButton = By.xpath('//button[contains(text(), "End Turn")]');
+
     // Notification toast
     this.notification = By.css('[data-testid="notification"], .notification, [role="alert"]');
   }
@@ -300,6 +303,86 @@ class GMControlPanelPage extends BasePage {
       turn: await this.getTurnNumber(),
       tokenCount: await this.getTokenCount()
     };
+  }
+
+  /**
+   * Get the current turn phase
+   * @returns {Promise<string>}
+   */
+  async getTurnPhase() {
+    try {
+      const phaseText = await this.executeScript(`
+        const panel = document.querySelector('[data-testid="gm-control-panel"]') ||
+                     document.querySelector('.gm-control-panel') ||
+                     Array.from(document.querySelectorAll('div')).find(d => d.textContent.includes('Turn:'));
+
+        if (panel) {
+          const turnLine = panel.textContent.split('\\n').find(line => line.includes('Turn:'));
+          if (turnLine) {
+            // Extract phase from "Turn: 1 (player phase)" or "Turn: 1 (enemy phase)"
+            const match = turnLine.match(/\\((\\w+) phase\\)/) || turnLine.match(/\\((\\w+)\\)/);
+            return match ? match[1] : 'player';
+          }
+        }
+        return 'player';
+      `);
+      return phaseText;
+    } catch (error) {
+      console.warn('Failed to get turn phase:', error.message);
+      return 'player';
+    }
+  }
+
+  /**
+   * Click the "End Turn" button
+   */
+  async clickEndTurn() {
+    const button = await this.findElement(this.endTurnButton);
+    await button.click();
+    await this.sleep(500); // Wait for turn advancement
+  }
+
+  /**
+   * Check if End Turn button is visible
+   * @returns {Promise<boolean>}
+   */
+  async isEndTurnButtonVisible() {
+    return await this.isElementPresent(this.endTurnButton, 3000);
+  }
+
+  /**
+   * Check if End Turn button is disabled
+   * @returns {Promise<boolean>}
+   */
+  async isEndTurnButtonDisabled() {
+    try {
+      const button = await this.findElement(this.endTurnButton);
+      const isDisabled = await button.getAttribute('disabled');
+      return isDisabled !== null;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  /**
+   * Get the text displayed on the End Turn button
+   * @returns {Promise<string>}
+   */
+  async getEndTurnButtonText() {
+    try {
+      const button = await this.findElement(this.endTurnButton);
+      return await button.getText();
+    } catch (error) {
+      return '';
+    }
+  }
+
+  /**
+   * Get notification text
+   * @returns {Promise<string>}
+   */
+  async getNotificationText() {
+    return await this.getNotificationMessage();
   }
 }
 

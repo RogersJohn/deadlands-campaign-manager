@@ -273,4 +273,139 @@ class GameStateControllerTest {
 
         verify(gameStateService, never()).resetGameState();
     }
+
+    // ==================== ADVANCE TURN TESTS ====================
+
+    @Test
+    @DisplayName("POST /api/game/turn/advance - GM can advance turn")
+    @WithMockUser(username = "gamemaster", roles = {"GAME_MASTER"})
+    void advanceTurn_asGM_succeeds() throws Exception {
+        // Arrange
+        GameState advancedState = GameState.builder()
+                .id(1L)
+                .turnNumber(3)
+                .turnPhase("enemy")
+                .currentMap("saloon_interior")
+                .lastActivity(LocalDateTime.now())
+                .tokenPositions(new ArrayList<>())
+                .build();
+
+        when(gameStateService.advanceTurn()).thenReturn(advancedState);
+        when(gameStateService.getAllTokenPositions()).thenReturn(mockPositions);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/game/turn/advance")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.turnNumber", is(3)))
+                .andExpect(jsonPath("$.turnPhase", is("enemy")))
+                .andExpect(jsonPath("$.currentMap", is("saloon_interior")))
+                .andExpect(jsonPath("$.tokenPositions", hasSize(2)));
+
+        verify(gameStateService, times(1)).advanceTurn();
+        verify(gameStateService, times(1)).getAllTokenPositions();
+    }
+
+    @Test
+    @DisplayName("POST /api/game/turn/advance - Advances from player to enemy phase")
+    @WithMockUser(username = "gamemaster", roles = {"GAME_MASTER"})
+    void advanceTurn_playerPhase_advancesToEnemy() throws Exception {
+        // Arrange
+        GameState advancedState = GameState.builder()
+                .id(1L)
+                .turnNumber(5)
+                .turnPhase("enemy")
+                .currentMap("saloon_interior")
+                .lastActivity(LocalDateTime.now())
+                .tokenPositions(new ArrayList<>())
+                .build();
+
+        when(gameStateService.advanceTurn()).thenReturn(advancedState);
+        when(gameStateService.getAllTokenPositions()).thenReturn(new ArrayList<>());
+
+        // Act & Assert
+        mockMvc.perform(post("/api/game/turn/advance")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.turnNumber", is(5)))
+                .andExpect(jsonPath("$.turnPhase", is("enemy")));
+    }
+
+    @Test
+    @DisplayName("POST /api/game/turn/advance - Advances from resolution to player and increments turn")
+    @WithMockUser(username = "gamemaster", roles = {"GAME_MASTER"})
+    void advanceTurn_resolutionPhase_advancesToPlayerAndIncrementsTurn() throws Exception {
+        // Arrange
+        GameState advancedState = GameState.builder()
+                .id(1L)
+                .turnNumber(6)
+                .turnPhase("player")
+                .currentMap("saloon_interior")
+                .lastActivity(LocalDateTime.now())
+                .tokenPositions(new ArrayList<>())
+                .build();
+
+        when(gameStateService.advanceTurn()).thenReturn(advancedState);
+        when(gameStateService.getAllTokenPositions()).thenReturn(new ArrayList<>());
+
+        // Act & Assert
+        mockMvc.perform(post("/api/game/turn/advance")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.turnNumber", is(6)))
+                .andExpect(jsonPath("$.turnPhase", is("player")));
+    }
+
+    @Test
+    @DisplayName("POST /api/game/turn/advance - Player cannot advance turn (403 Forbidden)")
+    @WithMockUser(username = "player1", roles = {"PLAYER"})
+    void advanceTurn_asPlayer_forbidden() throws Exception {
+        // Act & Assert
+        mockMvc.perform(post("/api/game/turn/advance")
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verify(gameStateService, never()).advanceTurn();
+    }
+
+    @Test
+    @DisplayName("POST /api/game/turn/advance - Unauthenticated request returns 403")
+    void advanceTurn_noAuth_forbidden() throws Exception {
+        // Act & Assert
+        mockMvc.perform(post("/api/game/turn/advance")
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        verify(gameStateService, never()).advanceTurn();
+    }
+
+    @Test
+    @DisplayName("POST /api/game/turn/advance - Returns full game state with token positions")
+    @WithMockUser(username = "gamemaster", roles = {"GAME_MASTER"})
+    void advanceTurn_returnsFullStateWithTokens() throws Exception {
+        // Arrange
+        GameState advancedState = GameState.builder()
+                .id(1L)
+                .turnNumber(10)
+                .turnPhase("resolution")
+                .currentMap("desert_canyon")
+                .lastActivity(LocalDateTime.now())
+                .tokenPositions(new ArrayList<>())
+                .build();
+
+        when(gameStateService.advanceTurn()).thenReturn(advancedState);
+        when(gameStateService.getAllTokenPositions()).thenReturn(mockPositions);
+
+        // Act & Assert
+        mockMvc.perform(post("/api/game/turn/advance")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.turnNumber", is(10)))
+                .andExpect(jsonPath("$.turnPhase", is("resolution")))
+                .andExpect(jsonPath("$.currentMap", is("desert_canyon")))
+                .andExpect(jsonPath("$.tokenPositions", hasSize(2)))
+                .andExpect(jsonPath("$.tokenPositions[0].tokenId", is("100")))
+                .andExpect(jsonPath("$.tokenPositions[1].tokenId", is("200")));
+    }
 }

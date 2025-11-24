@@ -221,6 +221,48 @@ public class GameStateService {
     }
 
     /**
+     * Advance to the next turn phase.
+     * Cycles through: player -> enemy -> resolution -> next turn (player)
+     *
+     * @return The updated GameState
+     */
+    @Transactional
+    public GameState advanceTurn() {
+        GameState gameState = getOrCreateGameState();
+        String currentPhase = gameState.getTurnPhase();
+        int currentTurn = gameState.getTurnNumber();
+
+        String nextPhase;
+        int nextTurn = currentTurn;
+
+        switch (currentPhase) {
+            case "player":
+                nextPhase = "enemy";
+                break;
+            case "enemy":
+                nextPhase = "resolution";
+                break;
+            case "resolution":
+                nextPhase = "player";
+                nextTurn = currentTurn + 1;
+                break;
+            default:
+                // Default to player phase if unknown
+                nextPhase = "player";
+        }
+
+        gameState.setTurnNumber(nextTurn);
+        gameState.setTurnPhase(nextPhase);
+        gameState.setLastActivity(LocalDateTime.now());
+        gameStateRepository.save(gameState);
+
+        logger.info("[GameStateService] Advanced turn: {} ({}) -> {} ({})",
+                currentTurn, currentPhase, nextTurn, nextPhase);
+
+        return gameState;
+    }
+
+    /**
      * Reset the entire game state.
      * Clears all token positions and resets turn to 1.
      * Does NOT change the current map.

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Container, Typography, Paper, Box, Button, CircularProgress, Alert, Grid, Card, CardContent, CardMedia, CardActionArea, Radio, RadioGroup, FormControlLabel, IconButton, Tooltip, Drawer } from '@mui/material';
 import { WbSunny as SunIcon, WbTwilight as TwilightIcon, Brightness3 as MoonIcon, Brightness1 as DarkIcon, Psychology as AIIcon } from '@mui/icons-material';
 import { GameCanvas } from './components/GameCanvas';
@@ -11,6 +12,7 @@ import { ActionBar } from './components/ActionBar';
 import InitiativeTracker from './components/InitiativeTracker';
 import { CombatLog } from './components/CombatLog';
 import { DiceRollPopup } from './components/DiceRollPopup';
+import { CombatHUD } from './components/CombatHUD';
 import AIAssistantPanel from '../components/ai/AIAssistantPanel';
 import GMControlPanel from './components/GMControlPanel';
 import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, CalledShotTarget, Illumination } from './types/GameTypes';
@@ -32,9 +34,18 @@ interface CombatState {
 }
 
 export function GameArena() {
+  const navigate = useNavigate();
   const { token, user } = useAuthStore();
   const { selectedCharacter, setSelectedCharacter } = useGameStore();
   const isGameMaster = user?.role === 'GAME_MASTER';
+
+  // ARENA PROTECTION: Redirect to character selection if no character selected
+  useEffect(() => {
+    if (!selectedCharacter && !isGameMaster) {
+      console.warn('[GameArena] No character selected, redirecting to character selection');
+      navigate('/character-select', { replace: true });
+    }
+  }, [selectedCharacter, isGameMaster, navigate]);
 
   const [gameStarted, setGameStarted] = useState(false);
   const [characters, setCharacters] = useState<GameCharacter[]>([]);
@@ -190,6 +201,30 @@ export function GameArena() {
     };
   }, [gameEvents]);
 
+  // Listen for turn changes from WebSocket
+  useEffect(() => {
+    const handleTurnChanged = (event: CustomEvent) => {
+      const gameState = event.detail;
+      console.log('[GameArena] Received turn change via WebSocket:', gameState);
+
+      // Update combat state with new turn information
+      setCombatState(prev => ({
+        ...prev,
+        turnNumber: gameState.turnNumber,
+        phase: gameState.turnPhase,
+      }));
+
+      console.log(`[GameArena] Turn updated to ${gameState.turnNumber} (${gameState.turnPhase} phase)`);
+    };
+
+    // Listen for turn change events from WebSocket
+    window.addEventListener('turnChanged', handleTurnChanged as EventListener);
+
+    return () => {
+      window.removeEventListener('turnChanged', handleTurnChanged as EventListener);
+    };
+  }, []);
+
   // WebSocket connection is now handled by useGameWebSocket hook
 
   // Load existing game state when entering arena (positions of players already on map)
@@ -321,7 +356,7 @@ export function GameArena() {
   };
 
   // Generate initiative entries for the tracker
-  // For now, only show the selected character in the session
+  // For now, only show the selected character in the game
   // TODO: Add NPCs/enemies when combat system is fully integrated
   const initiativeEntries = useMemo(() => {
     if (!selectedCharacter) return [];
@@ -452,6 +487,8 @@ export function GameArena() {
               // Optionally reset local game state
               console.log('Game reset by GM');
             }}
+            currentIllumination={illumination}
+            onIlluminationChange={setIllumination}
           />
 
           {/* ARENA LAYOUT: 15% Initiative | 65% Map | 15% Combat Log | 5% Spacing */}
@@ -474,6 +511,14 @@ export function GameArena() {
                 onShakenUpdate={handleShakenUpdate}
                 onMovementBudgetUpdate={handleMovementBudgetUpdate}
                 onPhaserGameReady={handlePhaserGameReady}
+              />
+              {/* Combat HUD - Turn and Health Display */}
+              <CombatHUD
+                turnNumber={combatState.turnNumber}
+                phase={combatState.phase as 'player' | 'enemy' | 'victory' | 'defeat'}
+                playerHealth={combatState.playerHealth}
+                playerMaxHealth={combatState.playerMaxHealth}
+                combatLog={combatState.combatLog}
               />
               {/* Dice Roll Popup - Positioned absolutely over the canvas */}
               <DiceRollPopup

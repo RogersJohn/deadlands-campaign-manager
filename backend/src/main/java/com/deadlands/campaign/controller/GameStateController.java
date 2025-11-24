@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,6 +33,9 @@ public class GameStateController {
 
     @Autowired
     private GameStateService gameStateService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     /**
      * Get the current game state including all token positions.
@@ -118,6 +122,46 @@ public class GameStateController {
         logger.info("[GameStateController] {}", message);
 
         return ResponseEntity.ok(message);
+    }
+
+    /**
+     * Advance to the next turn phase.
+     *
+     * Cycles through: player -> enemy -> resolution -> next turn (player)
+     *
+     * Only Game Masters can advance turns.
+     *
+     * @return The updated game state response
+     */
+    @PostMapping("/turn/advance")
+    @PreAuthorize("hasRole('GAME_MASTER')")
+    public ResponseEntity<GameStateResponse> advanceTurn() {
+        logger.info("[GameStateController] POST /api/game/turn/advance - GM advancing turn");
+
+        GameState gameState = gameStateService.advanceTurn();
+        List<TokenPosition> positions = gameStateService.getAllTokenPositions();
+
+        // Convert to DTOs
+        List<TokenPositionDTO> positionDTOs = positions.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        GameStateResponse response = GameStateResponse.builder()
+                .turnNumber(gameState.getTurnNumber())
+                .turnPhase(gameState.getTurnPhase())
+                .currentMap(gameState.getCurrentMap())
+                .tokenPositions(positionDTOs)
+                .lastActivity(gameState.getLastActivity())
+                .build();
+
+        logger.info("[GameStateController] Turn advanced to {} ({})",
+                gameState.getTurnNumber(), gameState.getTurnPhase());
+
+        // Broadcast turn change to all connected clients
+        messagingTemplate.convertAndSend("/topic/game/turn", response);
+        logger.debug("[GameStateController] Broadcasted turn change to /topic/game/turn");
+
+        return ResponseEntity.ok(response);
     }
 
     /**

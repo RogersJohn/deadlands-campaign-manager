@@ -128,6 +128,21 @@ export class WebSocketService {
       }
     });
 
+    // Subscribe to turn change events
+    this.client.subscribe('/topic/game/turn', (message: IMessage) => {
+      try {
+        const event = JSON.parse(message.body);
+        console.log('[WebSocket] Received turn change:', event);
+
+        // Dispatch turn change event for UI components
+        window.dispatchEvent(
+          new CustomEvent('turnChanged', { detail: event })
+        );
+      } catch (error) {
+        console.error('[WebSocket] Failed to parse turn change:', error);
+      }
+    });
+
     // Subscribe to personal pong messages
     this.client.subscribe('/user/queue/pong', (message: IMessage) => {
       try {

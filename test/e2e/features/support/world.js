@@ -24,6 +24,8 @@ class CustomWorld {
     this.pages = {}; // Store page objects for each browser
     this.testData = {}; // Store test data
     this.config = config;
+    this.createdCharacters = []; // Track characters created during this test
+    this.authTokens = {}; // Store auth tokens for cleanup
   }
 
   // Create a new browser instance with retry logic
@@ -141,6 +143,17 @@ class CustomWorld {
         }
       );
       console.log(`Character created: ${characterData.name}`);
+
+      // Track created character for cleanup
+      if (response.data && response.data.id) {
+        this.createdCharacters.push({
+          id: response.data.id,
+          name: response.data.name,
+          token: token
+        });
+        console.log(`Tracked character ${response.data.name} (ID: ${response.data.id}) for cleanup`);
+      }
+
       return response.data;
     } catch (error) {
       const errorData = error.response?.data;
@@ -156,7 +169,7 @@ class CustomWorld {
           );
           const existingChar = getResponse.data.find(char => char.name === characterData.name);
           if (existingChar) {
-            console.log(`Using existing character: ${characterData.name}`);
+            console.log(`Using existing character: ${characterData.name} (will NOT cleanup - existed before test)`);
             return existingChar;
           }
         } catch (fetchError) {
@@ -200,6 +213,8 @@ AfterAll(async function () {
 Before(async function () {
   // Reset test data for each scenario
   this.testData = {};
+  this.createdCharacters = [];
+  this.authTokens = {};
 });
 
 After(async function ({ result, pickle }) {
@@ -213,6 +228,23 @@ After(async function ({ result, pickle }) {
         console.error(`Failed to take screenshot for ${browserName}:`, error.message);
       }
     }
+  }
+
+  // CRITICAL: Clean up created test data
+  if (this.createdCharacters && this.createdCharacters.length > 0) {
+    console.log(`\nCleaning up ${this.createdCharacters.length} test character(s)...`);
+    for (const char of this.createdCharacters) {
+      try {
+        await axios.delete(
+          `${this.config.apiUrl}/characters/${char.id}`,
+          { headers: { Authorization: `Bearer ${char.token}` } }
+        );
+        console.log(`✓ Deleted test character: ${char.name} (ID: ${char.id})`);
+      } catch (error) {
+        console.warn(`✗ Failed to cleanup character ${char.name} (ID: ${char.id}):`, error.message);
+      }
+    }
+    console.log(`Cleanup complete.\n`);
   }
 
   // Close all browsers after each scenario

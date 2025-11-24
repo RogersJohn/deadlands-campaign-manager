@@ -334,4 +334,97 @@ class GameStateServiceTest {
         assertThat(mockGameState.getTurnPhase()).isEqualTo("enemy");
         verify(gameStateRepository, times(1)).save(mockGameState);
     }
+
+    // ==================== ADVANCE TURN TESTS ====================
+
+    @Test
+    @DisplayName("advanceTurn - Advances from player to enemy phase")
+    void advanceTurn_playerPhase_advancesToEnemy() {
+        // Arrange
+        mockGameState.setTurnNumber(5);
+        mockGameState.setTurnPhase("player");
+        when(gameStateRepository.findById(1L)).thenReturn(Optional.of(mockGameState));
+        when(gameStateRepository.save(any(GameState.class))).thenReturn(mockGameState);
+
+        // Act
+        GameState result = gameStateService.advanceTurn();
+
+        // Assert
+        assertThat(result.getTurnNumber()).isEqualTo(5);
+        assertThat(result.getTurnPhase()).isEqualTo("enemy");
+        verify(gameStateRepository, times(1)).save(mockGameState);
+    }
+
+    @Test
+    @DisplayName("advanceTurn - Advances from enemy to resolution phase")
+    void advanceTurn_enemyPhase_advancesToResolution() {
+        // Arrange
+        mockGameState.setTurnNumber(5);
+        mockGameState.setTurnPhase("enemy");
+        when(gameStateRepository.findById(1L)).thenReturn(Optional.of(mockGameState));
+        when(gameStateRepository.save(any(GameState.class))).thenReturn(mockGameState);
+
+        // Act
+        GameState result = gameStateService.advanceTurn();
+
+        // Assert
+        assertThat(result.getTurnNumber()).isEqualTo(5);
+        assertThat(result.getTurnPhase()).isEqualTo("resolution");
+        verify(gameStateRepository, times(1)).save(mockGameState);
+    }
+
+    @Test
+    @DisplayName("advanceTurn - Advances from resolution to player phase and increments turn")
+    void advanceTurn_resolutionPhase_advancesToPlayerAndIncrementsTurn() {
+        // Arrange
+        mockGameState.setTurnNumber(5);
+        mockGameState.setTurnPhase("resolution");
+        when(gameStateRepository.findById(1L)).thenReturn(Optional.of(mockGameState));
+        when(gameStateRepository.save(any(GameState.class))).thenReturn(mockGameState);
+
+        // Act
+        GameState result = gameStateService.advanceTurn();
+
+        // Assert
+        assertThat(result.getTurnNumber()).isEqualTo(6);
+        assertThat(result.getTurnPhase()).isEqualTo("player");
+        verify(gameStateRepository, times(1)).save(mockGameState);
+    }
+
+    @Test
+    @DisplayName("advanceTurn - Handles unknown phase by defaulting to player")
+    void advanceTurn_unknownPhase_defaultsToPlayer() {
+        // Arrange
+        mockGameState.setTurnNumber(5);
+        mockGameState.setTurnPhase("unknown");
+        when(gameStateRepository.findById(1L)).thenReturn(Optional.of(mockGameState));
+        when(gameStateRepository.save(any(GameState.class))).thenReturn(mockGameState);
+
+        // Act
+        GameState result = gameStateService.advanceTurn();
+
+        // Assert
+        assertThat(result.getTurnNumber()).isEqualTo(5);
+        assertThat(result.getTurnPhase()).isEqualTo("player");
+        verify(gameStateRepository, times(1)).save(mockGameState);
+    }
+
+    @Test
+    @DisplayName("advanceTurn - Updates lastActivity timestamp")
+    void advanceTurn_updatesLastActivity() {
+        // Arrange
+        LocalDateTime oldTimestamp = LocalDateTime.now().minusMinutes(10);
+        mockGameState.setTurnNumber(5);
+        mockGameState.setTurnPhase("player");
+        mockGameState.setLastActivity(oldTimestamp);
+        when(gameStateRepository.findById(1L)).thenReturn(Optional.of(mockGameState));
+        when(gameStateRepository.save(any(GameState.class))).thenReturn(mockGameState);
+
+        // Act
+        GameState result = gameStateService.advanceTurn();
+
+        // Assert
+        assertThat(result.getLastActivity()).isAfter(oldTimestamp);
+        verify(gameStateRepository, times(1)).save(mockGameState);
+    }
 }

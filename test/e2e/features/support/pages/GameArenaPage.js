@@ -386,6 +386,59 @@ class GameArenaPage extends BasePage {
     }
     return false;
   }
+
+  /**
+   * Get the turn number from CombatHUD
+   * @returns {Promise<number>}
+   */
+  async getCombatHUDTurn() {
+    try {
+      const turnText = await this.executeScript(`
+        // Look for CombatHUD turn display
+        const combatHUD = Array.from(document.querySelectorAll('*')).find(el =>
+          el.textContent.includes('Turn') && el.textContent.match(/Turn\\s+(\\d+)/)
+        );
+
+        if (combatHUD) {
+          const match = combatHUD.textContent.match(/Turn\\s+(\\d+)/);
+          return match ? parseInt(match[1]) : 1;
+        }
+        return 1;
+      `);
+      return turnText;
+    } catch (error) {
+      console.warn('Failed to get CombatHUD turn:', error.message);
+      return 1;
+    }
+  }
+
+  /**
+   * Get the phase text from CombatHUD
+   * @returns {Promise<string>}
+   */
+  async getCombatHUDPhase() {
+    try {
+      const phaseText = await this.executeScript(`
+        // Look for CombatHUD phase display
+        const phaseElement = Array.from(document.querySelectorAll('*')).find(el =>
+          el.textContent === 'YOUR TURN' ||
+          el.textContent === 'ENEMY TURN' ||
+          el.textContent === 'VICTORY!' ||
+          el.textContent === 'DEFEAT' ||
+          el.textContent.toLowerCase().includes('resolution')
+        );
+
+        if (phaseElement) {
+          return phaseElement.textContent;
+        }
+        return 'YOUR TURN';
+      `);
+      return phaseText;
+    } catch (error) {
+      console.warn('Failed to get CombatHUD phase:', error.message);
+      return 'YOUR TURN';
+    }
+  }
 }
 
 module.exports = GameArenaPage;

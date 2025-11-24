@@ -39,30 +39,46 @@ Given('test accounts exist:', async function (dataTable) {
 });
 
 Given('characters exist for all players', async function () {
-  // Create characters for all PLAYER role accounts
+  // Use existing characters for all PLAYER role accounts
+  // CRITICAL: Do NOT create new characters - use what already exists!
+  const axios = require('axios');
+
   for (const [username, data] of Object.entries(this.testData)) {
     if (data.role === 'PLAYER') {
       try {
         // Login to get token
         const token = await this.login(username, data.password);
 
-        // Create character
-        const character = await this.createCharacter(token, {
-          name: `${username}_character`,
-          agilityDie: 'd8',
-          smartsDie: 'd6',
-          spiritDie: 'd6',
-          strengthDie: 'd6',
-          vigorDie: 'd8',
-          parry: 5,
-          toughness: 6,
-          pace: 6,
-        });
+        // FIRST: Try to fetch existing characters
+        const response = await axios.get(
+          `${this.config.apiUrl}/characters`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
 
-        // Store character data
-        this.testData[username].character = character;
+        if (response.data && response.data.length > 0) {
+          // Use the first existing character
+          const character = response.data[0];
+          console.log(`Using existing character for ${username}: ${character.name}`);
+          this.testData[username].character = character;
+        } else {
+          // Only create if NO characters exist
+          console.log(`No characters found for ${username}, creating one...`);
+          const character = await this.createCharacter(token, {
+            name: `${username}_character`,
+            agilityDie: 'd8',
+            smartsDie: 'd6',
+            spiritDie: 'd6',
+            strengthDie: 'd6',
+            vigorDie: 'd8',
+            parry: 5,
+            toughness: 6,
+            pace: 6,
+          });
+          this.testData[username].character = character;
+        }
       } catch (error) {
-        console.warn(`Character creation skipped for ${username} (may already exist)`);
+        console.error(`Failed to get/create character for ${username}:`, error.message);
+        throw error;
       }
     }
   }
