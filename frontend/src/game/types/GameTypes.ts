@@ -48,6 +48,10 @@ export interface GameCharacter {
   maxPowerPoints?: number;
   fateChips?: number;
 
+  // Combat State (Savage Worlds)
+  woundCount?: number;
+  isShaken?: boolean;
+
   // Character abilities
   equipment?: Equipment[];
   skills?: Skill[];

@@ -733,4 +733,143 @@ class CharacterControllerTest {
         verify(characterRepository, never()).findById(any());
         verify(characterRepository, never()).save(any(Character.class));
     }
+
+    // =====================================================================
+    // COMBAT ACTIONS TESTS
+    // =====================================================================
+
+    @Test
+    @DisplayName("Apply damage - SHAKEN")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testApplyDamage_Shaken() throws Exception {
+        // Arrange
+        playerCharacter.setWoundCount(0);
+        playerCharacter.setIsShaken(false);
+        playerCharacter.setToughness(6);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert - Damage equals Toughness = Shaken
+        mockMvc.perform(post("/characters/1/combat/damage")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"damage\": 6}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isShaken").value(true))
+                .andExpect(jsonPath("$.woundCount").value(0));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Apply damage - WOUNDS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testApplyDamage_Wounds() throws Exception {
+        // Arrange
+        playerCharacter.setWoundCount(0);
+        playerCharacter.setIsShaken(false);
+        playerCharacter.setToughness(6);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert - Damage 10 vs Toughness 6 = 1 wound (no raises)
+        mockMvc.perform(post("/characters/1/combat/damage")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"damage\": 10}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.woundCount").value(1));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Soak damage - SUCCESS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testSoakDamage_Success() throws Exception {
+        // Arrange
+        playerCharacter.setWoundCount(2);
+        playerCharacter.setFateChips(3);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert - Vigor roll 8 (TN 4) = success + 1 raise = 2 wounds removed
+        mockMvc.perform(post("/characters/1/combat/soak")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"vigorRoll\": 8}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.woundCount").value(0))
+                .andExpect(jsonPath("$.woundsRemoved").value(2))
+                .andExpect(jsonPath("$.fateChips").value(2));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Soak damage - NO FATE CHIPS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testSoakDamage_NoChips() throws Exception {
+        // Arrange
+        playerCharacter.setWoundCount(2);
+        playerCharacter.setFateChips(0);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+
+        // Act & Assert
+        mockMvc.perform(post("/characters/1/combat/soak")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"vigorRoll\": 8}"))
+                .andExpect(status().isBadRequest());
+
+        verify(characterRepository, never()).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Recover from Shaken - SUCCESS")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testRecoverFromShaken_Success() throws Exception {
+        // Arrange
+        playerCharacter.setIsShaken(true);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert - Spirit roll 5 (TN 4) = success
+        mockMvc.perform(post("/characters/1/combat/recover")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"spiritRoll\": 5}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isShaken").value(false))
+                .andExpect(jsonPath("$.recovered").value(true));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
+
+    @Test
+    @DisplayName("Recover from Shaken - FAILURE")
+    @WithMockUser(username = "testplayer", roles = "PLAYER")
+    void testRecoverFromShaken_Failure() throws Exception {
+        // Arrange
+        playerCharacter.setIsShaken(true);
+        when(characterRepository.findById(1L)).thenReturn(Optional.of(playerCharacter));
+        when(userRepository.findByUsername("testplayer")).thenReturn(Optional.of(testPlayer));
+        when(characterRepository.save(any(Character.class))).thenReturn(playerCharacter);
+
+        // Act & Assert - Spirit roll 3 (TN 4) = failure
+        mockMvc.perform(post("/characters/1/combat/recover")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"spiritRoll\": 3}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isShaken").value(true))
+                .andExpect(jsonPath("$.recovered").value(false));
+
+        verify(characterRepository, times(1)).save(any(Character.class));
+    }
 }

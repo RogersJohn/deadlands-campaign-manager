@@ -401,6 +401,40 @@ const CharacterSheet = () => {
                       </Box>
                     </Tooltip>
                   </Grid>
+                  <Grid item xs={6} sm={4} md={3}>
+                    <Tooltip title="Wounds (each gives -1 penalty). 4 wounds = incapacitated" arrow>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          ❤️ Wounds
+                        </Typography>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: (character.woundCount || 0) >= 3 ? 'error.main' :
+                                   (character.woundCount || 0) >= 1 ? 'warning.main' :
+                                   'success.main'
+                          }}
+                        >
+                          {character.woundCount || 0} / 3
+                          {(character.woundCount || 0) >= 4 && ' (INCAP)'}
+                        </Typography>
+                      </Box>
+                    </Tooltip>
+                  </Grid>
+                  {character.isShaken && (
+                    <Grid item xs={6} sm={4} md={3}>
+                      <Tooltip title="Shaken (stunned) - can only take free actions" arrow>
+                        <Box>
+                          <Typography variant="subtitle2" color="warning.main">
+                            💫 Status
+                          </Typography>
+                          <Typography variant="h6" color="warning.main">
+                            SHAKEN
+                          </Typography>
+                        </Box>
+                      </Tooltip>
+                    </Grid>
+                  )}
                   {character.size !== undefined && character.size !== 0 && (
                     <Grid item xs={6} sm={4} md={3}>
                       <Typography variant="subtitle2" color="text.secondary">

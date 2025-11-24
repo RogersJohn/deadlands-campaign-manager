@@ -26,6 +26,9 @@ export interface Character {
   currentPowerPoints?: number
   maxPowerPoints?: number
   fateChips?: number
+  // Combat State (Savage Worlds)
+  woundCount?: number
+  isShaken?: boolean
   // Legacy Deadlands Classic Attributes (deprecated)
   cognitionDie?: string
   deftnessDie?: string
@@ -86,6 +89,22 @@ const characterService = {
 
   gainFateChip: async (id: number): Promise<{fateChips: number}> => {
     const response = await api.post(`/characters/${id}/fate-chips/gain`)
+    return response.data
+  },
+
+  // Combat actions
+  applyDamage: async (id: number, damage: number): Promise<{woundCount: number, isShaken: boolean, isIncapacitated: boolean}> => {
+    const response = await api.post(`/characters/${id}/combat/damage`, { damage })
+    return response.data
+  },
+
+  soakDamage: async (id: number, vigorRoll: number): Promise<{woundCount: number, woundsRemoved: number, fateChips: number, vigorRoll: number}> => {
+    const response = await api.post(`/characters/${id}/combat/soak`, { vigorRoll })
+    return response.data
+  },
+
+  recoverFromShaken: async (id: number, spiritRoll: number): Promise<{isShaken: boolean, recovered: boolean, spiritRoll: number}> => {
+    const response = await api.post(`/characters/${id}/combat/recover`, { spiritRoll })
     return response.data
   },
 }

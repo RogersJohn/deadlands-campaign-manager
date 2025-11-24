@@ -77,6 +77,9 @@ public class CharacterController {
         dto.setCurrentPowerPoints(character.getCurrentPowerPoints());
         dto.setMaxPowerPoints(character.getMaxPowerPoints());
         dto.setFateChips(character.getFateChips());
+        // Combat State
+        dto.setWoundCount(character.getWoundCount());
+        dto.setIsShaken(character.getIsShaken());
 
         // Add player information
         if (character.getPlayer() != null) {
@@ -162,6 +165,8 @@ public class CharacterController {
         private Integer currentPowerPoints;
         private Integer maxPowerPoints;
         private Integer fateChips;
+        private Integer woundCount;
+        private Boolean isShaken;
         private Long playerId;
         private String playerName;
         private java.util.List<EquipmentDTO> equipment;
@@ -221,6 +226,10 @@ public class CharacterController {
         public void setMaxPowerPoints(Integer maxPowerPoints) { this.maxPowerPoints = maxPowerPoints; }
         public Integer getFateChips() { return fateChips; }
         public void setFateChips(Integer fateChips) { this.fateChips = fateChips; }
+        public Integer getWoundCount() { return woundCount; }
+        public void setWoundCount(Integer woundCount) { this.woundCount = woundCount; }
+        public Boolean getIsShaken() { return isShaken; }
+        public void setIsShaken(Boolean isShaken) { this.isShaken = isShaken; }
         public Long getPlayerId() { return playerId; }
         public void setPlayerId(Long playerId) { this.playerId = playerId; }
         public String getPlayerName() { return playerName; }
@@ -593,11 +602,194 @@ public class CharacterController {
         return ResponseEntity.ok(Map.of("fateChips", character.getFateChips()));
     }
 
+    /**
+     * Apply damage to a character (Savage Worlds damage system).
+     * POST /api/characters/{id}/combat/damage
+     */
+    @PostMapping("/{id}/combat/damage")
+    public ResponseEntity<?> applyDamage(@PathVariable Long id,
+                                          @RequestBody DamageRequest request,
+                                          Authentication authentication) {
+        Character character = characterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // GM can apply damage to anyone, players only to their own characters
+        if (user.getRole() != User.Role.GAME_MASTER &&
+            !character.getPlayer().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to modify this character");
+        }
+
+        int damageTotal = request.getDamage();
+        int toughness = character.getToughness();
+
+        // Savage Worlds damage rules:
+        // - If damage < Toughness: No effect (or Shaken if already Shaken)
+        // - If damage >= Toughness: Shaken (if not already wounded)
+        // - If damage >= Toughness + 4: 1 wound per 4 points over Toughness
+
+        if (damageTotal < toughness) {
+            // No damage - but if already Shaken, might take a wound
+            if (character.getIsShaken()) {
+                character.setWoundCount(Math.min(character.getWoundCount() + 1, 4));
+                character.setIsShaken(false); // Taking wound clears Shaken
+            }
+        } else {
+            // Damage exceeds Toughness
+            int excessDamage = damageTotal - toughness;
+            int woundsToAdd = 1 + (excessDamage / 4); // 1 wound + 1 per raise (4 points)
+
+            if (character.getWoundCount() == 0 && woundsToAdd == 1 && !character.getIsShaken()) {
+                // First hit with only 1 wound = Shaken instead
+                character.setIsShaken(true);
+            } else {
+                // Add wounds
+                character.setWoundCount(Math.min(character.getWoundCount() + woundsToAdd, 4));
+                character.setIsShaken(false); // Wounds clear Shaken
+            }
+        }
+
+        characterRepository.save(character);
+
+        return ResponseEntity.ok(Map.of(
+                "woundCount", character.getWoundCount(),
+                "isShaken", character.getIsShaken(),
+                "isIncapacitated", character.getWoundCount() >= 4
+        ));
+    }
+
+    /**
+     * Soak damage (spend fate chip + Vigor roll to remove wounds).
+     * POST /api/characters/{id}/combat/soak
+     */
+    @PostMapping("/{id}/combat/soak")
+    public ResponseEntity<?> soakDamage(@PathVariable Long id,
+                                         @RequestBody SoakRequest request,
+                                         Authentication authentication) {
+        Character character = characterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Owner or GM can soak
+        if (user.getRole() != User.Role.GAME_MASTER &&
+            !character.getPlayer().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to modify this character");
+        }
+
+        // Must have fate chips to soak
+        if (character.getFateChips() <= 0) {
+            return ResponseEntity.badRequest().body("No fate chips remaining");
+        }
+
+        // Must have wounds to soak
+        if (character.getWoundCount() <= 0) {
+            return ResponseEntity.badRequest().body("No wounds to soak");
+        }
+
+        // Spend the fate chip
+        character.setFateChips(character.getFateChips() - 1);
+
+        // Vigor roll result (passed from frontend or rolled here)
+        // For simplicity, frontend should roll and pass the total
+        int vigorRollTotal = request.getVigorRoll();
+        int targetNumber = 4; // Standard TN for Vigor soak
+
+        // Calculate successes: base success + raises (every 4 over)
+        int margin = vigorRollTotal - targetNumber;
+        int woundsRemoved = 0;
+
+        if (margin >= 0) {
+            woundsRemoved = 1 + (margin / 4); // 1 for success + 1 per raise
+        }
+
+        // Remove wounds (min 0)
+        int newWoundCount = Math.max(character.getWoundCount() - woundsRemoved, 0);
+        character.setWoundCount(newWoundCount);
+
+        characterRepository.save(character);
+
+        return ResponseEntity.ok(Map.of(
+                "woundCount", character.getWoundCount(),
+                "woundsRemoved", woundsRemoved,
+                "fateChips", character.getFateChips(),
+                "vigorRoll", vigorRollTotal
+        ));
+    }
+
+    /**
+     * Recover from Shaken (Spirit roll).
+     * POST /api/characters/{id}/combat/recover
+     */
+    @PostMapping("/{id}/combat/recover")
+    public ResponseEntity<?> recoverFromShaken(@PathVariable Long id,
+                                                 @RequestBody RecoverRequest request,
+                                                 Authentication authentication) {
+        Character character = characterRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Character not found"));
+
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Owner or GM can attempt recovery
+        if (user.getRole() != User.Role.GAME_MASTER &&
+            !character.getPlayer().getId().equals(user.getId())) {
+            return ResponseEntity.status(403).body("Not authorized to modify this character");
+        }
+
+        // Must be Shaken to recover
+        if (!character.getIsShaken()) {
+            return ResponseEntity.badRequest().body("Character is not Shaken");
+        }
+
+        // Spirit roll (passed from frontend)
+        int spiritRollTotal = request.getSpiritRoll();
+        int targetNumber = 4; // Standard TN
+
+        boolean recovered = spiritRollTotal >= targetNumber;
+
+        if (recovered) {
+            character.setIsShaken(false);
+        }
+
+        characterRepository.save(character);
+
+        return ResponseEntity.ok(Map.of(
+                "isShaken", character.getIsShaken(),
+                "recovered", recovered,
+                "spiritRoll", spiritRollTotal
+        ));
+    }
+
     // Request DTOs
     static class PowerPointsRequest {
         private int amount;
 
         public int getAmount() { return amount; }
         public void setAmount(int amount) { this.amount = amount; }
+    }
+
+    static class DamageRequest {
+        private int damage;
+
+        public int getDamage() { return damage; }
+        public void setDamage(int damage) { this.damage = damage; }
+    }
+
+    static class SoakRequest {
+        private int vigorRoll;
+
+        public int getVigorRoll() { return vigorRoll; }
+        public void setVigorRoll(int vigorRoll) { this.vigorRoll = vigorRoll; }
+    }
+
+    static class RecoverRequest {
+        private int spiritRoll;
+
+        public int getSpiritRoll() { return spiritRoll; }
+        public void setSpiritRoll(int spiritRoll) { this.spiritRoll = spiritRoll; }
     }
 }

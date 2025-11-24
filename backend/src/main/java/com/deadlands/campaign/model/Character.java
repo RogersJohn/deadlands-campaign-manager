@@ -81,6 +81,13 @@ public class Character {
     @Column(name = "fate_chips", nullable = false)
     private Integer fateChips = 3; // Wild Cards start with 3, NPCs with 1
 
+    // Combat State (Savage Worlds)
+    @Column(name = "wound_count", nullable = false)
+    private Integer woundCount = 0; // 0-3 wounds (each = -1 penalty), 4 = incapacitated
+
+    @Column(name = "is_shaken", nullable = false)
+    private Boolean isShaken = false; // Shaken (stunned) - can only take free actions
+
     // Savage Worlds Attributes - stored as dice notation (e.g., "3d6")
     @Column(name = "agility_die")
     private String agilityDie = "1d6";

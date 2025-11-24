@@ -476,6 +476,20 @@ export function GameArena() {
                               🎲 Fate Chips: {character.fateChips}
                             </Typography>
                           )}
+                          {(character.woundCount !== undefined && character.woundCount > 0) && (
+                            <Typography sx={{
+                              fontSize: '0.75rem',
+                              mt: 0.5,
+                              color: character.woundCount >= 3 ? '#FF6B6B' : '#FFA500'
+                            }}>
+                              ❤️ Wounds: {character.woundCount}/3
+                            </Typography>
+                          )}
+                          {character.isShaken && (
+                            <Typography sx={{ fontSize: '0.75rem', mt: 0.5, color: '#FFA500' }}>
+                              💫 SHAKEN
+                            </Typography>
+                          )}
                         </Box>
                       </CardContent>
                     </CardActionArea>
