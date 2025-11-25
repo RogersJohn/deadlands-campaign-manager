@@ -28,12 +28,13 @@ export class WebSocketService {
   connect(apiUrl: string, token: string): Promise<void> {
     this.token = token;
 
-    // Extract base URL (remove /api suffix if present)
-    const baseUrl = apiUrl.replace(/\/api$/, '');
+    // WebSocket endpoint is under the same context path as the API
+    // If apiUrl is 'http://localhost:8080/api', WebSocket is at 'http://localhost:8080/api/ws'
+    const wsUrl = apiUrl.endsWith('/') ? `${apiUrl}ws` : `${apiUrl}/ws`;
 
     return new Promise((resolve, reject) => {
       this.client = new Client({
-        webSocketFactory: () => new SockJS(`${baseUrl}/ws`),
+        webSocketFactory: () => new SockJS(wsUrl),
 
         // Send JWT token in connection headers
         connectHeaders: {
