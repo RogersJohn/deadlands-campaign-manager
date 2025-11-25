@@ -12,7 +12,7 @@ import { ActionBar } from './components/ActionBar';
 import InitiativeTracker from './components/InitiativeTracker';
 import { CombatLog } from './components/CombatLog';
 import { DiceRollPopup } from './components/DiceRollPopup';
-import { CombatHUD } from './components/CombatHUD';
+// CombatHUD removed - turn indication is in InitiativeTracker (green pulsing dot), combat log is in right panel
 import AIAssistantPanel from '../components/ai/AIAssistantPanel';
 import GMControlPanel from './components/GMControlPanel';
 import { PowersPanel } from './components/PowersPanel';
@@ -601,14 +601,6 @@ export function GameArena() {
                 onShakenUpdate={handleShakenUpdate}
                 onMovementBudgetUpdate={handleMovementBudgetUpdate}
                 onPhaserGameReady={handlePhaserGameReady}
-              />
-              {/* Combat HUD - Turn and Health Display */}
-              <CombatHUD
-                turnNumber={combatState.turnNumber}
-                phase={combatState.phase as 'player' | 'enemy' | 'victory' | 'defeat'}
-                playerHealth={combatState.playerHealth}
-                playerMaxHealth={combatState.playerMaxHealth}
-                combatLog={combatState.combatLog}
               />
               {/* Dice Roll Popup - Positioned absolutely over the canvas */}
               <DiceRollPopup
