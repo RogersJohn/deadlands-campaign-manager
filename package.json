@@ -1,6 +1,21 @@
 {
+  "name": "deadlands-campaign-manager",
+  "version": "1.0.0",
+  "description": "Deadlands Savage Worlds Campaign Manager",
+  "private": true,
+  "scripts": {
+    "test:manual": "node test/manual-testing/launch-test-scenario.js",
+    "test:setup": "psql -U deadlands -d deadlands -f test/manual-testing/setup-test-characters.sql"
+  },
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "puppeteer": "^21.6.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RogersJohn/deadlands-campaign-manager.git"
   }
 }
