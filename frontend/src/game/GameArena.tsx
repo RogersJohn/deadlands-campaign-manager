@@ -408,13 +408,13 @@ export function GameArena() {
             console.log(`[GameArena] Rendering existing token: ${position.tokenId} at (${position.gridX}, ${position.gridY})`);
 
             // Emit to Phaser to render remote token
+            // Must match RemoteTokenMovedEvent interface: gridX, gridY, movedBy
             gameEvents.emit('remoteTokenMoved', {
               tokenId: position.tokenId,
               tokenType: position.tokenType,
-              toX: position.gridX,
-              toY: position.gridY,
-              username: position.lastMovedBy,
-              timestamp: new Date(position.lastMoved).getTime(),
+              gridX: position.gridX,
+              gridY: position.gridY,
+              movedBy: position.lastMovedBy,
             });
           }
         });
