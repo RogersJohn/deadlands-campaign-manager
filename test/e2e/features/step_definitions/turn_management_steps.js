@@ -95,15 +95,8 @@ Then('all players should see turn {string} with phase {string} within {int} seco
 
 // ==================== TURN ADVANCEMENT STEPS ====================
 
-When('{string} clicks {string}', async function (browserName, buttonText) {
-  const gmPanel = this.pages[browserName].gmPanel;
-
-  if (buttonText === 'End Turn') {
-    await gmPanel.clickEndTurn();
-  } else {
-    throw new Error(`Unknown button: ${buttonText}`);
-  }
-});
+// Note: Generic "{string} clicks {string}" step is defined in gm_control_steps.js
+// This avoids ambiguous step definition errors
 
 When('{string} advances turn {int} times', async function (browserName, times) {
   const gmPanel = this.pages[browserName].gmPanel;

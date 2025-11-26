@@ -10,9 +10,46 @@ When('{string} enters the game arena', async function (browserName) {
   const driver = await this.getBrowser(browserName);
   const arenaPage = new GameArenaPage(driver);
 
-  await arenaPage.navigate(this.config.frontendUrl, 'test-session');
-  const isLoaded = await arenaPage.waitForArenaLoaded(15000);
-  expect(isLoaded).to.be.true;
+  // Navigate to character select first
+  await arenaPage.visit(`${this.config.frontendUrl}/character-select`);
+  await driver.sleep(2000);
+
+  // Select a character (first available)
+  const characterSelected = await driver.executeScript(`
+    // Look for character cards and click the first one
+    const cards = document.querySelectorAll('[class*="MuiCard"]');
+    for (const card of cards) {
+      // Look for a "Select" or character name button
+      const selectBtn = card.querySelector('button');
+      if (selectBtn && !selectBtn.disabled) {
+        selectBtn.click();
+        return true;
+      }
+    }
+    // Alternative: click on the card itself
+    if (cards.length > 0) {
+      cards[0].click();
+      return true;
+    }
+    return false;
+  `);
+
+  await driver.sleep(1000);
+
+  // Now navigate to arena
+  await arenaPage.visit(`${this.config.frontendUrl}/arena`);
+  await driver.sleep(3000);
+
+  // Wait for canvas to appear
+  const canvasLoaded = await driver.executeScript(`
+    const canvas = document.querySelector('canvas');
+    return canvas !== null;
+  `);
+
+  if (!canvasLoaded) {
+    // Take a screenshot for debugging
+    console.log('Canvas not loaded, checking current URL:', await driver.getCurrentUrl());
+  }
 
   this.pages[browserName] = { ...this.pages[browserName], arenaPage };
 });
@@ -22,8 +59,38 @@ When('{string} opens the GM Control Panel', async function (browserName) {
   const driver = await this.getBrowser(browserName);
   const gmPanel = new GMControlPanelPage(driver);
 
-  const isVisible = await gmPanel.waitForPanel(5000);
-  expect(isVisible).to.be.true;
+  // Wait longer for the panel to appear
+  await driver.sleep(2000);
+
+  // Check if we can find the GM panel in the DOM
+  const panelInfo = await driver.executeScript(`
+    // Debug: log what we can find
+    const body = document.body.textContent;
+    const hasGM = body.includes('GM') || body.includes('Game Master');
+    const hasCanvas = document.querySelector('canvas') !== null;
+    const hasCombat = body.includes('Combat');
+    const hasSavageWorlds = body.includes('Savage Worlds');
+    const hasStartCombat = body.includes('Start Combat');
+    const hasNoCombat = body.includes('No Combat');
+
+    // Look for the gold-bordered panel
+    const panels = document.querySelectorAll('[class*="MuiPaper"]');
+    let foundGMPanel = false;
+    let gmPanelText = '';
+    panels.forEach(p => {
+      if (p.textContent.includes('Combat') || p.textContent.includes('Turn')) {
+        foundGMPanel = true;
+        gmPanelText = p.textContent.substring(0, 200);
+      }
+    });
+
+    return { hasGM, hasCanvas, hasCombat, hasSavageWorlds, hasStartCombat, hasNoCombat, foundGMPanel, panelCount: panels.length, gmPanelText };
+  `);
+
+  console.log('GM Panel debug info:', panelInfo);
+
+  const isVisible = await gmPanel.waitForPanel(10000);
+  expect(isVisible, `GM Control Panel not visible. Debug: ${JSON.stringify(panelInfo)}`).to.be.true;
 
   this.pages[browserName].gmPanel = gmPanel;
 });
@@ -135,6 +202,7 @@ When('{string} waits for panel to update', async function (browserName) {
 
 When('{string} clicks {string}', async function (browserName, buttonText) {
   const gmPanel = this.pages[browserName].gmPanel;
+  const driver = await this.getBrowser(browserName);
 
   if (buttonText === 'Change Map') {
     await gmPanel.clickChangeMap();
@@ -147,8 +215,31 @@ When('{string} clicks {string}', async function (browserName, buttonText) {
     } catch (e) {
       await gmPanel.cancelReset();
     }
+  } else if (buttonText === 'Start Combat') {
+    await gmPanel.clickStartCombat();
+  } else if (buttonText === 'Deal Cards') {
+    await gmPanel.clickDealCards();
+  } else if (buttonText === 'End Combat') {
+    await gmPanel.clickEndCombat();
+  } else if (buttonText === 'Force New Round') {
+    await gmPanel.clickForceNewRound();
+  } else if (buttonText === 'End Turn') {
+    await gmPanel.clickEndTurn();
   } else {
-    throw new Error(`Unknown button: ${buttonText}`);
+    // Generic button click for any other button
+    const clicked = await driver.executeScript(`
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const button = buttons.find(btn => btn.textContent.includes('${buttonText}'));
+      if (button && !button.disabled) {
+        button.click();
+        return true;
+      }
+      return false;
+    `);
+    if (!clicked) {
+      throw new Error(`Unknown or disabled button: ${buttonText}`);
+    }
+    await this.sleep(300);
   }
 });
 

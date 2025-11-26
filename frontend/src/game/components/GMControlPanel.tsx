@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { useGameStore } from '../../store/gameStore';
 import { Illumination } from '../types/GameTypes';
+import { combatService, CombatState } from '../../services/combatService';
 
 interface GameState {
   turnNumber: number;
@@ -24,12 +26,19 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({
   onIlluminationChange
 }) => {
   const { user, token } = useAuthStore();
+  const { selectedCharacter } = useGameStore();
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [newMapId, setNewMapId] = useState('');
   const [showMapInput, setShowMapInput] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Combat state
+  const [combatState, setCombatState] = useState<CombatState | null>(null);
+  const [showCombatSetup, setShowCombatSetup] = useState(false);
+  const [npcInput, setNpcInput] = useState('Bandit 1, Bandit 2, Bandit 3');
+  const [showEndCombatConfirm, setShowEndCombatConfirm] = useState(false);
 
   // Draggable panel state
   const [position, setPosition] = useState({ x: window.innerWidth - 420, y: 80 });
@@ -43,12 +52,34 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({
   // Check if user is GM
   const isGM = user?.role === 'GAME_MASTER';
 
-  // Load game state
+  // Load game state and combat state
   useEffect(() => {
     if (!token || !isGM) return;
 
     loadGameState();
+    loadCombatState();
   }, [token, isGM]);
+
+  // Listen for combat state changes via WebSocket
+  useEffect(() => {
+    const handleCombatChanged = (event: CustomEvent<CombatState>) => {
+      setCombatState(event.detail);
+    };
+
+    window.addEventListener('combatChanged', handleCombatChanged as EventListener);
+    return () => {
+      window.removeEventListener('combatChanged', handleCombatChanged as EventListener);
+    };
+  }, []);
+
+  const loadCombatState = async () => {
+    try {
+      const state = await combatService.getCombatState();
+      setCombatState(state);
+    } catch (error) {
+      console.error('Failed to load combat state:', error);
+    }
+  };
 
   const loadGameState = async () => {
     try {
@@ -169,6 +200,89 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({
     } catch (error) {
       console.error('Failed to advance turn:', error);
       showNotification('Error advancing turn');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Start combat with NPCs
+  const handleStartCombat = async () => {
+    setIsLoading(true);
+    try {
+      // Parse NPC names from input (comma-separated)
+      const npcNames = npcInput
+        .split(',')
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+
+      if (npcNames.length === 0) {
+        showNotification('Please enter at least one NPC name');
+        setIsLoading(false);
+        return;
+      }
+
+      // Get player character IDs from tokens on map (if available)
+      // For now, include the selected character if it exists
+      const playerCharacterIds: number[] = [];
+      if (selectedCharacter?.id) {
+        playerCharacterIds.push(selectedCharacter.id);
+      }
+
+      const state = await combatService.startCombat(playerCharacterIds, npcNames);
+      setCombatState(state);
+      setShowCombatSetup(false);
+      showNotification(`Combat started! Round ${state.roundNumber} - ${state.initiativeOrder.length} combatants`);
+    } catch (error) {
+      console.error('Failed to start combat:', error);
+      showNotification('Error starting combat');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // End combat
+  const handleEndCombat = async () => {
+    setIsLoading(true);
+    try {
+      const state = await combatService.endCombat();
+      setCombatState(state);
+      setShowEndCombatConfirm(false);
+      showNotification('Combat ended!');
+    } catch (error) {
+      console.error('Failed to end combat:', error);
+      showNotification('Error ending combat');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Force new round (deals new cards)
+  const handleNewRound = async () => {
+    setIsLoading(true);
+    try {
+      const state = await combatService.newRound();
+      setCombatState(state);
+      showNotification(`New round started! Round ${state.roundNumber}`);
+    } catch (error) {
+      console.error('Failed to start new round:', error);
+      showNotification('Error starting new round');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // End current character's turn (GM can end anyone's turn)
+  const handleEndCurrentTurn = async () => {
+    if (!combatState?.activeCharacterId) return;
+
+    setIsLoading(true);
+    try {
+      const state = await combatService.endTurn(combatState.activeCharacterId);
+      setCombatState(state);
+      showNotification(`${combatState.activeCharacterName}'s turn ended. Now: ${state.activeCharacterName}'s turn`);
+    } catch (error) {
+      console.error('Failed to end turn:', error);
+      showNotification('Error ending turn');
     } finally {
       setIsLoading(false);
     }
@@ -296,7 +410,145 @@ const GMControlPanel: React.FC<GMControlPanelProps> = ({
               </div>
             </div>
 
-            {/* End Turn Section */}
+            {/* Combat Controls Section */}
+            <div style={styles.section}>
+              <label style={styles.label}>
+                ⚔️ Combat (Savage Worlds Initiative)
+              </label>
+
+              {/* Combat Status Display */}
+              {combatState && (
+                <div style={{
+                  ...styles.stateDisplay,
+                  marginBottom: '8px',
+                  padding: '8px',
+                  backgroundColor: combatState.combatActive ? 'rgba(100, 50, 50, 0.8)' : 'rgba(50, 50, 50, 0.8)',
+                  border: combatState.combatActive ? '1px solid #ff6666' : '1px solid #666',
+                }}>
+                  <div style={styles.stateLine}>
+                    <strong>Status:</strong>{' '}
+                    <span style={{ color: combatState.combatActive ? '#ff6666' : '#88ff88' }}>
+                      {combatState.combatActive ? `Round ${combatState.roundNumber}` : 'No Combat'}
+                    </span>
+                  </div>
+                  {combatState.combatActive && combatState.activeCharacterName && (
+                    <div style={styles.stateLine}>
+                      <strong>Active:</strong> {combatState.activeCharacterName}
+                    </div>
+                  )}
+                  {combatState.combatActive && (
+                    <div style={styles.stateLine}>
+                      <strong>Combatants:</strong> {combatState.initiativeOrder.length}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Combat Not Active - Show Start Combat */}
+              {!combatState?.combatActive && !showCombatSetup && (
+                <button
+                  onClick={() => setShowCombatSetup(true)}
+                  style={{ ...styles.button, ...styles.combatButton }}
+                  disabled={isLoading}
+                >
+                  ⚔️ Start Combat
+                </button>
+              )}
+
+              {/* Combat Setup - NPC Input */}
+              {!combatState?.combatActive && showCombatSetup && (
+                <div style={styles.inputGroup}>
+                  <label style={{ ...styles.helpText, marginBottom: '4px', fontStyle: 'normal' }}>
+                    Enter NPC names (comma-separated):
+                  </label>
+                  <input
+                    type="text"
+                    value={npcInput}
+                    onChange={(e) => setNpcInput(e.target.value)}
+                    placeholder="Bandit 1, Bandit 2, Bandit Boss"
+                    style={styles.input}
+                    onKeyPress={(e) => e.key === 'Enter' && handleStartCombat()}
+                  />
+                  <div style={styles.buttonRow}>
+                    <button
+                      onClick={handleStartCombat}
+                      style={{ ...styles.button, ...styles.confirmButton, flex: 1 }}
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Starting...' : '🎴 Deal Cards'}
+                    </button>
+                    <button
+                      onClick={() => setShowCombatSetup(false)}
+                      style={{ ...styles.button, ...styles.cancelButton, flex: 1 }}
+                      disabled={isLoading}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                  <div style={styles.helpText}>
+                    Cards will be dealt to all combatants for initiative order
+                  </div>
+                </div>
+              )}
+
+              {/* Combat Active - Show Combat Controls */}
+              {combatState?.combatActive && (
+                <div style={styles.inputGroup}>
+                  {/* End Current Turn Button */}
+                  <button
+                    onClick={handleEndCurrentTurn}
+                    style={styles.button}
+                    disabled={isLoading || !combatState.activeCharacterId}
+                  >
+                    ⏭️ {isLoading ? 'Ending...' : `End ${combatState.activeCharacterName}'s Turn`}
+                  </button>
+
+                  {/* New Round Button */}
+                  <button
+                    onClick={handleNewRound}
+                    style={styles.button}
+                    disabled={isLoading}
+                  >
+                    🎴 {isLoading ? 'Dealing...' : 'Force New Round'}
+                  </button>
+
+                  {/* End Combat Button */}
+                  {!showEndCombatConfirm ? (
+                    <button
+                      onClick={() => setShowEndCombatConfirm(true)}
+                      style={{ ...styles.button, ...styles.dangerButton }}
+                      disabled={isLoading}
+                    >
+                      🏳️ End Combat
+                    </button>
+                  ) : (
+                    <div style={styles.confirmGroup}>
+                      <div style={styles.warningText}>
+                        End combat and clear initiative?
+                      </div>
+                      <div style={styles.buttonRow}>
+                        <button
+                          onClick={handleEndCombat}
+                          style={{ ...styles.button, ...styles.confirmButton }}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? 'Ending...' : 'Yes, End'}
+                        </button>
+                        <button
+                          onClick={() => setShowEndCombatConfirm(false)}
+                          style={{ ...styles.button, ...styles.cancelButton }}
+                          disabled={isLoading}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* End Turn Section (Legacy) */}
             <div style={styles.section}>
               <button
                 onClick={handleAdvanceTurn}
@@ -477,6 +729,11 @@ const styles: { [key: string]: React.CSSProperties } = {
   dangerButton: {
     borderColor: '#FF4444',
     color: '#FF4444',
+  },
+  combatButton: {
+    borderColor: '#ff6666',
+    color: '#ff6666',
+    backgroundColor: 'rgba(100, 50, 50, 0.5)',
   },
   inputGroup: {
     display: 'flex',

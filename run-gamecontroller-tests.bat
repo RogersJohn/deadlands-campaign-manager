@@ -1,4 +1,4 @@
-@echo off
+When I log into the game @echo off
 REM Run only GameControllerTest
 
 echo ========================================

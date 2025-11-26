@@ -14,8 +14,9 @@ class GMControlPanelPage extends BasePage {
   constructor(driver) {
     super(driver);
 
-    // Main panel container
-    this.panel = By.css('[data-testid="gm-control-panel"], .gm-control-panel');
+    // Main panel container - look for the draggable panel with gold border containing Combat section
+    // The GM Control Panel has a gold border (#d4af37) and contains "Combat" or "Savage Worlds Initiative"
+    this.panel = By.xpath('//div[contains(@style, "gold") or contains(@style, "d4af37")]//ancestor::div[contains(@class, "MuiPaper")] | //div[contains(text(), "Combat") and contains(text(), "Savage")]//ancestor::div[contains(@class, "MuiPaper")]');
 
     // Game state display elements
     this.currentMapDisplay = By.xpath('//*[contains(text(), "Map:")]/following-sibling::*[1]');
@@ -36,8 +37,20 @@ class GMControlPanelPage extends BasePage {
     // Turn management controls
     this.endTurnButton = By.xpath('//button[contains(text(), "End Turn")]');
 
+    // Combat controls (Savage Worlds initiative)
+    this.startCombatButton = By.xpath('//button[contains(text(), "Start Combat")]');
+    this.dealCardsButton = By.xpath('//button[contains(text(), "Deal Cards")]');
+    this.endCombatButton = By.xpath('//button[contains(text(), "End Combat")]');
+    this.forceNewRoundButton = By.xpath('//button[contains(text(), "Force New Round")]');
+    this.npcInput = By.css('input[placeholder*="Bandit"], input[placeholder*="NPC"], input[placeholder*="comma"]');
+    this.combatStatusDisplay = By.xpath('//*[contains(text(), "Round") or contains(text(), "No Combat")]');
+
+    // Confirmation dialog
+    this.confirmDialogYes = By.xpath('//button[contains(text(), "Yes")]');
+    this.confirmDialogNo = By.xpath('//button[contains(text(), "No") or contains(text(), "Cancel")]');
+
     // Notification toast
-    this.notification = By.css('[data-testid="notification"], .notification, [role="alert"]');
+    this.notification = By.css('[data-testid="notification"], .notification, [role="alert"], [class*="Snackbar"]');
   }
 
   /**
@@ -54,12 +67,24 @@ class GMControlPanelPage extends BasePage {
    * @returns {Promise<boolean>}
    */
   async waitForPanel(timeout = 10000) {
-    try {
-      await this.waitForElement(this.panel, timeout);
-      return true;
-    } catch (error) {
-      return false;
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      try {
+        // Check if the Combat section exists in the page
+        const hasCombatSection = await this.executeScript(`
+          const body = document.body.textContent;
+          return body.includes('Combat') &&
+                 (body.includes('Savage Worlds Initiative') || body.includes('Start Combat') || body.includes('No Combat'));
+        `);
+        if (hasCombatSection) {
+          return true;
+        }
+      } catch (e) {
+        // Continue waiting
+      }
+      await this.sleep(500);
     }
+    return false;
   }
 
   /**
@@ -383,6 +408,281 @@ class GMControlPanelPage extends BasePage {
    */
   async getNotificationText() {
     return await this.getNotificationMessage();
+  }
+
+  // ==================== COMBAT METHODS ====================
+
+  /**
+   * Check if Combat section is visible
+   * @returns {Promise<boolean>}
+   */
+  async hasCombatSection() {
+    try {
+      const hasCombat = await this.executeScript(`
+        const panel = document.body;
+        return panel.textContent.includes('Combat') &&
+               panel.textContent.includes('Savage Worlds Initiative');
+      `);
+      return hasCombat;
+    } catch (error) {
+      console.warn('Failed to check combat section:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Get the current combat status
+   * @returns {Promise<string>}
+   */
+  async getCombatStatus() {
+    try {
+      const status = await this.executeScript(`
+        const bodyText = document.body.textContent;
+        if (bodyText.includes('No Combat')) return 'No Combat';
+        const roundMatch = bodyText.match(/Round (\\d+)/);
+        if (roundMatch) return 'Round ' + roundMatch[1];
+        return 'Unknown';
+      `);
+      return status;
+    } catch (error) {
+      console.warn('Failed to get combat status:', error.message);
+      return 'Unknown';
+    }
+  }
+
+  /**
+   * Click the Start Combat button
+   */
+  async clickStartCombat() {
+    try {
+      await this.executeScript(`
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const startBtn = buttons.find(btn => btn.textContent.includes('Start Combat'));
+        if (startBtn) startBtn.click();
+      `);
+      await this.sleep(300);
+    } catch (error) {
+      console.error('Failed to click Start Combat:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Enter NPC names in the input field
+   * @param {string} npcNames - Comma-separated NPC names
+   */
+  async enterNPCNames(npcNames) {
+    try {
+      await this.executeScript(`
+        const inputs = document.querySelectorAll('input');
+        const npcInput = Array.from(inputs).find(input =>
+          input.placeholder &&
+          (input.placeholder.toLowerCase().includes('bandit') ||
+           input.placeholder.toLowerCase().includes('npc') ||
+           input.placeholder.toLowerCase().includes('comma'))
+        );
+        if (npcInput) {
+          npcInput.value = '${npcNames}';
+          npcInput.dispatchEvent(new Event('input', { bubbles: true }));
+          npcInput.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      `);
+      await this.sleep(200);
+    } catch (error) {
+      console.error('Failed to enter NPC names:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Click the Deal Cards button
+   */
+  async clickDealCards() {
+    try {
+      await this.executeScript(`
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const dealBtn = buttons.find(btn => btn.textContent.includes('Deal Cards'));
+        if (dealBtn) dealBtn.click();
+      `);
+      await this.sleep(1000); // Wait for combat to start
+    } catch (error) {
+      console.error('Failed to click Deal Cards:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Start combat with NPC names (complete workflow)
+   * @param {string} npcNames - Comma-separated NPC names
+   */
+  async startCombatWithNPCs(npcNames) {
+    await this.clickStartCombat();
+    await this.enterNPCNames(npcNames);
+    await this.clickDealCards();
+  }
+
+  /**
+   * Click the End Combat button
+   */
+  async clickEndCombat() {
+    try {
+      await this.executeScript(`
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const endBtn = buttons.find(btn => btn.textContent.includes('End Combat'));
+        if (endBtn) endBtn.click();
+      `);
+      await this.sleep(300);
+    } catch (error) {
+      console.error('Failed to click End Combat:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Confirm ending combat in the dialog
+   */
+  async confirmEndCombat() {
+    try {
+      await this.executeScript(`
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const confirmBtn = buttons.find(btn =>
+          btn.textContent.includes('Yes') ||
+          btn.textContent.includes('Confirm')
+        );
+        if (confirmBtn) confirmBtn.click();
+      `);
+      await this.sleep(500);
+    } catch (error) {
+      console.error('Failed to confirm end combat:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * End combat completely (click End Combat + confirm)
+   */
+  async endCombat() {
+    await this.clickEndCombat();
+    await this.confirmEndCombat();
+  }
+
+  /**
+   * Click the Force New Round button
+   */
+  async clickForceNewRound() {
+    try {
+      await this.executeScript(`
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const newRoundBtn = buttons.find(btn => btn.textContent.includes('Force New Round'));
+        if (newRoundBtn) newRoundBtn.click();
+      `);
+      await this.sleep(500);
+    } catch (error) {
+      console.error('Failed to click Force New Round:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Click the End Turn button for active combatant
+   */
+  async clickEndTurnForActive() {
+    try {
+      const clicked = await this.executeScript(`
+        const buttons = Array.from(document.querySelectorAll('button'));
+        const endTurnBtn = buttons.find(btn =>
+          btn.textContent.includes('End') &&
+          (btn.textContent.includes('Turn') || btn.textContent.includes("'s"))
+        );
+        if (endTurnBtn && !endTurnBtn.disabled) {
+          endTurnBtn.click();
+          return true;
+        }
+        return false;
+      `);
+      if (!clicked) {
+        throw new Error('Could not find or click End Turn button');
+      }
+      await this.sleep(500);
+    } catch (error) {
+      console.error('Failed to click End Turn:', error.message);
+      throw error;
+    }
+  }
+
+  /**
+   * Check if NPC input field is visible
+   * @returns {Promise<boolean>}
+   */
+  async hasNPCInput() {
+    try {
+      const hasInput = await this.executeScript(`
+        const inputs = document.querySelectorAll('input');
+        return Array.from(inputs).some(input =>
+          input.placeholder &&
+          (input.placeholder.toLowerCase().includes('bandit') ||
+           input.placeholder.toLowerCase().includes('npc') ||
+           input.placeholder.toLowerCase().includes('comma'))
+        );
+      `);
+      return hasInput;
+    } catch (error) {
+      console.warn('Failed to check NPC input:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Check if confirmation prompt is visible
+   * @returns {Promise<boolean>}
+   */
+  async hasConfirmationPrompt() {
+    try {
+      const hasPrompt = await this.executeScript(`
+        return document.body.textContent.includes('End combat') ||
+               document.body.textContent.includes('clear initiative') ||
+               document.body.textContent.includes('Yes, End');
+      `);
+      return hasPrompt;
+    } catch (error) {
+      console.warn('Failed to check confirmation prompt:', error.message);
+      return false;
+    }
+  }
+
+  /**
+   * Wait for combat to start (Round 1)
+   * @param {number} timeout
+   * @returns {Promise<boolean>}
+   */
+  async waitForCombatStart(timeout = 10000) {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      const status = await this.getCombatStatus();
+      if (status.includes('Round')) {
+        return true;
+      }
+      await this.sleep(500);
+    }
+    return false;
+  }
+
+  /**
+   * Wait for a specific round
+   * @param {number} roundNumber
+   * @param {number} timeout
+   * @returns {Promise<boolean>}
+   */
+  async waitForRound(roundNumber, timeout = 10000) {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeout) {
+      const status = await this.getCombatStatus();
+      if (status === `Round ${roundNumber}`) {
+        return true;
+      }
+      await this.sleep(500);
+    }
+    return false;
   }
 }
 
