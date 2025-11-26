@@ -1,505 +1,290 @@
 # Next Session - Action Items
 
-**Last Updated:** 2025-11-24
-**Current Status:** Documentation Fixes + UX Improvements Complete ✅
-**Priority:** Commit Changes → Plan Spells & Abilities Improvements
+**Last Updated:** 2025-11-25
+**Current Status:** Infrastructure Fixes Complete ✅
+**Priority:** Fix Initiative Tracker & Turn Structure (Savage Worlds Rules)
 
 ---
 
-## 🎯 Immediate Tasks (Start Here)
+## 🎯 Session Focus: Turn Management & Initiative
 
-### 1. Review What Was Done This Session (10 min)
-This session accomplished TWO major improvements:
+**Problem:** Players can take unlimited actions - the turn structure is broken.
 
-#### A. Documentation Bug Fixes ✅
-Fixed outdated session-related comments throughout codebase:
-- `WebSocketConfig.java` - Updated to reflect single shared world
-- `SecurityConfig.java` - Fixed WebSocket endpoint comment
-- `JwtAuthenticationFilter.java` - Removed obsolete session debug logging
-- `TokenMovedEvent.java` - Updated broadcast documentation
-- `GameArena.tsx`, `gameStore.ts`, `ArenaScene.ts` - Fixed "session" terminology
-
-**Impact:** Code documentation now accurately reflects architecture (no more confusion about "sessions")
-
-#### B. UX Improvements (Option A + B Complete) ✅
-Implemented 6 features with full E2E test coverage:
-
-**OPTION A - Critical Navigation Fixes:**
-1. ✅ Removed duplicate menu item from Layout
-2. ✅ Added back button to CharacterEdit page header
-3. ✅ Added breadcrumbs to CharacterSheet (My Characters > [Name])
-
-**OPTION B - High Value Quick Wins:**
-4. ✅ Empty state messages (verified already existed)
-5. ✅ Dashboard search filter (by name/occupation, real-time)
-6. ✅ Character stats tooltips (Str/Agi/Vig/Pace/Parry/Tough)
-
-**Files Modified:** 5 frontend components
-**E2E Tests Created:** 13 new scenarios across 2 feature files
-**Build Status:** ✅ Passing (3,106 kB bundle)
-
-**Read:** `UX_IMPROVEMENTS_COMPLETE.md` for full details
+**Goal:** Implement proper Savage Worlds turn management:
+- Each character gets 1 action per turn
+- Multi-action penalty (-2 per extra action) for additional actions
+- GM controls turn advancement
+- Initiative determines action order (card draw system)
 
 ---
 
-### 2. Git Commit (10 min)
+## 🐛 Critical Bug: Unlimited Actions
 
-**IMPORTANT:** You have TWO separate sets of changes to commit:
+### Root Cause Analysis
 
-#### Commit 1: Documentation Fixes
-```bash
-git add backend/src/main/java/com/deadlands/campaign/config/WebSocketConfig.java
-git add backend/src/main/java/com/deadlands/campaign/config/SecurityConfig.java
-git add backend/src/main/java/com/deadlands/campaign/security/JwtAuthenticationFilter.java
-git add backend/src/main/java/com/deadlands/campaign/dto/TokenMovedEvent.java
-git add frontend/src/game/GameArena.tsx
-git add frontend/src/game/engine/ArenaScene.ts
-git add frontend/src/store/gameStore.ts
+**TWO disconnected action systems exist:**
 
-git commit -m "Fix session-related documentation throughout codebase
+1. **Frontend (GameArena.tsx)**
+   - `remainingActions` state initialized to 1
+   - Only resets when player selects a character
+   - **NEVER RESET when turn advances via WebSocket**
+   - Location: `frontend/src/game/GameArena.tsx` lines 67, 383, 402-404
 
-Updated outdated comments referencing 'sessions' to reflect the current
-single shared world architecture implemented in commit d1dd167.
+2. **Backend (CombatManager.ts)**
+   - `actionsThisTurn` counter for multi-action penalty
+   - Resets in `endEnemyTurn()` method
+   - **Completely disconnected from frontend UI**
+   - Location: `frontend/src/game/engine/CombatManager.ts` lines 38, 151-153, 277, 330
 
-Backend documentation fixes:
-- WebSocketConfig.java: Updated class/method comments to describe single shared world
-- SecurityConfig.java: Fixed WebSocket endpoint comment
-- JwtAuthenticationFilter.java: Removed obsolete session endpoint debug logging
-- TokenMovedEvent.java: Updated broadcast documentation
+**Why It's Broken:** When the turn advances via WebSocket ('turnChanged' event), `GameArena` updates `combatState` but does NOT reset `remainingActions`. Players can take unlimited actions.
 
-Frontend documentation fixes:
-- GameArena.tsx: Changed 'in the session' to 'in the game'
-- gameStore.ts: Clarified 'session' means page visit
-- ArenaScene.ts: Changed 'in the session' to 'in the game'
+### The Fix
 
-No functional changes, documentation only."
+**Option A: Frontend Fix (Quick)**
+Add action reset in the WebSocket turn change handler:
+
+```typescript
+// In GameArena.tsx, inside the turnChanged event listener
+useEffect(() => {
+  const handleTurnChanged = (event: CustomEvent) => {
+    const gameState = event.detail;
+    setCombatState(prev => ({
+      ...prev,
+      turnNumber: gameState.turnNumber,
+      phase: gameState.turnPhase,
+    }));
+
+    // RESET ACTIONS when turn changes
+    setRemainingActions(1);
+  };
+  // ...
+}, []);
 ```
 
-#### Commit 2: UX Improvements
-```bash
-git add frontend/src/components/Layout.tsx
-git add frontend/src/pages/CharacterEdit.tsx
-git add frontend/src/pages/CharacterSheet.tsx
-git add frontend/src/pages/Dashboard.tsx
-git add frontend/src/pages/CharacterSelect.tsx
-git add test/e2e/features/navigation-improvements.feature
-git add test/e2e/features/ux-improvements.feature
-git add test/e2e/features/support/pages/LayoutPage.js
-git add test/e2e/features/support/pages/CharacterSheetPage.js
-git add test/e2e/features/support/pages/CharacterEditPage.js
-git add test/e2e/features/step_definitions/navigation_steps.js
-git add UX_IMPROVEMENTS_COMPLETE.md
-
-git commit -m "Add UX improvements: navigation fixes, search, and tooltips
-
-OPTION A - Critical Navigation Fixes:
-1. Remove duplicate menu item from Layout (kept 'My Characters')
-2. Add back button to CharacterEdit page header
-3. Add breadcrumbs to CharacterSheet (My Characters > Character Name)
-
-OPTION B - High Value Quick Wins:
-4. Verify empty state messages (already implemented)
-5. Add search filter to Dashboard (name/occupation, case-insensitive)
-6. Add tooltips to character stats (Str/Agi/Vig/Pace/Parry/Tough)
-
-E2E Test Coverage:
-- Created 13 new test scenarios across 2 feature files
-- Added 3 new page object classes (Layout, CharacterSheet, CharacterEdit)
-- Added 250+ lines of step definitions
-
-All changes are frontend-only, no breaking changes.
-Build: ✅ Successful (3,106 kB, +7 kB)
-Tests: ✅ Full E2E coverage with Selenium page objects
-
-See UX_IMPROVEMENTS_COMPLETE.md for full implementation details."
-```
+**Option B: Backend Enforcement (Proper)**
+- Track actions per character on the backend
+- Validate action requests (reject if no actions remaining)
+- Broadcast action usage via WebSocket
+- More work but prevents cheating
 
 ---
 
-## 🔮 NEXT SESSION FOCUS: Spells & Abilities Improvements
+## 📋 Implementation Tasks
 
-**Goal:** Enhance player options for spells, powers, and abilities from Deadlands and Savage Worlds rules
+### Phase 1: Fix Action Limits (1-2 hours)
+- [ ] Reset `remainingActions` when turn changes (frontend)
+- [ ] Disable action buttons when no actions remaining
+- [ ] Show "No actions remaining" message
+- [ ] Test multi-action penalty still works
 
-### Current State Assessment Needed
+### Phase 2: Initiative System (2-3 hours)
+- [ ] Draw actual playing cards for initiative (not hardcoded)
+- [ ] Store initiative order on backend GameState
+- [ ] Broadcast initiative to all players
+- [ ] Show all characters in tracker (not just current player)
+- [ ] Highlight whose turn it is
 
-Before implementing, we need to understand what's already in place:
+### Phase 3: Turn Flow (1-2 hours)
+- [ ] Player can only act on their turn
+- [ ] GM can advance to next character's turn
+- [ ] "End Turn" button for players
+- [ ] Round counter increments after all characters act
 
-#### 1. Review Current Implementation (30 min)
-**Files to Examine:**
-- `backend/src/main/java/com/deadlands/campaign/model/Character.java`
-  - How are `arcanePowers` stored?
-  - What fields exist? (name, powerPoints, description, range, etc.)
-
-- `backend/src/main/java/com/deadlands/campaign/model/references/ArcanePowerReference.java`
-  - What reference data is available?
-  - Are all Deadlands powers included?
-
-- `frontend/src/pages/CharacterEdit.tsx` (lines 984-1048)
-  - How does the UI for adding arcane powers work?
-  - What fields can players edit?
-
-- `frontend/src/pages/CharacterSheet.tsx` (Tab 5: Arcane Powers)
-  - How are powers displayed to players?
-  - Can they track usage during combat?
-
-#### 2. Identify Gaps (Questions to Answer)
-**Rule Coverage:**
-- [ ] Are all core Savage Worlds powers included? (Blast, Bolt, Barrier, etc.)
-- [ ] Are Deadlands-specific powers included? (Huckster hexes, Blessed miracles, etc.)
-- [ ] Are power modifiers supported? (+1 AP for increased range, duration, etc.)
-- [ ] Are power trappings supported? (Fire bolt vs ice bolt vs lightning bolt)
-
-**Gameplay Features:**
-- [ ] Can players track current Power Points during combat?
-- [ ] Can players spend Power Points when casting?
-- [ ] Are spell effects integrated with the game arena?
-- [ ] Can GM see when players cast spells?
-
-**Character Types:**
-- [ ] Do Hucksters have their special mechanics? (card draw for hexes)
-- [ ] Do Blessed have faith checks?
-- [ ] Do Mad Scientists have gizmo rules?
-- [ ] Do Shamans have spirit rules?
-
-#### 3. Database Seeding Check
-**Verify Reference Data:**
-```bash
-# Check if ArcanePowerReference table is populated
-# Look at: backend/src/main/resources/data.sql
-# Or: Check if there's a seed script for powers
-```
+### Phase 4: Savage Worlds Specifics (1-2 hours)
+- [ ] Joker = +2 to all trait and damage rolls that round
+- [ ] Hesitant hindrance (take lowest of 2 cards)
+- [ ] Quick edge (redraw cards 5 or lower)
+- [ ] Level Headed (draw 2, keep best)
+- [ ] Hold action (go later in initiative)
 
 ---
 
-## 🎯 Proposed Improvements (Based on Analysis)
+## 🔑 Key Files to Modify
 
-### Priority 1: Core Power Mechanics (2-3 hours)
-**If not already implemented:**
-
-1. **Power Points Tracking**
-   - Add `currentPowerPoints` and `maxPowerPoints` to Character
-   - Add UI in CharacterSheet to show PP: 10 / 15
-   - Add ability to spend/restore PP
-
-2. **Power Casting in Arena**
-   - Add "Cast Power" action in combat
-   - Power point cost deduction
-   - Broadcast to other players via WebSocket
-   - Show visual effect in Phaser
-
-3. **Power Reference Data**
-   - Ensure all Savage Worlds core powers are in database
-   - Add Deadlands-specific powers (hexes, miracles, etc.)
-   - Add power modifiers (range, duration, damage)
-
-### Priority 2: Advanced Mechanics (3-4 hours)
-**Character Type Specialization:**
-
-1. **Huckster Mechanics**
-   - Card draw system for casting hexes
-   - Backlash on failed draws
-   - Hex slinging rules
-
-2. **Blessed Mechanics**
-   - Faith checks for miracles
-   - Sin penalties
-   - Divine favor rules
-
-3. **Mad Scientist Mechanics**
-   - Gizmo creation
-   - Malfunction rolls
-   - Ghost rock requirements
-
-4. **Shaman Mechanics**
-   - Spirit world interaction
-   - Favor with spirits
-   - Ritual casting
-
-### Priority 3: UI/UX Enhancements (1-2 hours)
-
-1. **Power Quick Reference**
-   - Searchable/filterable power list
-   - Show range, duration, AP cost
-   - Show power trappings
-
-2. **Combat Integration**
-   - Quick-cast from hotbar
-   - Target selection for powers
-   - Area of effect visualization
-
-3. **Character Sheet Improvements**
-   - Power preparation (if using spell slots)
-   - Power usage tracking
-   - Power notes/customization
-
----
-
-## 📚 Key Files to Reference
-
-### Backend (Java)
+### Backend
 ```
 backend/src/main/java/com/deadlands/campaign/
-├── model/
-│   ├── Character.java                    (character entity)
-│   ├── references/
-│   │   └── ArcanePowerReference.java     (power reference data)
-│   └── ArcanePower.java                  (character's powers)
-├── controller/
-│   └── CharacterController.java          (character API)
-├── service/
-│   └── CharacterService.java             (business logic)
-└── repository/
-    └── ArcanePowerReferenceRepository.java
+├── model/GameState.java              # Add initiativeOrder field
+├── service/GameStateService.java     # Add drawInitiative(), advanceTurn()
+├── controller/GameStateController.java # Endpoints for turn management
+└── dto/InitiativeEntry.java          # New DTO for initiative data
 ```
 
-### Frontend (TypeScript/React)
+### Frontend
 ```
 frontend/src/
-├── pages/
-│   ├── CharacterEdit.tsx                 (power editing UI)
-│   └── CharacterSheet.tsx                (power display)
-├── services/
-│   ├── referenceService.ts               (fetch power references)
-│   └── characterService.ts               (character CRUD)
-└── game/
-    ├── GameArena.tsx                     (main game component)
-    └── components/
-        └── GMControlPanel.tsx            (GM controls)
-```
-
-### Reference Data
-```
-backend/src/main/resources/
-└── data.sql                              (database seed scripts)
+├── game/
+│   ├── GameArena.tsx                 # FIX: Reset actions on turn change
+│   ├── components/
+│   │   ├── InitiativeTracker.tsx     # Show all characters, real cards
+│   │   ├── ActionBar.tsx             # Disable when no actions
+│   │   └── TurnControls.tsx          # NEW: End turn, hold action buttons
+│   └── engine/CombatManager.ts       # Connect to frontend state
+├── hooks/
+│   └── useGameWebSocket.ts           # Handle initiative broadcasts
+└── services/
+    └── turnService.ts                # NEW: Turn management API calls
 ```
 
 ---
 
-## 🔍 Research Resources
+## 🃏 Savage Worlds Initiative Rules
 
-### Savage Worlds Rules (Core Powers)
-- **Combat Powers:** Bolt, Blast, Smite, Warrior's Gift
-- **Defensive Powers:** Armor, Deflection, Protection
-- **Utility Powers:** Detect/Conceal Arcana, Dispel, Light/Obscure
-- **Support Powers:** Boost/Lower Trait, Healing, Relief
-- **Movement Powers:** Speed, Fly, Teleport
+### Basic Rules
+1. **Deal Cards:** Each character draws one card at start of round
+2. **Order:** Act from highest (Ace ♠) to lowest (2 ♣)
+3. **Suit Order:** ♠ > ♥ > ♦ > ♣
+4. **Jokers:** Red = act first with +2 bonus, Black = act last (or first?)
+5. **One Action:** Each character gets 1 action per turn
+6. **Multi-Action:** Can take multiple actions at -2 per additional action
 
-### Deadlands Classic Powers
-**Huckster Hexes:**
-- Soul Blast, Phantom Fingers, Mind Rider
-- Texas Twister, Trinkets, Whateley Blood
+### Special Cases
+- **Hesitant (Hindrance):** Draw 2 cards, use worst
+- **Quick (Edge):** Redraw cards 5 or lower
+- **Level Headed (Edge):** Draw 2 cards, use best
+- **Improved Level Headed:** Draw 3 cards, use best
+- **Hold:** Can choose to act later in round
+- **Interrupt:** Spend a Benny to act out of turn
 
-**Blessed Miracles:**
-- Lay on Hands, Consecrate Ground, Smite
-- Guardian Angel, Holy Roller, Sanctify
+### Card Values (High to Low)
+```
+Joker (Red) > Ace > King > Queen > Jack > 10 > 9 > 8 > 7 > 6 > 5 > 4 > 3 > 2 > Joker (Black)
+```
 
-**Shaman Powers:**
-- Spirit Guide, Vision Quest, Shape Change
-- Totem Guardian, Nature's Fury
-
-**Mad Scientist Gizmos:**
-- Analytical Engine, Gatling Gun, Spring-Heeled Boots
-- Ghost Rock Bomb, Tesla Coil, Dirigible
-
-### Implementation Patterns to Follow
-- **WebSocket Integration:** See `TURN_MANAGEMENT_IMPLEMENTATION.md`
-- **State Management:** See `STATE_MANAGEMENT.md`
-- **GM-Only Features:** Role-based rendering + @PreAuthorize
-- **Reference Data:** Follow pattern in EdgeReference, SkillReference
+Within same value: ♠ > ♥ > ♦ > ♣
 
 ---
 
-## ✅ Success Criteria for Next Session
+## 🧪 Testing Checklist
 
-### Phase 1: Analysis & Planning (30 min)
-- [ ] Reviewed all power-related code
-- [ ] Identified gaps in current implementation
-- [ ] Checked database seed data for powers
-- [ ] Documented findings in new markdown file
+### Manual Testing
+1. [ ] Player can only take 1 action per turn
+2. [ ] Action buttons disable after action used
+3. [ ] Multi-action penalty applies correctly (-2, -4, -6...)
+4. [ ] GM can advance turn to next character
+5. [ ] Player sees "Your Turn" indicator correctly
+6. [ ] Initiative tracker shows all characters in order
+7. [ ] Cards change each round
+8. [ ] Joker bonus applies (+2 to rolls)
 
-### Phase 2: Implementation (2-4 hours)
-- [ ] Power Points tracking implemented (if needed)
-- [ ] At least 1 character type specialization done
-- [ ] Power casting integrated with combat system
-- [ ] UI improvements for power management
-- [ ] Backend tests written
-- [ ] Frontend builds successfully
+### Test Accounts (Production)
+| Username | Password | Role | Character |
+|----------|----------|------|-----------|
+| `gamemaster` | `Test123!` | GM | N/A |
+| `JCKullmann` | `Test123!` | Player | Jack Horner |
+| `e2e_player1` | `Test123!` | Player | Wild West Huckster |
+| `e2e_player2` | `Test123!` | Player | Frontier Blessed |
 
-### Phase 3: Documentation (30 min)
-- [ ] Implementation guide created
-- [ ] Session notes written
-- [ ] NEXT_SESSION.md updated
-- [ ] Changes committed to git
-
----
-
-## 🛠️ Development Environment
-
-### Start Backend
+### Launch Test Browsers
 ```bash
+cd test/manual-testing
+npm install  # First time only
+node launch-test-scenario.js
+```
+
+---
+
+## 📊 Current State Summary
+
+### What's Working ✅
+- Turn phase cycling (player → enemy → resolution)
+- WebSocket broadcasting of turn changes
+- Multi-action penalty calculation (in CombatManager)
+- Basic initiative tracker display
+- GM turn advance endpoint
+
+### What's Broken ❌
+- **Unlimited actions** - remainingActions never resets
+- **Static initiative cards** - hardcoded, not drawn
+- **Single player tracker** - only shows current player
+- **No enforcement** - players can act out of turn
+- **No End Turn button** - players can't pass
+
+### What's Missing 🚧
+- Backend initiative card drawing
+- Initiative order storage in GameState
+- Character-specific turn tracking
+- Action validation on backend
+- Hold/interrupt mechanics
+
+---
+
+## 🚀 Quick Start for Next Session
+
+### 1. Read the Bug (5 min)
+Open `frontend/src/game/GameArena.tsx` and find:
+- Line 67: `remainingActions` useState
+- Line 214-236: `turnChanged` handler (missing action reset!)
+- Line 402-404: `handleSelectAction` (decrements actions)
+
+### 2. Apply Quick Fix (15 min)
+Add `setRemainingActions(1);` inside the `handleTurnChanged` function.
+
+### 3. Test Locally (10 min)
+```bash
+# Terminal 1 - Backend
 cd backend
 mvnw.cmd spring-boot:run
-```
-Backend: http://localhost:8080
 
-### Start Frontend
-```bash
+# Terminal 2 - Frontend
 cd frontend
 npm run dev
 ```
-Frontend: http://localhost:3000
 
-### Test Database Connection
-```bash
-# Check application.properties for database config
-# Usually H2 in-memory or PostgreSQL
-```
+### 4. Implement Full Solution (2-4 hours)
+Follow the Phase 1-4 tasks above.
 
 ---
 
-## 📁 Session Documentation Template
+## 📝 This Session's Accomplishments (2025-11-25)
 
-When you start next session, create:
-```
-SESSION_2025-11-24_SPELLS_ABILITIES.md
-SPELLS_ABILITIES_IMPLEMENTATION.md
-```
+### Bug Fixes
+- ✅ Fixed WebSocket URL (was `/ws`, should be `/api/ws`)
+- ✅ Fixed Railway build (root `package.json` was confusing build)
+- ✅ Removed CombatHUD clutter (duplicate turn/health display)
 
-Include:
-- Analysis of current state
-- Gaps identified
-- Features implemented
-- Testing approach
-- Next steps
+### Database Fixes
+- ✅ Reset PostgreSQL sequences (was causing duplicate key errors)
+- ✅ Created test characters for e2e_player1 and e2e_player2
+- ✅ Reset password for JCKullmann player account
+- ✅ Renamed JCKullman → JCKullmann
 
----
+### New Utilities
+- `test/manual-testing/create-test-characters.js` - Create fully-loaded test characters
+- `test/manual-testing/fix-sequences.js` - Reset PostgreSQL auto-increment sequences
+- `test/manual-testing/verify-characters.js` - Verify character data
+- `test/manual-testing/find-character.js` - Find character owner
+- `test/manual-testing/reset-user-password.js` - Reset user passwords
+- `test/manual-testing/rename-user.js` - Rename users
 
-## ✅ Recent Accomplishments
-
-### This Session (2025-11-24)
-- ✅ Documentation bug fixes (7 files) - Session terminology corrected
-- ✅ UX improvements (6 features) - Navigation, search, tooltips
-- ✅ E2E test coverage (13 scenarios) - Full Selenium page objects
-- ✅ Build verification - All passing, no regressions
-
-### Previous Session (2025-11-23)
-- ✅ Security cleanup - Credentials removed
-- ✅ Arena protection redirect - Bug prevention
-- ✅ Illumination UI control - QoL feature
-- ✅ Character delete button - QoL feature
-
-### Session Before (2025-11-22)
-- ✅ State management refactoring (Zustand + React Query)
-- ✅ Character selection screen created
-- ✅ WebSocket logic extracted to custom hook
-- ✅ Architecture documentation
+### Infrastructure
+- ✅ Moved test dependencies to `test/manual-testing/package.json`
+- ✅ Removed root `package.json` that broke Railway builds
+- ✅ Production deployment restored
 
 ---
 
-## 🐛 Known Issues
+## 🔗 Reference Documentation
 
-### None Currently
-All documentation and UX improvements implemented cleanly.
-
-### Future Considerations
-1. **Power Points Not Tracked in Combat** - Need to add if not present
-2. **No Power Casting UI** - Need combat integration
-3. **Limited Power Reference Data** - May need to seed more powers
-
----
-
-## 💡 Recommendation for Next Session
-
-**Recommended Approach:**
-
-1. **Start with Analysis** (30 min)
-   - Read all power-related code
-   - Check database for existing powers
-   - Document what exists vs what's needed
-
-2. **Quick Win: Power Points Tracking** (1-2 hours)
-   - Add `currentPowerPoints`/`maxPowerPoints` to Character
-   - Add UI to CharacterSheet to display/edit
-   - Simple, high-value feature
-
-3. **Choose One Specialization** (1-2 hours)
-   - Pick Huckster OR Blessed OR Mad Scientist
-   - Implement their unique mechanics
-   - Test thoroughly before moving to next
-
-4. **Document & Commit** (30 min)
-   - Write implementation guide
-   - Update NEXT_SESSION.md
-   - Commit with good messages
-
-**Total Time:** 3-5 hours (achievable in one session)
+| Document | Purpose |
+|----------|---------|
+| `TURN_MANAGEMENT_IMPLEMENTATION.md` | WebSocket turn sync pattern |
+| `STATE_MANAGEMENT.md` | When to use Zustand vs React Query |
+| `COMMON_PATTERNS.md` | Implementation patterns |
+| `ARCHITECTURE_DECISIONS.md` | Design rationale |
 
 ---
 
-## 🚀 Quick Reference
+## 🎯 Success Criteria
 
-### Test Accounts (Local)
-- **GM:** `gamemaster` / `password`
-- **Player:** `testplayer` / `password`
+By end of next session:
+- [ ] Players limited to 1 action per turn (bug fixed)
+- [ ] Action buttons disable when no actions remaining
+- [ ] Initiative tracker shows multiple characters
+- [ ] GM can advance through turn order
+- [ ] Basic Savage Worlds turn flow working
 
-### Test Accounts (Production)
-- **GM:** `gamemaster` / `Test123!`
-- **Players:** `e2e_player1`, `e2e_player2` / `Test123!`
-
-### Git Commands
-```bash
-# Check what needs committing
-git status
-
-# See all changes from this session
-git diff
-
-# See specific file changes
-git diff frontend/src/pages/Dashboard.tsx
-```
-
-### Important Documentation
-- `UX_IMPROVEMENTS_COMPLETE.md` - This session's UX work
-- `ARCHITECTURE_DECISIONS.md` - Why we made design choices
-- `COMMON_PATTERNS.md` - How to implement features
-- `STATE_MANAGEMENT.md` - When to use each state tool
-- `TURN_MANAGEMENT_IMPLEMENTATION.md` - WebSocket pattern reference
-
----
-
-## 🎯 Questions to Answer Next Session
-
-Before coding, answer these:
-
-1. **Are Power Points already tracked?**
-   - Check Character.java for fields
-   - Check CharacterSheet.tsx for display
-
-2. **What powers exist in the database?**
-   - Check data.sql or equivalent
-   - Check ArcanePowerReferenceRepository
-
-3. **Can players cast powers in combat?**
-   - Check GameArena.tsx for power casting actions
-   - Check WebSocket for power cast events
-
-4. **What character types are supported?**
-   - Check if Huckster/Blessed/Mad Scientist/Shaman are distinguished
-   - Check if they have unique mechanics
-
-5. **What's the easiest high-value improvement?**
-   - Power Points display?
-   - More powers in database?
-   - Combat casting integration?
-
----
-
-**Ready for Next Session!**
-
-1. ✅ Commit this session's changes (2 commits)
-2. ✅ Review power-related code
-3. ✅ Answer the 5 questions above
-4. ✅ Start with analysis before coding
-5. ✅ Pick one clear goal and implement fully
-
-**Focus:** Improve player options for spells and abilities per Deadlands/Savage Worlds rules
+**Stretch Goals:**
+- [ ] Real card drawing for initiative
+- [ ] End Turn button for players
+- [ ] Joker bonus implementation
