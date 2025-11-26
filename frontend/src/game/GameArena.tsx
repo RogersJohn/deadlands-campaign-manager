@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Container, Typography, Paper, Box, Button, CircularProgress, Alert, Grid, Card, CardContent, CardMedia, CardActionArea, Radio, RadioGroup, FormControlLabel, IconButton, Tooltip, Drawer } from '@mui/material';
+import { Container, Typography, Paper, Box, Button, CircularProgress, Alert, Grid, Card, CardContent, CardMedia, CardActionArea, Radio, RadioGroup, FormControlLabel, IconButton, Tooltip, Drawer, Snackbar } from '@mui/material';
 import { WbSunny as SunIcon, WbTwilight as TwilightIcon, Brightness3 as MoonIcon, Brightness1 as DarkIcon, Psychology as AIIcon } from '@mui/icons-material';
 import { GameCanvas } from './components/GameCanvas';
 import { WeaponSelection } from './components/WeaponSelection';
@@ -20,6 +20,7 @@ import { GameCharacter, CombatLogEntry, DiceRollEvent, Equipment, CombatAction, 
 import { GeneratedMap } from '../types/map';
 import { TurnPhase } from './engine/CombatManager';
 import { characterService } from './services/characterService';
+import { combatService, CombatState as CombatStateAPI, InitiativeEntry } from '../services/combatService';
 import { wrapGameEvents, TypedGameEvents } from './events/GameEvents';
 import { useAuthStore } from '../store/authStore';
 import { useGameStore } from '../store/gameStore';
@@ -93,6 +94,26 @@ export function GameArena() {
     needsTarget: boolean;
   } | null>(null);
 
+  // Initiative/Combat state (Savage Worlds card-based initiative)
+  const [initiativeState, setInitiativeState] = useState<CombatStateAPI>({
+    roundNumber: 1,
+    combatActive: false,
+    activeCharacterId: null,
+    activeCharacterName: null,
+    initiativeOrder: [],
+    jokerDealt: false,
+    message: null,
+  });
+
+  // Snackbar for turn notifications
+  const [turnNotification, setTurnNotification] = useState<string | null>(null);
+
+  // Check if it's the current player's turn
+  const isMyTurn = useMemo(() => {
+    if (!initiativeState.combatActive) return true; // No combat = can act freely
+    if (!selectedCharacter?.id) return false;
+    return initiativeState.activeCharacterId === selectedCharacter.id;
+  }, [initiativeState.combatActive, initiativeState.activeCharacterId, selectedCharacter?.id]);
 
   const handleCombatStateUpdate = useCallback((state: CombatState) => {
     setCombatState(state);
@@ -211,7 +232,7 @@ export function GameArena() {
     };
   }, [gameEvents]);
 
-  // Listen for turn changes from WebSocket
+  // Listen for turn changes from WebSocket (legacy support)
   useEffect(() => {
     const handleTurnChanged = (event: CustomEvent) => {
       const gameState = event.detail;
@@ -224,7 +245,11 @@ export function GameArena() {
         phase: gameState.turnPhase,
       }));
 
-      console.log(`[GameArena] Turn updated to ${gameState.turnNumber} (${gameState.turnPhase} phase)`);
+      // CRITICAL FIX: Reset actions when turn changes
+      // This prevents the bug where players could take unlimited actions
+      setRemainingActions(1);
+
+      console.log(`[GameArena] Turn updated to ${gameState.turnNumber} (${gameState.turnPhase} phase) - Actions reset to 1`);
     };
 
     // Listen for turn change events from WebSocket
@@ -234,6 +259,61 @@ export function GameArena() {
       window.removeEventListener('turnChanged', handleTurnChanged as EventListener);
     };
   }, []);
+
+  // Load initial combat state and listen for combat updates
+  useEffect(() => {
+    // Load initial combat state
+    const loadCombatState = async () => {
+      try {
+        const state = await combatService.getCombatState();
+        setInitiativeState(state);
+        console.log('[GameArena] Loaded combat state:', state);
+      } catch (error) {
+        console.error('[GameArena] Failed to load combat state:', error);
+      }
+    };
+
+    loadCombatState();
+
+    // Listen for combat state changes via WebSocket
+    const handleCombatChanged = (event: CustomEvent<CombatStateAPI>) => {
+      const newState = event.detail;
+      console.log('[GameArena] Received combat update via WebSocket:', newState);
+      setInitiativeState(newState);
+
+      // Show notification if there's a message
+      if (newState.message) {
+        setTurnNotification(newState.message);
+      }
+
+      // Reset actions when it becomes this player's turn
+      if (selectedCharacter?.id && newState.activeCharacterId === selectedCharacter.id) {
+        setRemainingActions(1);
+        setTurnNotification("It's your turn!");
+      }
+    };
+
+    // Listen for combat change events from WebSocket
+    window.addEventListener('combatChanged', handleCombatChanged as EventListener);
+
+    return () => {
+      window.removeEventListener('combatChanged', handleCombatChanged as EventListener);
+    };
+  }, [selectedCharacter?.id]);
+
+  // Handler for ending turn
+  const handleEndTurn = useCallback(async () => {
+    if (!selectedCharacter?.id) return;
+
+    try {
+      const newState = await combatService.endTurn(selectedCharacter.id);
+      setInitiativeState(newState);
+      setRemainingActions(0); // Can't act anymore this turn
+      console.log('[GameArena] Turn ended, new active:', newState.activeCharacterName);
+    } catch (error) {
+      console.error('[GameArena] Failed to end turn:', error);
+    }
+  }, [selectedCharacter?.id]);
 
   // WebSocket connection is now handled by useGameWebSocket hook
 
@@ -392,6 +472,20 @@ export function GameArena() {
   const handleSelectAction = (action: CombatAction, power?: string) => {
     console.log('Action selected:', action.name, power ? `Power: ${power}` : '');
 
+    // TURN ENFORCEMENT: Check if combat is active and it's the player's turn
+    if (initiativeState.combatActive && !isMyTurn) {
+      setTurnNotification("It's not your turn!");
+      console.log('[GameArena] Action blocked - not player\'s turn');
+      return;
+    }
+
+    // Check if player has actions remaining
+    if (remainingActions <= 0) {
+      setTurnNotification("No actions remaining this turn!");
+      console.log('[GameArena] Action blocked - no actions remaining');
+      return;
+    }
+
     // PHASE 1: Handle called shot - open dialog for target selection
     if (action.type === 'called_shot') {
       setCalledShotDialogOpen(true);
@@ -399,7 +493,7 @@ export function GameArena() {
     }
 
     // Emit action event to Phaser game (TYPE-SAFE)
-    if (gameEvents && remainingActions > 0) {
+    if (gameEvents) {
       gameEvents.emit('playerActionSelected', { action, power });
       setRemainingActions(prev => prev - 1);
     }
@@ -420,23 +514,6 @@ export function GameArena() {
   const handleCalledShotCancel = () => {
     setCalledShotDialogOpen(false);
   };
-
-  // Generate initiative entries for the tracker
-  // For now, only show the selected character in the game
-  // TODO: Add NPCs/enemies when combat system is fully integrated
-  const initiativeEntries = useMemo(() => {
-    if (!selectedCharacter) return [];
-
-    return [
-      {
-        id: selectedCharacter.id?.toString() || 'player',
-        name: selectedCharacter.name,
-        card: { suit: '♥' as const, value: 'K' as const, isJoker: false },
-        isPlayer: true,
-        isActive: true,
-      }
-    ];
-  }, [selectedCharacter]);
 
   return (
     <Box sx={{ width: '100%', height: '100%' }}>
@@ -587,7 +664,12 @@ export function GameArena() {
           <Box sx={{ display: 'flex', flexGrow: 1, overflow: 'hidden', gap: '2.5%' }}>
             {/* Left: Initiative Tracker (15% of screen width) */}
             <Box sx={{ width: '15%', minWidth: 150, p: 2 }}>
-              <InitiativeTracker entries={initiativeEntries} />
+              <InitiativeTracker
+                entries={initiativeState.initiativeOrder}
+                roundNumber={initiativeState.roundNumber}
+                combatActive={initiativeState.combatActive}
+                currentCharacterId={selectedCharacter?.id}
+              />
             </Box>
 
             {/* Center: Game Canvas (65% of screen width) */}
@@ -648,6 +730,9 @@ export function GameArena() {
               onOpenPowers={() => setPowersOpen(true)}
               hasPowers={selectedCharacter.powers && selectedCharacter.powers.length > 0}
               isGM={isGameMaster}
+              isMyTurn={isMyTurn}
+              combatActive={initiativeState.combatActive}
+              onEndTurn={handleEndTurn}
             />
           )}
         </Box>
@@ -706,6 +791,24 @@ export function GameArena() {
         open={calledShotDialogOpen}
         onSelect={handleCalledShotSelect}
         onCancel={handleCalledShotCancel}
+      />
+
+      {/* Turn Notification Snackbar */}
+      <Snackbar
+        open={!!turnNotification}
+        autoHideDuration={3000}
+        onClose={() => setTurnNotification(null)}
+        message={turnNotification}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{
+          '& .MuiSnackbarContent-root': {
+            backgroundColor: '#2d1b0e',
+            border: '2px solid #8b4513',
+            color: '#f5e6d3',
+            fontFamily: 'Rye, serif',
+            fontSize: '16px',
+          },
+        }}
       />
     </Box>
   );

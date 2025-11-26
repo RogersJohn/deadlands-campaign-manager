@@ -1,63 +1,53 @@
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper, Chip } from '@mui/material';
+import { InitiativeEntry } from '../../services/combatService';
 
-// Savage Worlds card suits and values
-const SUITS = ['♠', '♥', '♦', '♣'] as const;
-const VALUES = ['A', 'K', 'Q', 'J', '10', '9', '8', '7', '6', '5', '4', '3', '2'] as const;
-
-type Suit = typeof SUITS[number];
-type Value = typeof VALUES[number];
-
-interface Card {
-  suit: Suit;
-  value: Value;
-  isJoker?: boolean;
-  isRed?: boolean; // For red vs black joker
-}
-
-interface InitiativeEntry {
-  id: string;
-  name: string;
-  card: Card;
-  isPlayer: boolean;
-  isActive: boolean; // Currently acting
-}
+// Savage Worlds card suits (for display)
+const SUIT_SYMBOLS: Record<string, string> = {
+  'SPADES': '♠',
+  'HEARTS': '♥',
+  'DIAMONDS': '♦',
+  'CLUBS': '♣',
+};
 
 interface InitiativeTrackerProps {
-  entries?: InitiativeEntry[];
-  currentTurn?: string; // ID of current actor
+  entries: InitiativeEntry[];
+  roundNumber: number;
+  combatActive: boolean;
+  currentCharacterId?: number | null;
 }
 
 const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
   entries = [],
-  currentTurn
+  roundNumber = 1,
+  combatActive = false,
+  currentCharacterId,
 }) => {
-  // Use props data instead of demo data
-  const initiativeOrder = entries;
-
-  // Card value for sorting (higher = better initiative)
-  const getCardValue = (card: Card): number => {
-    if (card.isJoker) {
-      return card.isRed ? 1000 : -1000; // Red joker best, Black joker last
-    }
-    const valueScore = VALUES.indexOf(card.value);
-    const suitScore = SUITS.indexOf(card.suit) * 0.1;
-    return (13 - valueScore) + suitScore;
-  };
-
   // Get color for card based on suit
-  const getCardColor = (card: Card): string => {
-    if (card.isJoker) {
-      return card.isRed ? '#ff0000' : '#000000';
+  const getCardColor = (entry: InitiativeEntry): string => {
+    if (entry.isJoker) {
+      return entry.isRedJoker ? '#ff0000' : '#000000';
     }
-    return card.suit === '♥' || card.suit === '♦' ? '#d32f2f' : '#000000';
+    const suit = entry.cardSuit;
+    return suit === 'HEARTS' || suit === 'DIAMONDS' ? '#d32f2f' : '#000000';
   };
 
   // Get background color for card
-  const getCardBackground = (card: Card): string => {
-    if (card.isJoker) {
-      return card.isRed ? '#ffe0e0' : '#e0e0e0';
+  const getCardBackground = (entry: InitiativeEntry): string => {
+    if (entry.isJoker) {
+      return entry.isRedJoker ? '#ffe0e0' : '#e0e0e0';
     }
     return '#f5e6d3';
+  };
+
+  // Get suit symbol
+  const getSuitSymbol = (suit: string | null): string => {
+    if (!suit) return '';
+    return SUIT_SYMBOLS[suit] || suit;
+  };
+
+  // Check if this entry is the current character (for highlighting)
+  const isCurrentCharacter = (entry: InitiativeEntry): boolean => {
+    return entry.characterId === currentCharacterId;
   };
 
   return (
@@ -89,7 +79,7 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
           color: '#f5e6d3',
           fontSize: '18px',
           fontWeight: 'bold',
-          mb: 2,
+          mb: 1,
           textAlign: 'center',
           borderBottom: '2px solid #8b4513',
           pb: 1,
@@ -98,15 +88,39 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
         INITIATIVE
       </Typography>
 
+      {/* Combat Status */}
+      <Box sx={{ textAlign: 'center', mb: 2 }}>
+        {combatActive ? (
+          <Chip
+            label={`Round ${roundNumber}`}
+            color="error"
+            size="small"
+            sx={{
+              fontFamily: 'Rye, serif',
+              fontWeight: 'bold',
+            }}
+          />
+        ) : (
+          <Chip
+            label="No Combat"
+            color="default"
+            size="small"
+            sx={{
+              fontFamily: 'Rye, serif',
+            }}
+          />
+        )}
+      </Box>
+
       {/* Initiative Cards */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-        {initiativeOrder.length === 0 ? (
+        {!combatActive || entries.length === 0 ? (
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              minHeight: 200,
+              minHeight: 150,
               color: '#8b7355',
               fontSize: '12px',
               fontStyle: 'italic',
@@ -114,15 +128,14 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
               px: 2,
             }}
           >
-            Combat not yet started.<br />
-            Initiative will be drawn when combat begins.
+            {combatActive
+              ? 'Waiting for combatants...'
+              : 'Combat not yet started.\nInitiative will be drawn when combat begins.'}
           </Box>
         ) : (
-          initiativeOrder
-            .sort((a, b) => getCardValue(b.card) - getCardValue(a.card))
-            .map((entry) => (
+          entries.map((entry, index) => (
             <Paper
-              key={entry.id}
+              key={`${entry.characterId || entry.characterName}-${index}`}
               elevation={entry.isActive ? 8 : 2}
               sx={{
                 p: 1.5,
@@ -130,6 +143,8 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
                 border: `2px solid ${
                   entry.isActive
                     ? '#d4af37'
+                    : isCurrentCharacter(entry)
+                    ? '#44ff44'
                     : entry.isPlayer
                     ? '#4169e1'
                     : '#8b4513'
@@ -138,20 +153,19 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 2,
-                cursor: 'pointer',
+                opacity: entry.hasActed ? 0.5 : 1,
                 transition: 'all 0.2s ease',
                 '&:hover': {
                   backgroundColor: '#4a3520',
-                  transform: 'translateX(4px)',
                 },
               }}
             >
               {/* Playing Card */}
               <Box
                 sx={{
-                  width: 50,
-                  height: 70,
-                  backgroundColor: getCardBackground(entry.card),
+                  width: 45,
+                  height: 65,
+                  backgroundColor: getCardBackground(entry),
                   border: '2px solid #000',
                   borderRadius: 1,
                   display: 'flex',
@@ -159,63 +173,71 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexShrink: 0,
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                  boxShadow: entry.isJoker
+                    ? '0 0 10px rgba(255, 215, 0, 0.5)'
+                    : '0 2px 4px rgba(0,0,0,0.3)',
                 }}
               >
-                {entry.card.isJoker ? (
+                {entry.isJoker ? (
                   <Typography
                     sx={{
-                      fontSize: '12px',
+                      fontSize: '10px',
                       fontWeight: 'bold',
-                      color: getCardColor(entry.card),
+                      color: getCardColor(entry),
+                      textAlign: 'center',
                     }}
                   >
                     JOKER
+                    <br />
+                    {entry.isRedJoker ? '(+2)' : '(+2)'}
                   </Typography>
                 ) : (
                   <>
                     <Typography
                       sx={{
-                        fontSize: '24px',
+                        fontSize: '20px',
                         fontWeight: 'bold',
-                        color: getCardColor(entry.card),
+                        color: getCardColor(entry),
                         lineHeight: 1,
                       }}
                     >
-                      {entry.card.value}
+                      {entry.cardValue}
                     </Typography>
                     <Typography
                       sx={{
-                        fontSize: '20px',
-                        color: getCardColor(entry.card),
+                        fontSize: '18px',
+                        color: getCardColor(entry),
                         lineHeight: 1,
                       }}
                     >
-                      {entry.card.suit}
+                      {getSuitSymbol(entry.cardSuit)}
                     </Typography>
                   </>
                 )}
               </Box>
 
               {/* Character Info */}
-              <Box sx={{ flexGrow: 1 }}>
+              <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                 <Typography
                   sx={{
                     fontFamily: 'Rye, serif',
                     color: entry.isPlayer ? '#4169e1' : '#ff6b6b',
-                    fontSize: '14px',
+                    fontSize: '13px',
                     fontWeight: 'bold',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  {entry.name}
+                  {entry.characterName}
                 </Typography>
                 <Typography
                   sx={{
-                    fontSize: '11px',
-                    color: '#8b7355',
+                    fontSize: '10px',
+                    color: entry.hasActed ? '#666' : '#8b7355',
                   }}
                 >
-                  {entry.isPlayer ? 'Player' : 'Enemy'}
+                  {entry.hasActed ? 'Acted' : entry.isPlayer ? 'Player' : 'NPC'}
                 </Typography>
               </Box>
 
@@ -236,10 +258,47 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
                   }}
                 />
               )}
+
+              {/* Your Turn Indicator */}
+              {isCurrentCharacter(entry) && entry.isActive && (
+                <Chip
+                  label="YOUR TURN"
+                  size="small"
+                  sx={{
+                    backgroundColor: '#44ff44',
+                    color: '#000',
+                    fontWeight: 'bold',
+                    fontSize: '9px',
+                    height: '20px',
+                  }}
+                />
+              )}
             </Paper>
           ))
         )}
       </Box>
+
+      {/* Joker Info */}
+      {combatActive && entries.some((e) => e.isJoker) && (
+        <Box
+          sx={{
+            mt: 2,
+            pt: 1,
+            borderTop: '1px solid #8b4513',
+          }}
+        >
+          <Typography
+            sx={{
+              fontSize: '10px',
+              color: '#d4af37',
+              textAlign: 'center',
+              fontStyle: 'italic',
+            }}
+          >
+            Joker drawn! +2 to all Trait and damage rolls. Deck shuffles next round.
+          </Typography>
+        </Box>
+      )}
 
       {/* Round Info */}
       <Box
@@ -251,23 +310,14 @@ const InitiativeTracker: React.FC<InitiativeTrackerProps> = ({
       >
         <Typography
           sx={{
-            fontFamily: 'Rye, serif',
-            color: '#d4b896',
-            fontSize: '12px',
-            textAlign: 'center',
-          }}
-        >
-          Round 1
-        </Typography>
-        <Typography
-          sx={{
             fontSize: '10px',
             color: '#8b7355',
             textAlign: 'center',
-            mt: 0.5,
           }}
         >
-          New cards dealt each round
+          {combatActive
+            ? 'New cards dealt each round'
+            : 'GM starts combat to deal cards'}
         </Typography>
       </Box>
     </Box>

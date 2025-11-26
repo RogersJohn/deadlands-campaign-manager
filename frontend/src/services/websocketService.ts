@@ -129,7 +129,7 @@ export class WebSocketService {
       }
     });
 
-    // Subscribe to turn change events
+    // Subscribe to turn change events (legacy)
     this.client.subscribe('/topic/game/turn', (message: IMessage) => {
       try {
         const event = JSON.parse(message.body);
@@ -141,6 +141,21 @@ export class WebSocketService {
         );
       } catch (error) {
         console.error('[WebSocket] Failed to parse turn change:', error);
+      }
+    });
+
+    // Subscribe to combat/initiative events (Savage Worlds card-based initiative)
+    this.client.subscribe('/topic/game/combat', (message: IMessage) => {
+      try {
+        const event = JSON.parse(message.body);
+        console.log('[WebSocket] Received combat state update:', event);
+
+        // Dispatch combat change event for UI components
+        window.dispatchEvent(
+          new CustomEvent('combatChanged', { detail: event })
+        );
+      } catch (error) {
+        console.error('[WebSocket] Failed to parse combat event:', error);
       }
     });
 

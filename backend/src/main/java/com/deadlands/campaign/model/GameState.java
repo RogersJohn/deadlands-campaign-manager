@@ -17,7 +17,7 @@ import java.util.List;
  * Singleton entity representing the global game state.
  *
  * There is only ONE game state record (id = 1) for the entire shared world.
- * This tracks the current map, turn number, phase, and all token positions.
+ * This tracks the current map, combat state, initiative order, and all token positions.
  *
  * When the GM changes maps, all token positions are cleared.
  */
@@ -37,16 +37,49 @@ public class GameState {
     private Long id = 1L;
 
     /**
-     * Current turn number in combat.
+     * Current combat round number (1-based).
+     * Reset to 1 when combat starts, increments when all characters have acted.
      */
+    @Column(nullable = false)
+    private Integer roundNumber = 1;
+
+    /**
+     * Legacy field - keeping for backwards compatibility during transition.
+     * Will be removed once new initiative system is fully implemented.
+     * @deprecated Use roundNumber and activeCharacterId instead
+     */
+    @Deprecated
     @Column(nullable = false)
     private Integer turnNumber = 1;
 
     /**
-     * Current phase: 'player', 'enemy', 'resolution'
+     * Legacy field - keeping for backwards compatibility during transition.
+     * @deprecated Use combatActive and initiative order instead
      */
+    @Deprecated
     @Column(nullable = false, length = 50)
     private String turnPhase = "player";
+
+    /**
+     * Whether combat is currently active.
+     * When true, initiative order is in effect.
+     */
+    @Column(nullable = false)
+    private Boolean combatActive = false;
+
+    /**
+     * Character ID of whoever's turn it currently is.
+     * Null if combat is not active or between rounds.
+     */
+    @Column(name = "active_character_id")
+    private Long activeCharacterId;
+
+    /**
+     * Whether a Joker was dealt this round.
+     * If true, the deck should be shuffled at the start of next round.
+     */
+    @Column(nullable = false)
+    private Boolean jokerDealtThisRound = false;
 
     /**
      * Current map identifier (e.g., "saloon_interior", "desert_canyon")
@@ -62,6 +95,16 @@ public class GameState {
     @OneToMany(mappedBy = "gameState", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<TokenPosition> tokenPositions = new ArrayList<>();
+
+    /**
+     * Initiative order for current combat round.
+     * Sorted by card value (highest first).
+     * Cleared when combat ends or new round starts (new cards dealt).
+     */
+    @OneToMany(mappedBy = "gameState", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @OrderBy("sortValue DESC")
+    private List<InitiativeEntry> initiativeOrder = new ArrayList<>();
 
     /**
      * Last time any game action occurred (move, combat, etc.)
@@ -98,6 +141,71 @@ public class GameState {
         this.tokenPositions.add(position);
 
         // Update last activity
+        this.lastActivity = LocalDateTime.now();
+    }
+
+    /**
+     * Clear all initiative entries.
+     * Used when combat ends or a new round starts.
+     */
+    public void clearInitiativeOrder() {
+        this.initiativeOrder.clear();
+    }
+
+    /**
+     * Add an initiative entry.
+     */
+    public void addInitiativeEntry(InitiativeEntry entry) {
+        entry.setGameState(this);
+        this.initiativeOrder.add(entry);
+    }
+
+    /**
+     * Get the next character to act (first one who hasn't acted yet).
+     * Returns null if all characters have acted.
+     */
+    public InitiativeEntry getNextToAct() {
+        return this.initiativeOrder.stream()
+                .filter(e -> !e.isHasActed())
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Check if all characters have acted this round.
+     */
+    public boolean allCharactersActed() {
+        return this.initiativeOrder.stream().allMatch(InitiativeEntry::isHasActed);
+    }
+
+    /**
+     * Start combat - set active and reset round.
+     */
+    public void startCombat() {
+        this.combatActive = true;
+        this.roundNumber = 1;
+        this.jokerDealtThisRound = false;
+        this.lastActivity = LocalDateTime.now();
+    }
+
+    /**
+     * End combat - clear initiative and deactivate.
+     */
+    public void endCombat() {
+        this.combatActive = false;
+        this.activeCharacterId = null;
+        this.jokerDealtThisRound = false;
+        clearInitiativeOrder();
+        this.lastActivity = LocalDateTime.now();
+    }
+
+    /**
+     * Advance to next round.
+     */
+    public void nextRound() {
+        this.roundNumber++;
+        this.jokerDealtThisRound = false;
+        clearInitiativeOrder();
         this.lastActivity = LocalDateTime.now();
     }
 

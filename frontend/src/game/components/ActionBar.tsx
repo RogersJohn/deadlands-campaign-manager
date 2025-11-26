@@ -34,6 +34,10 @@ interface ActionBarProps {
   onOpenPowers?: () => void;
   hasPowers?: boolean;
   isGM?: boolean;
+  // New props for turn management
+  isMyTurn?: boolean;
+  combatActive?: boolean;
+  onEndTurn?: () => void;
 }
 
 export function ActionBar({
@@ -65,6 +69,9 @@ export function ActionBar({
   onOpenPowers,
   hasPowers = false,
   isGM = false,
+  isMyTurn = true,
+  combatActive = false,
+  onEndTurn,
 }: ActionBarProps) {
   const [actionsAnchorEl, setActionsAnchorEl] = useState<null | HTMLElement>(null);
   const actionsOpen = Boolean(actionsAnchorEl);
@@ -243,30 +250,80 @@ export function ActionBar({
         )}
       </Box>
 
-      {/* Actions Button & Settings */}
+      {/* Turn Status & Actions */}
       <Box sx={{ ml: 'auto', display: 'flex', gap: 2, alignItems: 'center' }}>
+        {/* Turn Status Indicator */}
+        {combatActive && (
+          <Box
+            sx={{
+              px: 2,
+              py: 0.5,
+              borderRadius: 1,
+              backgroundColor: isMyTurn ? '#2d4a1b' : '#4a1b1b',
+              border: `2px solid ${isMyTurn ? '#44ff44' : '#ff4444'}`,
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: 'Rye, serif',
+                fontSize: '12px',
+                color: isMyTurn ? '#44ff44' : '#ff4444',
+                fontWeight: 'bold',
+              }}
+            >
+              {isMyTurn ? 'YOUR TURN' : 'WAITING...'}
+            </Typography>
+          </Box>
+        )}
+
         {/* Actions Button */}
         <Button
           variant="contained"
           onClick={handleActionsClick}
-          disabled={remainingActions <= 0}
+          disabled={remainingActions <= 0 || (combatActive && !isMyTurn)}
           sx={{
-            backgroundColor: remainingActions > 0 ? '#8b4513' : '#4a3520',
+            backgroundColor: remainingActions > 0 && (!combatActive || isMyTurn) ? '#8b4513' : '#4a3520',
             color: '#f5e6d3',
             fontFamily: 'Rye, serif',
             fontSize: '14px',
             px: 3,
             py: 1,
             '&:hover': {
-              backgroundColor: remainingActions > 0 ? '#a0522d' : '#4a3520',
+              backgroundColor: remainingActions > 0 && (!combatActive || isMyTurn) ? '#a0522d' : '#4a3520',
             },
             '&:disabled': {
               color: '#8b7355',
             },
           }}
         >
-          {remainingActions > 0 ? `Actions (${remainingActions} left)` : 'No Actions Left'}
+          {combatActive && !isMyTurn
+            ? 'Not Your Turn'
+            : remainingActions > 0
+            ? `Actions (${remainingActions} left)`
+            : 'No Actions Left'}
         </Button>
+
+        {/* End Turn Button - only visible during combat and on player's turn */}
+        {combatActive && isMyTurn && onEndTurn && (
+          <Button
+            variant="outlined"
+            onClick={onEndTurn}
+            sx={{
+              borderColor: '#d4af37',
+              color: '#d4af37',
+              fontFamily: 'Rye, serif',
+              fontSize: '12px',
+              px: 2,
+              py: 1,
+              '&:hover': {
+                borderColor: '#ffd700',
+                backgroundColor: 'rgba(212, 175, 55, 0.1)',
+              },
+            }}
+          >
+            End Turn
+          </Button>
+        )}
 
         {/* Actions Menu Popover */}
         <Popover
