@@ -10,45 +10,70 @@ When('{string} enters the game arena', async function (browserName) {
   const driver = await this.getBrowser(browserName);
   const arenaPage = new GameArenaPage(driver);
 
-  // Navigate to character select first
-  await arenaPage.visit(`${this.config.frontendUrl}/character-select`);
-  await driver.sleep(2000);
-
-  // Select a character (first available)
-  const characterSelected = await driver.executeScript(`
-    // Look for character cards and click the first one
-    const cards = document.querySelectorAll('[class*="MuiCard"]');
-    for (const card of cards) {
-      // Look for a "Select" or character name button
-      const selectBtn = card.querySelector('button');
-      if (selectBtn && !selectBtn.disabled) {
-        selectBtn.click();
-        return true;
-      }
-    }
-    // Alternative: click on the card itself
-    if (cards.length > 0) {
-      cards[0].click();
-      return true;
-    }
-    return false;
-  `);
-
-  await driver.sleep(1000);
-
-  // Now navigate to arena
+  // Navigate directly to arena page
   await arenaPage.visit(`${this.config.frontendUrl}/arena`);
   await driver.sleep(3000);
 
-  // Wait for canvas to appear
-  const canvasLoaded = await driver.executeScript(`
-    const canvas = document.querySelector('canvas');
-    return canvas !== null;
+  // The arena has an embedded character selection screen
+  // We need to select a character there to start the game
+  const charSelectInfo = await driver.executeScript(`
+    const cards = document.querySelectorAll('[class*="MuiCard"]');
+    const actionAreas = document.querySelectorAll('[class*="MuiCardActionArea"]');
+    const bodyText = document.body.textContent.substring(0, 300);
+    return { cardCount: cards.length, actionAreaCount: actionAreas.length, bodyText };
   `);
+  console.log('Arena character select:', charSelectInfo);
+
+  // Select a character by clicking the CardActionArea in the arena's embedded selection
+  const characterSelected = await driver.executeScript(`
+    // Look for CardActionArea elements (MUI clickable card areas)
+    const actionAreas = document.querySelectorAll('[class*="MuiCardActionArea"]');
+    if (actionAreas.length > 0) {
+      actionAreas[0].click();
+      return 'clicked CardActionArea: ' + actionAreas.length + ' found';
+    }
+
+    // Fallback: Look for character cards and click
+    const cards = document.querySelectorAll('[class*="MuiCard"]');
+    for (const card of cards) {
+      card.click();
+      return 'clicked card directly';
+    }
+    return 'no cards found';
+  `);
+  console.log('Character selection result:', characterSelected);
+
+  // Wait for canvas to load after character selection
+  await driver.sleep(3000);
+
+  // Wait for canvas to appear with retry
+  let canvasLoaded = false;
+  for (let i = 0; i < 10; i++) {
+    canvasLoaded = await driver.executeScript(`
+      const canvas = document.querySelector('canvas');
+      return canvas !== null;
+    `);
+    if (canvasLoaded) {
+      console.log('Canvas loaded after', i + 1, 'attempts');
+      break;
+    }
+    await driver.sleep(1000);
+  }
+
+  const currentUrl = await driver.getCurrentUrl();
+  console.log('Arena page URL:', currentUrl, 'Canvas loaded:', canvasLoaded);
 
   if (!canvasLoaded) {
-    // Take a screenshot for debugging
-    console.log('Canvas not loaded, checking current URL:', await driver.getCurrentUrl());
+    // Get page state for debugging
+    const pageState = await driver.executeScript(`
+      return {
+        url: window.location.href,
+        bodyText: document.body.textContent.substring(0, 500),
+        hasGMPanel: document.body.textContent.includes('Savage Worlds') || document.body.textContent.includes('Start Combat'),
+        hasCanvas: document.querySelector('canvas') !== null
+      };
+    `);
+    console.log('Page state without canvas:', pageState);
   }
 
   this.pages[browserName] = { ...this.pages[browserName], arenaPage };
@@ -267,9 +292,36 @@ When('{string} confirms the reset', async function (browserName) {
 // ==================== NOTIFICATION STEPS ====================
 
 Then('{string} should see a notification {string}', async function (browserName, expectedText) {
-  const gmPanel = this.pages[browserName].gmPanel;
+  const driver = await this.getBrowser(browserName);
 
-  const hasNotification = await gmPanel.waitForNotificationContaining(expectedText, 5000);
+  // Wait for notification text to appear anywhere on page
+  // The notification is a plain div with no class, so we just check body text
+  const startTime = Date.now();
+  let hasNotification = false;
+  let lastBodyText = '';
+  while (Date.now() - startTime < 5000) {
+    const bodyText = await driver.executeScript(`return document.body.textContent`);
+    lastBodyText = bodyText;
+    if (bodyText.includes(expectedText)) {
+      hasNotification = true;
+      console.log(`Found notification: "${expectedText}" in body text`);
+      break;
+    }
+    await driver.sleep(200);
+  }
+
+  if (!hasNotification) {
+    // Debug: Log what's on the page to help diagnose
+    console.log(`Notification "${expectedText}" not found. Page contains Combat-related text:`);
+    const combatKeywords = ['Combat', 'Round', 'started', 'ended', 'Error', 'Failed'];
+    combatKeywords.forEach(keyword => {
+      if (lastBodyText.includes(keyword)) {
+        const idx = lastBodyText.indexOf(keyword);
+        console.log(`  Found "${keyword}" at position ${idx}: "...${lastBodyText.substring(Math.max(0, idx - 20), idx + 50)}..."`);
+      }
+    });
+  }
+
   expect(hasNotification).to.be.true;
 });
 

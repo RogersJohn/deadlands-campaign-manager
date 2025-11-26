@@ -499,12 +499,17 @@ class GMControlPanelPage extends BasePage {
    */
   async clickDealCards() {
     try {
-      await this.executeScript(`
+      const result = await this.executeScript(`
         const buttons = Array.from(document.querySelectorAll('button'));
         const dealBtn = buttons.find(btn => btn.textContent.includes('Deal Cards'));
-        if (dealBtn) dealBtn.click();
+        if (dealBtn && !dealBtn.disabled) {
+          dealBtn.click();
+          return { clicked: true, buttonText: dealBtn.textContent };
+        }
+        return { clicked: false, buttonTexts: buttons.map(b => b.textContent.substring(0, 30)) };
       `);
-      await this.sleep(1000); // Wait for combat to start
+      console.log('Deal Cards click result:', result);
+      await this.sleep(2000); // Wait for combat to start
     } catch (error) {
       console.error('Failed to click Deal Cards:', error.message);
       throw error;

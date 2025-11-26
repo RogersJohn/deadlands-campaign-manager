@@ -18,12 +18,15 @@ class LoginPage extends BasePage {
   }
 
   async login(username, password) {
+    // Wait for form to be ready
+    await this.waitForElement(this.usernameInput, 10000);
+
     await this.type(this.usernameInput, username);
     await this.type(this.passwordInput, password);
     await this.click(this.loginButton);
 
-    // Wait for navigation
-    await this.sleep(1000);
+    // Wait longer for navigation/API call
+    await this.sleep(3000);
   }
 
   async isLoginSuccessful() {
