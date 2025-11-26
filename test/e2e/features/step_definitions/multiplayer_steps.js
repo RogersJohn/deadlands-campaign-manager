@@ -91,9 +91,25 @@ Given('{string} is logged in as Game Master in browser {string}', async function
   const loginPage = new LoginPage(driver);
 
   await loginPage.navigate(this.config.frontendUrl);
+
+  // Debug: Check if login page loaded
+  const currentUrl = await driver.getCurrentUrl();
+  console.log(`Login page URL: ${currentUrl}`);
+
   await loginPage.login(username, this.testData[username].password);
 
-  expect(await loginPage.isLoginSuccessful()).to.be.true;
+  // Debug: Check URL after login attempt
+  const afterLoginUrl = await driver.getCurrentUrl();
+  console.log(`After login URL: ${afterLoginUrl}`);
+
+  // Check for error message
+  const errorMsg = await loginPage.getErrorMessage();
+  if (errorMsg) {
+    console.log(`Login error message: ${errorMsg}`);
+  }
+
+  const isSuccessful = await loginPage.isLoginSuccessful();
+  expect(isSuccessful, `Login failed. URL: ${afterLoginUrl}, Error: ${errorMsg}`).to.be.true;
 
   this.pages[browserName] = { loginPage };
 });
