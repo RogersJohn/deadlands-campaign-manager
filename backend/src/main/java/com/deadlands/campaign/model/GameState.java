@@ -39,9 +39,9 @@ public class GameState {
     /**
      * Current combat round number (1-based).
      * Reset to 1 when combat starts, increments when all characters have acted.
-     * Note: columnDefinition provides default for existing DB rows during migration
+     * Note: nullable=true allows Hibernate migration without breaking existing rows
      */
-    @Column(columnDefinition = "integer default 1")
+    @Column
     private Integer roundNumber = 1;
 
     /**
@@ -64,9 +64,9 @@ public class GameState {
     /**
      * Whether combat is currently active.
      * When true, initiative order is in effect.
-     * Note: columnDefinition provides default for existing DB rows during migration
+     * Note: nullable=true allows Hibernate migration without breaking existing rows
      */
-    @Column(columnDefinition = "boolean default false")
+    @Column
     private Boolean combatActive = false;
 
     /**
@@ -79,9 +79,9 @@ public class GameState {
     /**
      * Whether a Joker was dealt this round.
      * If true, the deck should be shuffled at the start of next round.
-     * Note: columnDefinition provides default for existing DB rows during migration
+     * Note: nullable=true allows Hibernate migration without breaking existing rows
      */
-    @Column(columnDefinition = "boolean default false")
+    @Column
     private Boolean jokerDealtThisRound = false;
 
     /**

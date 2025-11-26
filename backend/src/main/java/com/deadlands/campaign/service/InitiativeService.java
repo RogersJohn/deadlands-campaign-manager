@@ -241,7 +241,7 @@ public class InitiativeService {
     public CombatStateResponse endTurn(Long characterId) {
         GameState gameState = gameStateService.getOrCreateGameState();
 
-        if (!gameState.getCombatActive()) {
+        if (!Boolean.TRUE.equals(gameState.getCombatActive())) {
             return buildCombatStateResponse(gameState, "Combat is not active");
         }
 
@@ -392,12 +392,12 @@ public class InitiativeService {
         }
 
         return CombatStateResponse.builder()
-                .roundNumber(gameState.getRoundNumber())
-                .combatActive(gameState.getCombatActive())
+                .roundNumber(gameState.getRoundNumber() != null ? gameState.getRoundNumber() : 1)
+                .combatActive(Boolean.TRUE.equals(gameState.getCombatActive()))
                 .activeCharacterId(gameState.getActiveCharacterId())
                 .activeCharacterName(activeCharacterName)
                 .initiativeOrder(initiativeOrder)
-                .jokerDealt(gameState.getJokerDealtThisRound())
+                .jokerDealt(Boolean.TRUE.equals(gameState.getJokerDealtThisRound()))
                 .message(message)
                 .build();
     }
@@ -428,7 +428,7 @@ public class InitiativeService {
     public CombatStateResponse addCombatant(Long characterId, String npcName, boolean isPlayer) {
         GameState gameState = gameStateService.getOrCreateGameState();
 
-        if (!gameState.getCombatActive()) {
+        if (!Boolean.TRUE.equals(gameState.getCombatActive())) {
             return buildCombatStateResponse(gameState, "Combat is not active");
         }
 
@@ -473,7 +473,7 @@ public class InitiativeService {
     public CombatStateResponse removeCombatant(Long characterId, String npcName) {
         GameState gameState = gameStateService.getOrCreateGameState();
 
-        if (!gameState.getCombatActive()) {
+        if (!Boolean.TRUE.equals(gameState.getCombatActive())) {
             return buildCombatStateResponse(gameState, "Combat is not active");
         }
 
