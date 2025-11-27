@@ -1,8 +1,60 @@
 # Next Session - Action Items
 
-**Last Updated:** 2025-11-25
-**Current Status:** Infrastructure Fixes Complete ✅
-**Priority:** Fix Initiative Tracker & Turn Structure (Savage Worlds Rules)
+**Last Updated:** 2025-11-27
+**Current Status:** Deployment in Progress - Check Status First
+**Priority:** Verify deployment, then continue with Initiative/Turn Structure
+
+---
+
+## 🚨 FIRST THING - Check Deployment Status
+
+A deployment was triggered at the end of last session. Before doing anything else:
+
+### 1. Test API Health
+```bash
+# Test login endpoint
+curl -s https://deadlands-campaign-manager-production.up.railway.app/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"gamemaster","password":"Test123!"}'
+
+# If it returns a token, the deployment is working
+# If it returns 500, check Railway logs for errors
+```
+
+### 2. Check Railway Logs
+```bash
+railway logs --tail 50
+```
+
+### 3. If Still Failing - Manual Redeploy
+Go to Railway dashboard and trigger a manual redeploy from the UI.
+
+---
+
+## 📝 Session 2025-11-27 - What Was Done
+
+### Bug Fixes Committed
+
+1. **Multiplayer Sync Fix** (commit `d4b0eaf`)
+   - Fixed property name mismatch in `GameArena.tsx`
+   - Was: `toX`, `toY`, `username`
+   - Now: `gridX`, `gridY`, `movedBy` (matches `ArenaScene.ts`)
+
+2. **Hibernate Schema Fix** (commit `2fdf74c`)
+   - Added `nullable = true` to `@Column` annotations in `GameState.java`
+   - Fields: `roundNumber`, `combatActive`, `jokerDealtThisRound`
+   - Added null safety to `nextRound()` method
+   - Added error logging to `GameStateController`
+
+### Files Modified
+- `backend/src/main/java/com/deadlands/campaign/model/GameState.java`
+- `backend/src/main/java/com/deadlands/campaign/controller/GameStateController.java`
+- `frontend/src/game/GameArena.tsx`
+- `test/manual-testing/fix-game-state-nulls.js` (new utility)
+
+### Root Cause Analysis
+- **Multiplayer Issue**: Event property names mismatched between emitter and handler
+- **500 Errors**: Hibernate `ddl-auto: update` was trying to add NOT NULL columns to table with existing data
 
 ---
 
