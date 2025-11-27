@@ -64,28 +64,36 @@ public class GameStateController {
      */
     @GetMapping("/state")
     public ResponseEntity<GameStateResponse> getGameState() {
-        logger.debug("[GameStateController] GET /api/game/state");
+        logger.info("[GameStateController] GET /api/game/state - Starting");
 
-        GameState gameState = gameStateService.getFullGameState();
-        List<TokenPosition> positions = gameStateService.getAllTokenPositions();
+        try {
+            GameState gameState = gameStateService.getFullGameState();
+            logger.info("[GameStateController] Got game state: id={}", gameState.getId());
 
-        // Convert to DTOs
-        List<TokenPositionDTO> positionDTOs = positions.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+            List<TokenPosition> positions = gameStateService.getAllTokenPositions();
+            logger.info("[GameStateController] Got {} token positions", positions.size());
 
-        GameStateResponse response = GameStateResponse.builder()
-                .turnNumber(gameState.getTurnNumber())
-                .turnPhase(gameState.getTurnPhase())
-                .currentMap(gameState.getCurrentMap())
-                .tokenPositions(positionDTOs)
-                .lastActivity(gameState.getLastActivity())
-                .build();
+            // Convert to DTOs
+            List<TokenPositionDTO> positionDTOs = positions.stream()
+                    .map(this::convertToDTO)
+                    .collect(Collectors.toList());
 
-        logger.info("[GameStateController] Returning game state: turn {}, {} tokens",
-                gameState.getTurnNumber(), positionDTOs.size());
+            GameStateResponse response = GameStateResponse.builder()
+                    .turnNumber(gameState.getTurnNumber())
+                    .turnPhase(gameState.getTurnPhase())
+                    .currentMap(gameState.getCurrentMap())
+                    .tokenPositions(positionDTOs)
+                    .lastActivity(gameState.getLastActivity())
+                    .build();
 
-        return ResponseEntity.ok(response);
+            logger.info("[GameStateController] Returning game state: turn {}, {} tokens",
+                    gameState.getTurnNumber(), positionDTOs.size());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("[GameStateController] ERROR in getGameState: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
     /**

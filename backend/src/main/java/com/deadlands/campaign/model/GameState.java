@@ -41,7 +41,7 @@ public class GameState {
      * Reset to 1 when combat starts, increments when all characters have acted.
      * Note: nullable=true allows Hibernate migration without breaking existing rows
      */
-    @Column
+    @Column(nullable = true)
     private Integer roundNumber = 1;
 
     /**
@@ -66,7 +66,7 @@ public class GameState {
      * When true, initiative order is in effect.
      * Note: nullable=true allows Hibernate migration without breaking existing rows
      */
-    @Column
+    @Column(nullable = true)
     private Boolean combatActive = false;
 
     /**
@@ -81,7 +81,7 @@ public class GameState {
      * If true, the deck should be shuffled at the start of next round.
      * Note: nullable=true allows Hibernate migration without breaking existing rows
      */
-    @Column
+    @Column(nullable = true)
     private Boolean jokerDealtThisRound = false;
 
     /**
@@ -206,7 +206,7 @@ public class GameState {
      * Advance to next round.
      */
     public void nextRound() {
-        this.roundNumber++;
+        this.roundNumber = (this.roundNumber != null ? this.roundNumber : 1) + 1;
         this.jokerDealtThisRound = false;
         clearInitiativeOrder();
         this.lastActivity = LocalDateTime.now();
