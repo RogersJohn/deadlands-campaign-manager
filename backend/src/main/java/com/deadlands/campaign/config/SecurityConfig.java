@@ -2,6 +2,9 @@ package com.deadlands.campaign.config;
 
 import com.deadlands.campaign.security.JwtAuthenticationFilter;
 import com.deadlands.campaign.security.CustomUserDetailsService;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -30,6 +33,8 @@ import java.util.List;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
+
     @Autowired
     private CustomUserDetailsService customUserDetailsService;
 
@@ -38,6 +43,14 @@ public class SecurityConfig {
 
     @Value("${cors.allowed-origins}")
     private String allowedOrigins;
+
+    @PostConstruct
+    public void logSecurityConfig() {
+        log.info("========== SECURITY CONFIG ==========");
+        log.info("CORS Allowed Origins: {}", allowedOrigins);
+        log.info("Origins parsed: {}", Arrays.asList(allowedOrigins.split(",")));
+        log.info("======================================");
+    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {

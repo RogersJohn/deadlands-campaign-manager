@@ -10,6 +10,8 @@ import com.deadlands.campaign.model.ArcanePowerReference;
 import com.deadlands.campaign.repository.CharacterRepository;
 import com.deadlands.campaign.repository.UserRepository;
 import com.deadlands.campaign.repository.ArcanePowerReferenceRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +25,8 @@ import java.util.Map;
 @RequestMapping("/characters")
 public class CharacterController {
 
+    private static final Logger log = LoggerFactory.getLogger(CharacterController.class);
+
     @Autowired
     private CharacterRepository characterRepository;
 
@@ -34,21 +38,42 @@ public class CharacterController {
 
     @GetMapping
     public ResponseEntity<List<CharacterDTO>> getAllCharacters(Authentication authentication) {
-        User user = userRepository.findByUsername(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        log.info("[CharacterController] GET /characters - Auth: {}, Principal: {}",
+                authentication != null ? "present" : "NULL",
+                authentication != null ? authentication.getName() : "N/A");
 
-        List<Character> characters;
-        if (user.getRole() == User.Role.GAME_MASTER) {
-            characters = characterRepository.findAll();
-        } else {
-            characters = characterRepository.findByPlayerId(user.getId());
+        if (authentication == null) {
+            log.error("[CharacterController] Authentication is NULL - this should not happen if security is configured correctly");
+            return ResponseEntity.status(401).build();
         }
 
-        List<CharacterDTO> characterDTOs = characters.stream()
-                .map(this::toDTO)
-                .toList();
+        try {
+            User user = userRepository.findByUsername(authentication.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found: " + authentication.getName()));
 
-        return ResponseEntity.ok(characterDTOs);
+            log.info("[CharacterController] User found: {} (role: {})", user.getUsername(), user.getRole());
+
+            List<Character> characters;
+            if (user.getRole() == User.Role.GAME_MASTER) {
+                characters = characterRepository.findAll();
+                log.info("[CharacterController] GM mode - fetched all {} characters", characters.size());
+            } else {
+                characters = characterRepository.findByPlayerId(user.getId());
+                log.info("[CharacterController] Player mode - fetched {} characters for player {}",
+                        characters.size(), user.getId());
+            }
+
+            List<CharacterDTO> characterDTOs = characters.stream()
+                    .map(this::toDTO)
+                    .toList();
+
+            log.info("[CharacterController] Returning {} character DTOs", characterDTOs.size());
+            return ResponseEntity.ok(characterDTOs);
+        } catch (Exception e) {
+            log.error("[CharacterController] Error fetching characters: {} - {}",
+                    e.getClass().getSimpleName(), e.getMessage());
+            throw e;
+        }
     }
 
     private CharacterDTO toDTO(Character character) {

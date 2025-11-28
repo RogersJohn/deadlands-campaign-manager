@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +20,8 @@ import java.io.IOException;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+
     @Autowired
     private JwtTokenProvider tokenProvider;
 
@@ -30,65 +34,55 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         String requestURI = request.getRequestURI();
+        String method = request.getMethod();
+        String origin = request.getHeader("Origin");
 
-        // Debug logging disabled by default (enable for troubleshooting)
-        boolean debugEnabled = false;
-
-        if (debugEnabled) {
-            System.out.println("========== JWT FILTER DEBUG ==========");
-            System.out.println("Request URI: " + requestURI);
-            System.out.println("Method: " + request.getMethod());
-        }
+        // Always log for diagnosing 403 issues (can disable after fix)
+        log.info("[JWT-FILTER] {} {} | Origin: {}", method, requestURI, origin);
 
         try {
             String jwt = getJwtFromRequest(request);
+            boolean hasToken = StringUtils.hasText(jwt);
 
-            if (debugEnabled) {
-                System.out.println("Authorization Header: " + (jwt != null ? "Present" : "MISSING"));
-            }
+            log.info("[JWT-FILTER] Token present: {} | Token length: {}",
+                    hasToken, hasToken ? jwt.length() : 0);
 
-            if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                String username = tokenProvider.getUsernameFromToken(jwt);
+            if (hasToken) {
+                boolean isValid = tokenProvider.validateToken(jwt);
+                log.info("[JWT-FILTER] Token valid: {}", isValid);
 
-                if (debugEnabled) {
-                    System.out.println("JWT Valid - Username: " + username);
+                if (isValid) {
+                    String username = tokenProvider.getUsernameFromToken(jwt);
+                    log.info("[JWT-FILTER] Username from token: {}", username);
+
+                    UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+                    log.info("[JWT-FILTER] UserDetails loaded - Username: {}, Authorities: {}",
+                            userDetails.getUsername(), userDetails.getAuthorities());
+
+                    UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.info("[JWT-FILTER] Authentication SET in SecurityContext");
+                } else {
+                    log.warn("[JWT-FILTER] Token validation FAILED for URI: {}", requestURI);
                 }
-
-                UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-
-                if (debugEnabled) {
-                    System.out.println("UserDetails loaded: " + userDetails.getUsername());
-                    System.out.println("Authorities: " + userDetails.getAuthorities());
-                }
-
-                UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-
-                if (debugEnabled) {
-                    System.out.println("✓ Authentication SET in SecurityContext");
-                }
-            } else if (debugEnabled && StringUtils.hasText(jwt)) {
-                System.out.println("✗ JWT validation FAILED");
+            } else {
+                log.info("[JWT-FILTER] No token provided for URI: {}", requestURI);
             }
         } catch (Exception ex) {
+            log.error("[JWT-FILTER] Exception during authentication: {} - {}",
+                    ex.getClass().getSimpleName(), ex.getMessage());
             logger.error("Could not set user authentication in security context", ex);
-            if (debugEnabled) {
-                System.out.println("✗ Exception: " + ex.getMessage());
-                ex.printStackTrace();
-            }
         }
 
-        if (debugEnabled) {
-            System.out.println("Final Authentication: " +
-                (SecurityContextHolder.getContext().getAuthentication() != null ?
-                    SecurityContextHolder.getContext().getAuthentication().getName() + " [" +
-                    SecurityContextHolder.getContext().getAuthentication().getAuthorities() + "]" :
-                    "NULL"));
-            System.out.println("======================================");
-        }
+        // Log final authentication state
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        log.info("[JWT-FILTER] Final auth state - Authenticated: {}, Principal: {}, Authorities: {}",
+                auth != null && auth.isAuthenticated(),
+                auth != null ? auth.getName() : "NULL",
+                auth != null ? auth.getAuthorities() : "NULL");
 
         filterChain.doFilter(request, response);
     }
