@@ -13,15 +13,18 @@ import {
   Paper,
   TextField,
   InputAdornment,
+  Drawer,
 } from '@mui/material'
-import { Add as AddIcon, Person as PersonIcon, SportsEsports as GameIcon, Search as SearchIcon } from '@mui/icons-material'
+import { Add as AddIcon, Person as PersonIcon, SportsEsports as GameIcon, Search as SearchIcon, Psychology as AIIcon } from '@mui/icons-material'
 import characterService from '../services/characterService'
 import { useAuthStore } from '../store/authStore'
+import AIAssistantPanel from '../components/ai/AIAssistantPanel'
 
 const Dashboard = () => {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const [searchQuery, setSearchQuery] = useState('')
+  const [aiAssistantOpen, setAiAssistantOpen] = useState(false)
 
   const { data: characters, isLoading } = useQuery({
     queryKey: ['characters'],
@@ -68,8 +71,32 @@ const Dashboard = () => {
           >
             New Character
           </Button>
+          <Button
+            variant="outlined"
+            size="large"
+            startIcon={<AIIcon />}
+            onClick={() => setAiAssistantOpen(true)}
+            sx={{ color: 'primary.contrastText', borderColor: 'primary.contrastText' }}
+          >
+            AI Assistant
+          </Button>
         </Box>
       </Paper>
+
+      {/* AI Assistant Drawer */}
+      <Drawer
+        anchor="right"
+        open={aiAssistantOpen}
+        onClose={() => setAiAssistantOpen(false)}
+        PaperProps={{
+          sx: {
+            width: 500,
+            maxWidth: '90vw',
+          },
+        }}
+      >
+        <AIAssistantPanel onClose={() => setAiAssistantOpen(false)} />
+      </Drawer>
 
       {/* Characters Section */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

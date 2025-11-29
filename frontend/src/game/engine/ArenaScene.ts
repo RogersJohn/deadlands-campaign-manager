@@ -49,6 +49,18 @@ export class ArenaScene extends Phaser.Scene {
   private cameraFollowEnabled = true;
   private cameraPanSpeed = 10;
 
+  /**
+   * Check if user is currently typing in an input field.
+   * Used to prevent Phaser keyboard shortcuts from interfering with text input.
+   */
+  private isTypingInInput(): boolean {
+    const activeElement = document.activeElement;
+    if (!activeElement) return false;
+    const tagName = activeElement.tagName.toLowerCase();
+    return tagName === 'input' || tagName === 'textarea' ||
+           (activeElement as HTMLElement).isContentEditable;
+  }
+
   // Weapon ranges display
   private showWeaponRanges = true;
 
@@ -475,23 +487,27 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
 
     // Keyboard zoom controls (+ and - keys)
     this.input.keyboard?.on('keydown-PLUS', () => {
+      if (this.isTypingInInput()) return;
       this.currentZoom = Phaser.Math.Clamp(this.currentZoom + 0.1, this.minZoom, this.maxZoom);
       this.cameras.main.setZoom(this.currentZoom);
     });
 
     this.input.keyboard?.on('keydown-MINUS', () => {
+      if (this.isTypingInInput()) return;
       this.currentZoom = Phaser.Math.Clamp(this.currentZoom - 0.1, this.minZoom, this.maxZoom);
       this.cameras.main.setZoom(this.currentZoom);
     });
 
     // Also support = key for zoom in (no shift needed)
     this.input.keyboard?.on('keydown-EQUALS', () => {
+      if (this.isTypingInInput()) return;
       this.currentZoom = Phaser.Math.Clamp(this.currentZoom + 0.1, this.minZoom, this.maxZoom);
       this.cameras.main.setZoom(this.currentZoom);
     });
 
     // Toggle coordinate display with 'C' key
     this.input.keyboard?.on('keydown-C', () => {
+      if (this.isTypingInInput()) return;
       this.showCoordinates = !this.showCoordinates;
       if (!this.showCoordinates && this.coordinateText) {
         this.coordinateText.setVisible(false);
@@ -1036,6 +1052,9 @@ Parry: ${this.character.parry} | Toughness: ${this.character.toughness}`;
   update(time: number, delta: number) {
     if (!this.player || !this.cursors || !this.combatManager) return;
     if (this.combatManager.getCurrentPhase() !== 'player') return;
+
+    // Skip keyboard processing when user is typing in an input field
+    if (this.isTypingInInput()) return;
 
     // Camera panning (when follow is disabled)
     if (!this.cameraFollowEnabled) {
